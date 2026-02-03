@@ -33,7 +33,7 @@ Clone the project into Laragon’s `www` directory:
 
 ```bash
 cd C:\laragon\www
-git clone https://github.com/Schraia/LMSWebDev academix
+git clone https://github.com/Schraia/Academix academix
 ```
 
 > The folder name **must be `academix`** so Laragon maps it to:
