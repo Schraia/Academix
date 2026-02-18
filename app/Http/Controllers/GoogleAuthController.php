@@ -41,7 +41,13 @@ class GoogleAuthController extends Controller
 
             return redirect()->intended('/dashboard');
         } catch (\Exception $e) {
-            return redirect('/login')->with('error', 'Unable to login with Google. Please try again.');
+            // Log the actual error for debugging
+            \Log::error('Google OAuth Error: ' . $e->getMessage(), [
+                'exception' => $e,
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return redirect('/login')->with('error', 'Unable to login with Google. Please try again. Error: ' . $e->getMessage());
         }
     }
 }
