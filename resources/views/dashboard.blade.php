@@ -95,9 +95,59 @@
         .main-content {
             flex: 1;
             padding: 3rem;
+            padding-top: 33vh;
             display: flex;
-            align-items: center;
-            justify-content: center;
+            flex-direction: column;
+            align-items: flex-start;
+            justify-content: flex-start;
+        }
+        .todays-schedule-section {
+            width: 100%;
+            max-width: 520px;
+            margin-bottom: 2rem;
+        }
+        .todays-schedule-header {
+            font-size: 1.125rem;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 0.25rem;
+        }
+        .todays-schedule-date {
+            font-size: 0.875rem;
+            color: #6b7280;
+            margin-bottom: 0.75rem;
+        }
+        .todays-schedule-list {
+            list-style: none;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            background: white;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+        .todays-schedule-list li {
+            padding: 0.625rem 1rem;
+            border-bottom: 1px solid #e5e7eb;
+            font-size: 0.9375rem;
+            color: #374151;
+        }
+        .todays-schedule-list li:last-child {
+            border-bottom: none;
+        }
+        .todays-schedule-list a {
+            color: #dc2626;
+            text-decoration: underline;
+            text-underline-offset: 2px;
+        }
+        .todays-schedule-list a:hover {
+            color: #b91c1c;
+        }
+        .todays-schedule-chevron {
+            display: block;
+            text-align: center;
+            padding: 0.5rem;
+            color: #9ca3af;
+            font-size: 0.875rem;
         }
         .welcome-card {
             background: white;
@@ -156,6 +206,12 @@
                     </svg>
                     <span>Enroll Online</span>
                 </a>
+                @if(Auth::user()->isAdmin())
+                <a href="{{ route('settings.index') }}" class="nav-item" style="text-decoration: none; color: inherit;">
+                    <svg fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd"/></svg>
+                    <span>Settings</span>
+                </a>
+                @endif
             </nav>
             <div class="nav-logout">
                 <form method="POST" action="{{ route('logout') }}">
@@ -170,6 +226,22 @@
             </div>
         </div>
         <div class="main-content">
+            <div class="todays-schedule-section">
+                <h2 class="todays-schedule-header">Today's Schedule:</h2>
+                <p class="todays-schedule-date">{{ $dateFormatted }}</p>
+                <ul class="todays-schedule-list">
+                    @forelse($todaysSchedules as $schedule)
+                    <li>
+                        {{ $schedule['time_slot'] }} — <a href="{{ route('courses.show', $schedule['course_id']) }}">{{ $schedule['display_title'] }}</a>
+                    </li>
+                    @empty
+                    <li style="color: #9ca3af;">No classes scheduled for today.</li>
+                    @endforelse
+                </ul>
+                @if(isset($todaysSchedules) && count($todaysSchedules) > 0)
+                <span class="todays-schedule-chevron" aria-hidden="true">▼</span>
+                @endif
+            </div>
             <div class="welcome-card">
                 <h1>Welcome to the Dashboard</h1>
                 <p>Hello, {{ Auth::user()->name }}! You're successfully logged in.</p>

@@ -22,6 +22,7 @@ class User extends Authenticatable
         'email',
         'password',
         'google_id',
+        'role',
     ];
 
     /**
@@ -65,5 +66,20 @@ class User extends Authenticatable
             ->whereYear('enrolled_at', $currentYear)
             ->where('status', 'enrolled')
             ->exists();
+    }
+
+    public function isAdmin(): bool
+    {
+        return $this->role === 'admin';
+    }
+
+    public function isInstructor(): bool
+    {
+        return $this->role === 'instructor';
+    }
+
+    public function isStudent(): bool
+    {
+        return $this->role === 'student' || empty($this->role);
     }
 }

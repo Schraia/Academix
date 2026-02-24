@@ -10,6 +10,7 @@ use App\Models\Enrollment;
 use App\Models\SectionSubjectSchedule;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 
 class EnrollController extends Controller
 {
@@ -291,27 +292,44 @@ class EnrollController extends Controller
         }
 
         $user = Auth::user();
-        $course = Course::first();
-        if (!$course) {
-            $course = Course::create([
-                'title' => 'Placeholder',
-                'code' => 'PLACEHOLDER',
-                'status' => 'published',
-            ]);
-        }
 
         foreach ($items as $item) {
-            Enrollment::create([
-                'user_id' => $user->id,
-                'course_id' => $course->id,
-                'college_course_id' => $item['college_course_id'] ?? null,
-                'course_name' => $item['course_name'],
-                'section_name' => $item['section_name'],
-                'section_code' => $item['section_code'] ?? null,
-                'time_slot' => $item['time_slot'] ?? null,
-                'days' => $item['days'] ?? null,
-                'status' => 'enrolled',
-            ]);
+            $courseName = $item['course_name'] ?? '';
+            if ($courseName === '') {
+                continue;
+            }
+
+            $course = Course::where('title', $courseName)->first();
+            if (! $course) {
+                $baseCode = strtoupper(Str::slug(substr($courseName, 0, 20), ''));
+                $code = $baseCode;
+                $n = 0;
+                while (Course::where('code', $code)->exists()) {
+                    $code = $baseCode . (string) (++$n);
+                }
+                $course = Course::create([
+                    'title' => $courseName,
+                    'code' => $code,
+                    'description' => null,
+                    'status' => 'published',
+                ]);
+            }
+
+            Enrollment::updateOrCreate(
+                [
+                    'user_id' => $user->id,
+                    'course_id' => $course->id,
+                ],
+                [
+                    'college_course_id' => $item['college_course_id'] ?? null,
+                    'course_name' => $courseName,
+                    'section_name' => $item['section_name'],
+                    'section_code' => $item['section_code'] ?? null,
+                    'time_slot' => $item['time_slot'] ?? null,
+                    'days' => $item['days'] ?? null,
+                    'status' => 'enrolled',
+                ]
+            );
         }
 
         $request->session()->forget('pending_enrollments');
