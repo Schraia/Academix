@@ -39,6 +39,11 @@ class GoogleAuthController extends Controller
 
             Auth::login($user);
 
+            // Check if user has enrollments for the current school year
+            if (!$user->hasCurrentYearEnrollments()) {
+                return redirect()->route('enroll');
+            }
+
             return redirect()->intended('/dashboard');
         } catch (\Exception $e) {
             // Log the actual error for debugging

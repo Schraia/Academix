@@ -21,6 +21,8 @@
         }
         .sidebar {
             width: 250px;
+            min-height: 100vh;
+            flex-shrink: 0;
             background: linear-gradient(180deg, #ef4444 0%, #dc2626 100%);
             color: white;
             display: flex;
@@ -37,6 +39,8 @@
         }
         .nav-menu {
             flex: 1;
+            min-height: 0;
+            overflow-y: auto;
             padding: 1rem 0;
         }
         .nav-item {
@@ -61,6 +65,9 @@
             margin-top: auto;
             padding: 1rem 1.5rem;
             border-top: 1px solid rgba(255, 255, 255, 0.1);
+            position: sticky;
+            bottom: 0;
+            background: linear-gradient(180deg, #ef4444 0%, #dc2626 100%);
         }
         .logout-btn {
             width: 100%;
@@ -80,6 +87,10 @@
         }
         .logout-btn:hover {
             background: rgba(255, 255, 255, 0.2);
+        }
+        .logout-btn svg {
+            width: 20px;
+            height: 20px;
         }
         .main-content {
             flex: 1;
@@ -120,13 +131,13 @@
                     </svg>
                     <span>Dashboard</span>
                 </div>
-                <div class="nav-item">
+                <a href="{{ route('courses.index') }}" class="nav-item" style="text-decoration: none; color: inherit;">
                     <svg fill="currentColor" viewBox="0 0 20 20">
                         <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"/>
                         <path fill-rule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clip-rule="evenodd"/>
                     </svg>
                     <span>Courses</span>
-                </div>
+                </a>
                 <div class="nav-item">
                     <svg fill="currentColor" viewBox="0 0 20 20">
                         <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"/>
@@ -139,6 +150,12 @@
                     </svg>
                     <span>Profile</span>
                 </div>
+                <a href="{{ route('enroll') }}" class="nav-item" style="text-decoration: none; color: inherit;">
+                    <svg fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"/>
+                    </svg>
+                    <span>Enroll Online</span>
+                </a>
             </nav>
             <div class="nav-logout">
                 <form method="POST" action="{{ route('logout') }}">
