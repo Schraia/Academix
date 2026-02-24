@@ -24,6 +24,13 @@ class AuthController extends Controller
 
         if (Auth::attempt($request->only('email', 'password'), $request->boolean('remember'))) {
             $request->session()->regenerate();
+            
+            // Check if user has enrollments for the current school year
+            $user = Auth::user();
+            if (!$user->hasCurrentYearEnrollments()) {
+                return redirect()->route('enroll');
+            }
+            
             return redirect()->intended('/dashboard');
         }
 
@@ -47,6 +54,11 @@ class AuthController extends Controller
         ]);
 
         Auth::login($user);
+
+        // Check if user has enrollments for the current school year
+        if (!$user->hasCurrentYearEnrollments()) {
+            return redirect()->route('enroll');
+        }
 
         return redirect()->intended('/dashboard');
     }

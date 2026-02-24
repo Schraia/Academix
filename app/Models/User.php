@@ -46,4 +46,24 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+
+    /**
+     * Get the enrollments for the user.
+     */
+    public function enrollments()
+    {
+        return $this->hasMany(\App\Models\Enrollment::class);
+    }
+
+    /**
+     * Check if user has enrollments for the current school year.
+     */
+    public function hasCurrentYearEnrollments()
+    {
+        $currentYear = now()->year;
+        return $this->enrollments()
+            ->whereYear('enrolled_at', $currentYear)
+            ->where('status', 'enrolled')
+            ->exists();
+    }
 }
