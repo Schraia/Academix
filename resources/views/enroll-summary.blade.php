@@ -36,7 +36,7 @@
         .main-content { flex: 1; padding: 3rem; }
         .summary-card {
             background: white; padding: 2rem; border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); max-width: 700px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); max-width: 1100px; width: 100%;
         }
         .summary-title { font-size: 1.75rem; font-weight: 700; color: #1f2937; margin-bottom: 1.5rem; }
         .summary-list { margin-bottom: 1.5rem; }
@@ -57,6 +57,30 @@
             border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 1rem;
         }
         .btn-skip-payment:hover { background: #15803d; }
+        .summary-actions { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.5rem; }
+        .btn-back {
+            padding: 0.5rem 1rem; background: #6b7280; color: white; border: none; border-radius: 8px;
+            font-weight: 600; cursor: pointer; font-size: 0.9375rem; text-decoration: none; display: inline-flex; align-items: center; gap: 0.5rem;
+        }
+        .btn-back:hover { background: #4b5563; color: white; }
+        .summary-table-wrap { overflow-x: auto; margin-bottom: 1.5rem; }
+        .summary-table {
+            width: 100%; border-collapse: collapse; font-size: 0.9375rem;
+        }
+        .summary-table th {
+            text-align: left; padding: 0.75rem; background: #f9fafb; border: 1px solid #e5e7eb;
+            font-weight: 600; color: #374151;
+        }
+        .summary-table td {
+            padding: 0.75rem; border: 1px solid #e5e7eb; color: #4b5563;
+        }
+        .summary-table tbody tr:nth-child(even) { background: #fafafa; }
+        .summary-table tbody tr:hover { background: #f3f4f6; }
+        .summary-table .col-price { text-align: right; white-space: nowrap; }
+        .summary-table .col-units { text-align: center; }
+        .summary-table .col-section { min-width: 140px; }
+        .summary-table .col-schedule { min-width: 160px; }
+        .summary-table .col-course { min-width: 180px; }
     </style>
 </head>
 <body>
@@ -89,17 +113,42 @@
         <div class="main-content">
             <div class="summary-card">
                 <h1 class="summary-title">Enrollment Summary</h1>
-                <div class="summary-list">
-                    @foreach($items as $item)
-                    <div class="summary-row">
-                        <span class="summary-label">{{ $item['course_name'] }} — {{ $item['section_name'] }}</span>
-                        <span class="summary-value">₱5,000</span>
-                    </div>
-                    @endforeach
+                <div class="summary-actions">
+                    <a href="{{ route('enroll') }}" class="btn-back">← Back</a>
+                </div>
+                <div class="summary-table-wrap">
+                    <table class="summary-table">
+                        <thead>
+                            <tr>
+                                <th class="col-course">Course</th>
+                                <th class="col-units">Units</th>
+                                <th class="col-section">Section</th>
+                                <th class="col-schedule">Schedule</th>
+                                <th class="col-price">Price</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($items as $item)
+                            @php
+                                $schedule = trim(($item['days'] ?? '') . ' ' . ($item['time_slot'] ?? ''));
+                                if ($schedule === '') $schedule = '—';
+                                $section = $item['section_name'] ?? '—';
+                                $units = $item['units'] ?? '—';
+                            @endphp
+                            <tr>
+                                <td class="col-course">{{ $item['course_name'] }}</td>
+                                <td class="col-units">{{ $units }}</td>
+                                <td class="col-section">{{ $section }}</td>
+                                <td class="col-schedule">{{ $schedule }}</td>
+                                <td class="col-price">Php {{ number_format($pricePerSubject) }}</td>
+                            </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
                 </div>
                 <div class="summary-total">
-                    <span>Total</span>
-                    <span>₱{{ number_format($totalAmount) }}</span>
+                    <span>Total ({{ count($items) }} subject{{ count($items) !== 1 ? 's' : '' }})</span>
+                    <span>Php {{ number_format($totalAmount) }}</span>
                 </div>
                 <div class="payment-type"><strong>Payment:</strong> {{ $paymentType }}</div>
                 <form method="POST" action="{{ route('enroll.complete') }}">@csrf

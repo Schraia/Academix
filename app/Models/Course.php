@@ -12,6 +12,7 @@ class Course extends Model
     protected $fillable = [
         'title',
         'description',
+        'banner_path',
         'block_section_id',
         'code',
         'credits',
@@ -31,6 +32,26 @@ class Course extends Model
     public function curriculum()
     {
         return $this->hasMany(Curriculum::class);
+    }
+
+    public function lessonModules()
+    {
+        return $this->hasMany(LessonModule::class, 'course_id')->orderBy('order');
+    }
+
+    public function discussionThreads()
+    {
+        return $this->hasMany(DiscussionThread::class, 'course_id');
+    }
+
+    public function courseGrades()
+    {
+        return $this->hasMany(CourseGrade::class, 'course_id');
+    }
+
+    public function courseAnnouncements()
+    {
+        return $this->hasMany(CourseAnnouncement::class, 'course_id');
     }
 }
 

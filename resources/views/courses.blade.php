@@ -89,16 +89,20 @@
             @endif
 
             <div class="courses-card">
-                @if($enrollments->isEmpty())
+                @if($enrollments->isEmpty() && empty($allCourses))
                     <div class="empty-state">
                         <p>You are not enrolled in any courses for this school year.</p>
                         <p style="margin-top: 0.5rem;"><a href="{{ route('enroll') }}">Enroll online</a></p>
+                    </div>
+                @elseif($enrollments->isEmpty())
+                    <div class="empty-state">
+                        <p>You are not enrolled in any courses. Use the list below to open a course.</p>
                     </div>
                 @else
                     <table class="courses-table">
                         <thead>
                             <tr>
-                                <th>Course / Level</th>
+                                <th>Courses</th>
                                 <th>Section</th>
                                 <th>Status</th>
                                 <th>Enrolled at</th>
@@ -107,7 +111,7 @@
                         <tbody>
                             @foreach($enrollments as $e)
                             <tr>
-                                <td>{{ $e->course_name ?? '—' }}</td>
+                                <td><a href="{{ route('courses.show', $e->course_id) }}" style="color: #dc2626; text-decoration: underline;">{{ $e->course_name ?? '—' }}</a></td>
                                 <td>{{ $e->section_name ?? '—' }}</td>
                                 <td>{{ ucfirst($e->status) }}</td>
                                 <td>{{ $e->enrolled_at->format('M j, Y') }}</td>
@@ -117,6 +121,26 @@
                     </table>
                 @endif
             </div>
+
+            @if(isset($allCourses) && $allCourses->isNotEmpty())
+                <h2 class="page-title" style="margin-top: 2rem; font-size: 1.25rem;">All courses</h2>
+                <p class="page-subtitle" style="margin-bottom: 0.75rem;">Open any course to manage content (instructors).</p>
+                <div class="courses-card">
+                    <table class="courses-table">
+                        <thead>
+                            <tr><th>Course</th><th>Code</th></tr>
+                        </thead>
+                        <tbody>
+                            @foreach($allCourses as $c)
+                                <tr>
+                                    <td><a href="{{ route('courses.show', $c) }}" style="color: #dc2626; text-decoration: underline;">{{ $c->title }}</a></td>
+                                    <td>{{ $c->code ?? '—' }}</td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            @endif
         </div>
     </div>
 </body>
