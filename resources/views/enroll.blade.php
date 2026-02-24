@@ -353,7 +353,10 @@
             display: none;
         }
         .save-enrollments-wrap.visible {
-            display: block;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            flex-wrap: wrap;
         }
         .btn-save-enrollments {
             padding: 0.75rem 1.5rem;
@@ -368,6 +371,20 @@
         }
         .btn-save-enrollments:hover {
             background: #15803d;
+        }
+        .btn-clear-all-enrollments {
+            padding: 0.75rem 1.5rem;
+            background: #6b7280;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background 0.3s;
+        }
+        .btn-clear-all-enrollments:hover {
+            background: #4b5563;
         }
         .course-category {
             margin-bottom: 1rem;
@@ -544,37 +561,37 @@
                         </svg>
                     </div>
                     <div class="category-content">
-                        <div class="sub-subcategory" onclick="selectCourse(this, 'Kinder')">
+                        <div class="sub-subcategory" data-course-name="Kinder" onclick="selectCourse(this, 'Kinder')">
                             <span class="sub-subcategory-title">Kinder</span>
                         </div>
-                        <div class="sub-subcategory" onclick="selectCourse(this, 'Grade 1')">
+                        <div class="sub-subcategory" data-course-name="Grade 1" onclick="selectCourse(this, 'Grade 1')">
                             <span class="sub-subcategory-title">Grade 1</span>
                         </div>
-                        <div class="sub-subcategory" onclick="selectCourse(this, 'Grade 2')">
+                        <div class="sub-subcategory" data-course-name="Grade 2" onclick="selectCourse(this, 'Grade 2')">
                             <span class="sub-subcategory-title">Grade 2</span>
                         </div>
-                        <div class="sub-subcategory" onclick="selectCourse(this, 'Grade 3')">
+                        <div class="sub-subcategory" data-course-name="Grade 3" onclick="selectCourse(this, 'Grade 3')">
                             <span class="sub-subcategory-title">Grade 3</span>
                         </div>
-                        <div class="sub-subcategory" onclick="selectCourse(this, 'Grade 4')">
+                        <div class="sub-subcategory" data-course-name="Grade 4" onclick="selectCourse(this, 'Grade 4')">
                             <span class="sub-subcategory-title">Grade 4</span>
                         </div>
-                        <div class="sub-subcategory" onclick="selectCourse(this, 'Grade 5')">
+                        <div class="sub-subcategory" data-course-name="Grade 5" onclick="selectCourse(this, 'Grade 5')">
                             <span class="sub-subcategory-title">Grade 5</span>
                         </div>
-                        <div class="sub-subcategory" onclick="selectCourse(this, 'Grade 6')">
+                        <div class="sub-subcategory" data-course-name="Grade 6" onclick="selectCourse(this, 'Grade 6')">
                             <span class="sub-subcategory-title">Grade 6</span>
                         </div>
-                        <div class="sub-subcategory" onclick="selectCourse(this, 'Grade 7')">
+                        <div class="sub-subcategory" data-course-name="Grade 7" onclick="selectCourse(this, 'Grade 7')">
                             <span class="sub-subcategory-title">Grade 7</span>
                         </div>
-                        <div class="sub-subcategory" onclick="selectCourse(this, 'Grade 8')">
+                        <div class="sub-subcategory" data-course-name="Grade 8" onclick="selectCourse(this, 'Grade 8')">
                             <span class="sub-subcategory-title">Grade 8</span>
                         </div>
-                        <div class="sub-subcategory" onclick="selectCourse(this, 'Grade 9')">
+                        <div class="sub-subcategory" data-course-name="Grade 9" onclick="selectCourse(this, 'Grade 9')">
                             <span class="sub-subcategory-title">Grade 9</span>
                         </div>
-                        <div class="sub-subcategory" onclick="selectCourse(this, 'Grade 10')">
+                        <div class="sub-subcategory" data-course-name="Grade 10" onclick="selectCourse(this, 'Grade 10')">
                             <span class="sub-subcategory-title">Grade 10</span>
                         </div>
                     </div>
@@ -591,10 +608,10 @@
                         </svg>
                     </div>
                     <div class="category-content">
-                        <div class="sub-subcategory" onclick="selectCourse(this, 'Grade 11')">
+                        <div class="sub-subcategory" data-course-name="Grade 11" onclick="selectCourse(this, 'Grade 11')">
                             <span class="sub-subcategory-title">Grade 11</span>
                         </div>
-                        <div class="sub-subcategory" onclick="selectCourse(this, 'Grade 12')">
+                        <div class="sub-subcategory" data-course-name="Grade 12" onclick="selectCourse(this, 'Grade 12')">
                             <span class="sub-subcategory-title">Grade 12</span>
                         </div>
                     </div>
@@ -630,7 +647,8 @@
                             </div>
                             <div class="subcategory-content">
                                 @foreach($collegeSemesters as $sem)
-                                <div class="sub-subcategory" onclick="selectCourseWithCollege(this, {{ json_encode($cc->name . ' - ' . $sem) }}, {{ $cc->id }})">
+                                @php $courseNameSem = $cc->name . ' - ' . $sem; @endphp
+                                <div class="sub-subcategory" data-course-name="{{ $courseNameSem }}" data-college-course-id="{{ $cc->id }}" onclick="selectCourseWithCollege(this, {{ json_encode($courseNameSem) }}, {{ $cc->id }})">
                                     <span class="sub-subcategory-title">{{ $sem }}</span>
                                 </div>
                                 @endforeach
@@ -656,8 +674,11 @@
                     <form id="saveEnrollmentsForm" method="POST" action="{{ route('enroll.save') }}">
                         @csrf
                         <input type="hidden" name="items" id="enrollItemsInput" value="">
+                        <input type="hidden" name="return_course_name" id="returnCourseNameInput" value="">
+                        <input type="hidden" name="return_college_course_id" id="returnCollegeCourseIdInput" value="">
                         <button type="submit" class="btn-save-enrollments">Save</button>
                     </form>
+                    <button type="button" class="btn-clear-all-enrollments" id="clearAllEnrollmentsBtn" onclick="clearAllEnrollments()">Clear All</button>
                 </div>
             </div>
         </div>
@@ -717,6 +738,9 @@
         window.sectionsByCollege = @json($sectionsByCollege ?? []);
         window.sectionSubjectTimes = @json($sectionSubjectTimes ?? []);
         window.peMlcSchedules = @json($peMlcSchedules ?? ['pe' => [], 'mlc' => []]);
+        window.pendingEnrollmentsFromSession = @json($pendingEnrollmentsFromSession ?? []);
+        window.returnCourseName = @json($returnCourseName ?? '');
+        window.returnCollegeCourseId = @json($returnCollegeCourseId ?? '');
         let currentSelectedCategory = null;
         let currentSelectedCourse = null;
         let currentCourseName = null;
@@ -947,19 +971,21 @@
                     actionBtn = '<button type="button" class="btn-view' + (isEnrolled ? ' enrolled' : '') + '" data-course-name="' + escapeAttr(courseName) + '" data-section-name="' + escapeAttr(sectionNameForEnroll) + '" onclick="openK12Modal(this)">' + (isEnrolled ? 'Enrolled' : 'View') + '</button>';
                 } else if (isPE) {
                     var peSubjectsJson = escapeAttr(JSON.stringify(sec.peSubjects || []));
-                    actionBtn = '<button type="button" class="btn-options' + (isEnrolled ? ' enrolled' : '') + '" data-course-name="' + escapeAttr(courseNameForEnroll) + '" data-section-name="' + escapeAttr(sectionNameForEnroll) + '" data-pe-subjects="' + peSubjectsJson + '" onclick="openPeModal(this)">' + (isEnrolled ? 'Switch' : 'Options') + '</button>';
+                    var peUnits = (sec.credits != null && sec.credits !== '') ? escapeAttr(String(sec.credits)) : '2';
+                    actionBtn = '<button type="button" class="btn-options' + (isEnrolled ? ' enrolled' : '') + '" data-course-name="' + escapeAttr(courseNameForEnroll) + '" data-section-name="' + escapeAttr(sectionNameForEnroll) + '" data-pe-subjects="' + peSubjectsJson + '" data-units="' + peUnits + '" onclick="openPeModal(this)">' + (isEnrolled ? 'Switch' : 'Options') + '</button>';
                 } else if (isMLC) {
-                    actionBtn = '<button type="button" class="btn-options' + (isEnrolled ? ' enrolled' : '') + '" data-course-name="' + escapeAttr(courseNameForEnroll) + '" data-section-name="' + escapeAttr(sectionNameForEnroll) + '" onclick="openMlcModal(this)">' + (isEnrolled ? 'Switch' : 'Options') + '</button>';
+                    var mlcUnits = (sec.credits != null && sec.credits !== '') ? escapeAttr(String(sec.credits)) : '3';
+                    actionBtn = '<button type="button" class="btn-options' + (isEnrolled ? ' enrolled' : '') + '" data-course-name="' + escapeAttr(courseNameForEnroll) + '" data-section-name="' + escapeAttr(sectionNameForEnroll) + '" data-units="' + mlcUnits + '" onclick="openMlcModal(this)">' + (isEnrolled ? 'Switch' : 'Options') + '</button>';
                 } else {
                     if (isEnrolled && enrolledItemMatch) {
                         var matchSectionName = enrolledItemMatch.sectionName || sectionNameForEnroll;
                         var matchSectionCode = enrolledItemMatch.section_code || '';
                         var matchDays = enrolledItemMatch.days || '';
-                        actionBtn = '<button type="button" class="btn-enroll enrolled" data-course-code="' + escapeAttr(sec.courseCode || '') + '" data-course-name="' + escapeAttr(courseNameForEnroll) + '" data-section-name="' + escapeAttr(matchSectionName) + '" data-section-code="' + escapeAttr(matchSectionCode) + '" data-time-slot="' + escapeAttr(enrolledItemMatch.timeSlot || '') + '" data-days="' + escapeAttr(matchDays) + '" onclick="toggleEnroll(this)">Remove</button>';
+                        actionBtn = '<button type="button" class="btn-enroll enrolled" data-course-code="' + escapeAttr(sec.courseCode || '') + '" data-course-name="' + escapeAttr(courseNameForEnroll) + '" data-section-name="' + escapeAttr(matchSectionName) + '" data-section-code="' + escapeAttr(matchSectionCode) + '" data-time-slot="' + escapeAttr(enrolledItemMatch.timeSlot || '') + '" data-days="' + escapeAttr(matchDays) + '" data-units="' + (sec.credits != null && sec.credits !== '' ? escapeAttr(String(sec.credits)) : '') + '" onclick="toggleEnroll(this)">Remove</button>';
                     } else if (isEnrolled) {
-                        actionBtn = '<button type="button" class="btn-enroll enrolled" data-course-code="' + escapeAttr(sec.courseCode || '') + '" data-course-name="' + escapeAttr(courseNameForEnroll) + '" data-section-name="' + escapeAttr(sectionNameForEnroll) + '" data-time-slot="' + escapeAttr(sec.timeSlot || '') + '" onclick="toggleEnroll(this)">Remove</button>';
+                        actionBtn = '<button type="button" class="btn-enroll enrolled" data-course-code="' + escapeAttr(sec.courseCode || '') + '" data-course-name="' + escapeAttr(courseNameForEnroll) + '" data-section-name="' + escapeAttr(sectionNameForEnroll) + '" data-time-slot="' + escapeAttr(sec.timeSlot || '') + '" data-units="' + (sec.credits != null && sec.credits !== '' ? escapeAttr(String(sec.credits)) : '') + '" onclick="toggleEnroll(this)">Remove</button>';
                     } else {
-                        actionBtn = '<button type="button" class="btn-enroll" data-course-code="' + escapeAttr(sec.courseCode || '') + '" data-course-name="' + escapeAttr(courseNameForEnroll) + '" data-section-name="' + escapeAttr(sectionNameForEnroll) + '" data-time-slot="' + escapeAttr(sec.timeSlot || '') + '" onclick="openEnrollModal(this)">Enroll</button>';
+                        actionBtn = '<button type="button" class="btn-enroll" data-course-code="' + escapeAttr(sec.courseCode || '') + '" data-course-name="' + escapeAttr(courseNameForEnroll) + '" data-section-name="' + escapeAttr(sectionNameForEnroll) + '" data-time-slot="' + escapeAttr(sec.timeSlot || '') + '" data-units="' + (sec.credits != null && sec.credits !== '' ? escapeAttr(String(sec.credits)) : '') + '" onclick="openEnrollModal(this)">Enroll</button>';
                     }
                 }
                 var detailsHtml = '';
@@ -1027,6 +1053,8 @@
                 var scheduleText = days ? (days + ' ' + timeSlot) : timeSlot;
                 var alreadyPicked = enrolledItems.some(function(e) { return e.courseName === displayName && e.sectionName && e.sectionName.indexOf(sectionName) === 0; });
                 var hasConflict = timeSlot && hasTimeConflictGlobal(days, timeSlot);
+                var conflictWithLabels = hasConflict ? getConflictWithGlobal(days, timeSlot) : [];
+                var conflictText = conflictWithLabels.length ? ('Time conflict with: ' + conflictWithLabels.join(', ')) : '';
                 var enrolledCount = 10 + (idx * 4);
                 var statusText = enrolledCount < 40 ? 'Available' : 'Full';
                 var card = document.createElement('div');
@@ -1049,6 +1077,8 @@
                     });
                     var item = { courseName: itemCourseName, sectionName: itemSectionName, section_code: itemSectionCode, timeSlot: itemTimeSlot, days: itemDays };
                     if (currentCollegeCourseId) item.collegeCourseId = currentCollegeCourseId;
+                    var peUnits = btn.getAttribute('data-units');
+                    if (peUnits) item.units = peUnits;
                     enrolledItems.push(item);
                     btn.textContent = 'Switch';
                     btn.classList.add('enrolled');
@@ -1063,7 +1093,7 @@
                     '<span><strong>Schedule:</strong> ' + escapeHtml(scheduleText || '—') + '</span>' +
                     '<span><strong>Enrolled:</strong> ' + enrolledCount + ' / 40</span>' +
                     '<span><strong>Status:</strong> ' + statusText + '</span>' +
-                    (hasConflict ? '<div class="conflict-warning" style="margin-top:0.5rem;">Time conflict with another subject</div>' : '') +
+                    (hasConflict && conflictText ? '<div class="conflict-warning" style="margin-top:0.5rem;">' + escapeHtml(conflictText) + '</div>' : '') +
                     '</div></div><div class="section-card-actions"></div>';
                 card.querySelector('.section-card-actions').appendChild(actionBtn);
                 list.appendChild(card);
@@ -1157,7 +1187,26 @@
                 return sameDaysForConflict(e, days) && timeRangesOverlap(e.time_slot || '', timeRange);
             });
         }
-        var enrollModalRef = { btn: null, courseName: null, sectionName: null, courseCode: null };
+        function getConflictWithGlobal(days, timeRange) {
+            if (!timeRange) return [];
+            var labels = [];
+            enrolledItems.forEach(function(e) {
+                if (sameDaysForConflict(e, days) && timeRangesOverlap(e.timeSlot || '', timeRange)) {
+                    var label = e.courseName || '';
+                    if (e.section_code) label += ' (' + e.section_code + ')';
+                    if (label) labels.push(label);
+                }
+            });
+            (window.alreadyEnrolled || []).forEach(function(e) {
+                if (sameDaysForConflict(e, days) && timeRangesOverlap(e.time_slot || '', timeRange)) {
+                    var label = e.course_name || '';
+                    if (e.section_code) label += ' (' + e.section_code + ')';
+                    if (label) labels.push(label);
+                }
+            });
+            return labels;
+        }
+        var enrollModalRef = { btn: null, courseName: null, sectionName: null, courseCode: null, units: null };
         function getSectionSubjectTime(sectionCode, courseCode) {
             if (!currentCollegeCourseId || !sectionCode || !courseCode || !window.sectionSubjectTimes) return '';
             var parsed = parseSemesterLabel(enrollModalRef.sectionName);
@@ -1179,6 +1228,7 @@
             enrollModalRef.courseName = courseName;
             enrollModalRef.sectionName = sectionName;
             enrollModalRef.courseCode = courseCode;
+            enrollModalRef.units = btn.getAttribute('data-units') || null;
             var headerText = courseCode ? (courseCode + ' - ' + courseName) : courseName;
             if (headerText.length > 35) headerText = headerText.substring(0, 32) + '...';
             document.getElementById('enrollModalTitle').textContent = headerText;
@@ -1211,7 +1261,8 @@
                 var timeConflict = conflictInSection || conflictGlobal;
                 var disabled = timeConflict || !available;
                 var statusText = available ? 'Available' : 'Full';
-                var conflictWarning = conflictGlobal ? 'Time conflict with another subject (same schedule)' : (conflictInSection ? 'Time conflict in this section' : '');
+                var conflictWithLabels = conflictGlobal ? getConflictWithGlobal(days, timeRange) : [];
+                var conflictWarning = conflictGlobal && conflictWithLabels.length ? ('Time conflict with: ' + conflictWithLabels.join(', ')) : (conflictInSection ? 'Time conflict in this section' : '');
                 var card = document.createElement('div');
                 card.className = 'enroll-modal-section-card';
                 if (conflictWarning) card.classList.add('enroll-modal-section-card--conflict');
@@ -1246,6 +1297,7 @@
             enrollModalRef.courseName = null;
             enrollModalRef.sectionName = null;
             enrollModalRef.courseCode = null;
+            enrollModalRef.units = null;
         }
         function confirmEnrollInSection(clickedBtn) {
             var sectionCode = clickedBtn.getAttribute('data-section-code');
@@ -1257,6 +1309,7 @@
             if (hasTimeConflictInSection(sectionCode, timeRange, days) || hasTimeConflictGlobal(days, timeRange)) return;
             var item = { courseName: ref.courseName, sectionName: fullSectionName, section_code: sectionCode, timeSlot: timeRange, days: days };
             if (currentCollegeCourseId) item.collegeCourseId = currentCollegeCourseId;
+            if (ref.units) item.units = ref.units;
             enrolledItems.push(item);
             ref.btn.textContent = 'Remove';
             ref.btn.classList.add('enrolled');
@@ -1292,6 +1345,8 @@
                 var days = s.days || '';
                 var scheduleText = days ? (days + ' ' + timeSlot) : timeSlot;
                 var hasConflict = timeSlot && hasTimeConflictGlobal(days, timeSlot);
+                var conflictWithLabels = hasConflict ? getConflictWithGlobal(days, timeSlot) : [];
+                var conflictText = conflictWithLabels.length ? ('Time conflict with: ' + conflictWithLabels.join(', ')) : '';
                 var enrolledCount = 12 + (idx * 5);
                 var statusText = enrolledCount < 40 ? 'Available' : 'Full';
                 var card = document.createElement('div');
@@ -1313,6 +1368,8 @@
                     });
                     var item = { courseName: courseName, sectionName: itemSectionName, section_code: itemSectionCode, timeSlot: itemTimeSlot, days: itemDays };
                     if (currentCollegeCourseId) item.collegeCourseId = currentCollegeCourseId;
+                    var mlcUnits = btn.getAttribute('data-units');
+                    if (mlcUnits) item.units = mlcUnits;
                     enrolledItems.push(item);
                     btn.textContent = 'Switch';
                     btn.classList.add('enrolled');
@@ -1327,7 +1384,7 @@
                     '<span><strong>Schedule:</strong> ' + escapeHtml(scheduleText || '—') + '</span>' +
                     '<span><strong>Enrolled:</strong> ' + enrolledCount + ' / 40</span>' +
                     '<span><strong>Status:</strong> ' + statusText + '</span>' +
-                    (hasConflict ? '<div class="conflict-warning" style="margin-top:0.5rem;">Time conflict with another subject</div>' : '') +
+                    (hasConflict && conflictText ? '<div class="conflict-warning" style="margin-top:0.5rem;">' + escapeHtml(conflictText) + '</div>' : '') +
                     '</div></div><div class="section-card-actions"></div>';
                 card.querySelector('.section-card-actions').appendChild(actionBtn);
                 list.appendChild(card);
@@ -1423,10 +1480,71 @@
             if (e.target === this) closeK12Modal();
         });
 
+        function clearAllEnrollments() {
+            enrolledItems = [];
+            document.getElementById('enrollItemsInput').value = JSON.stringify(enrolledItems);
+            document.getElementById('saveEnrollmentsWrap').classList.remove('visible');
+            var el = document.querySelector('.sub-subcategory.selected');
+            if (el && currentCourseName) {
+                if (currentCollegeCourseId) {
+                    selectCourseWithCollege(el, currentCourseName, currentCollegeCourseId);
+                } else {
+                    selectCourse(el, currentCourseName);
+                }
+            }
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('saveEnrollmentsForm').addEventListener('submit', function() {
                 document.getElementById('enrollItemsInput').value = JSON.stringify(enrolledItems);
+                document.getElementById('returnCourseNameInput').value = currentCourseName || '';
+                document.getElementById('returnCollegeCourseIdInput').value = currentCollegeCourseId || '';
             });
+
+            if (window.pendingEnrollmentsFromSession && window.pendingEnrollmentsFromSession.length > 0) {
+                enrolledItems = window.pendingEnrollmentsFromSession.slice();
+                document.getElementById('enrollItemsInput').value = JSON.stringify(enrolledItems);
+                document.getElementById('saveEnrollmentsWrap').classList.add('visible');
+
+                var returnCourseName = window.returnCourseName || '';
+                var returnCollegeCourseId = window.returnCollegeCourseId || '';
+
+                if (returnCollegeCourseId) {
+                    var collegeCat = document.querySelector('.course-category[data-category="college"]');
+                    if (collegeCat) {
+                        var catContent = collegeCat.querySelector('.category-content');
+                        if (catContent && !catContent.classList.contains('expanded')) {
+                            collegeCat.querySelector('.category-header').click();
+                        }
+                    }
+                }
+
+                var tabEl = null;
+                document.querySelectorAll('.sub-subcategory').forEach(function(el) {
+                    if (el.getAttribute('data-course-name') === returnCourseName &&
+                        String(el.getAttribute('data-college-course-id') || '') === String(returnCollegeCourseId || '')) {
+                        tabEl = el;
+                    }
+                });
+
+                if (tabEl && returnCollegeCourseId) {
+                    var subcat = tabEl.closest('.subcategory');
+                    if (subcat) {
+                        var subContent = subcat.querySelector('.subcategory-content');
+                        if (subContent && !subContent.classList.contains('expanded')) {
+                            subcat.querySelector('.subcategory-header').click();
+                        }
+                    }
+                }
+
+                if (tabEl && returnCourseName) {
+                    if (returnCollegeCourseId) {
+                        selectCourseWithCollege(tabEl, returnCourseName, parseInt(returnCollegeCourseId, 10));
+                    } else {
+                        selectCourse(tabEl, returnCourseName);
+                    }
+                }
+            }
         });
     </script>
 </body>

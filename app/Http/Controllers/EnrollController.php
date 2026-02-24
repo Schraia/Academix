@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\Auth;
 
 class EnrollController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $user = Auth::user();
         $schoolYear = now()->year;
@@ -49,6 +49,32 @@ class EnrollController extends Controller
         $sectionSubjectTimes = $this->buildSectionSubjectTimes();
         $peMlcSchedules = $this->buildPeMlcSchedules();
 
+        $pendingEnrollments = $request->session()->get('pending_enrollments', []);
+        $pendingForFrontend = array_map(function ($row) {
+            $item = [
+                'courseName' => $row['course_name'] ?? '',
+                'sectionName' => $row['section_name'] ?? '',
+            ];
+            if (!empty($row['section_code'])) {
+                $item['section_code'] = $row['section_code'];
+            }
+            if (!empty($row['time_slot'])) {
+                $item['timeSlot'] = $row['time_slot'];
+            }
+            if (!empty($row['days'])) {
+                $item['days'] = $row['days'];
+            }
+            if (!empty($row['college_course_id'])) {
+                $item['collegeCourseId'] = (int) $row['college_course_id'];
+            }
+            if (isset($row['units'])) {
+                $item['units'] = (int) $row['units'];
+            }
+            return $item;
+        }, $pendingEnrollments);
+        $returnCourseName = $request->session()->get('enroll_return_course_name', '');
+        $returnCollegeCourseId = $request->session()->get('enroll_return_college_course_id', '');
+
         return view('enroll', [
             'alreadyEnrolled' => $alreadyEnrolled,
             'collegeCourses' => $collegeCourses,
@@ -57,6 +83,9 @@ class EnrollController extends Controller
             'sectionsByCollege' => $sectionsByCollege,
             'sectionSubjectTimes' => $sectionSubjectTimes,
             'peMlcSchedules' => $peMlcSchedules,
+            'pendingEnrollmentsFromSession' => $pendingForFrontend,
+            'returnCourseName' => $returnCourseName,
+            'returnCollegeCourseId' => $returnCollegeCourseId,
         ]);
     }
 
@@ -219,6 +248,9 @@ class EnrollController extends Controller
             if (!empty($item['collegeCourseId'])) {
                 $row['college_course_id'] = (int) $item['collegeCourseId'];
             }
+            if (isset($item['units']) && $item['units'] !== '' && $item['units'] !== null) {
+                $row['units'] = (int) $item['units'];
+            }
             $placeholders[] = $row;
         }
 
@@ -227,6 +259,8 @@ class EnrollController extends Controller
         }
 
         $request->session()->put('pending_enrollments', $placeholders);
+        $request->session()->put('enroll_return_course_name', $request->input('return_course_name', ''));
+        $request->session()->put('enroll_return_college_course_id', $request->input('return_college_course_id', ''));
         return redirect()->route('enroll.summary');
     }
 
@@ -237,12 +271,14 @@ class EnrollController extends Controller
             return redirect()->route('enroll')->with('info', 'No pending enrollments.');
         }
 
-        $totalAmount = count($items) * 5000; // placeholder amount per subject
+        $pricePerSubject = 8000;
+        $totalAmount = count($items) * $pricePerSubject;
         $paymentType = 'To be selected'; // placeholder
 
         return view('enroll-summary', [
             'items' => $items,
             'totalAmount' => $totalAmount,
+            'pricePerSubject' => $pricePerSubject,
             'paymentType' => $paymentType,
         ]);
     }
