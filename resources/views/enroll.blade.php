@@ -852,7 +852,11 @@
                     return e.sectionName === sectionName || (e.sectionName && e.sectionName.indexOf(sectionName) === 0);
                 });
             }
-            return window.alreadyEnrolled.some(function(e) { return e.course_name === courseName && (e.section_name === sectionName || (e.section_name && e.section_name.indexOf(sectionName) === 0)); }) ||
+            var matchAlready = function(e) {
+                var nameMatch = isPE && courseName === 'PPE' ? (e.course_name === 'PPE' || (e.course_name && e.course_name.indexOf('PPE') === 0)) : (e.course_name === courseName);
+                return nameMatch && (e.section_name === sectionName || (e.section_name && e.section_name.indexOf(sectionName) === 0));
+            };
+            return window.alreadyEnrolled.some(matchAlready) ||
                 enrolledItems.some(function(e) { return (isPE && courseName === 'PPE' ? (e.courseName === 'PPE' || (e.courseName && e.courseName.indexOf('PPE') === 0)) : e.courseName === courseName) && e.sectionName && e.sectionName.indexOf(sectionName) === 0; });
         }
 
@@ -1051,7 +1055,8 @@
                 var timeSlot = opt.time_slot || '';
                 var days = opt.days || '';
                 var scheduleText = days ? (days + ' ' + timeSlot) : timeSlot;
-                var alreadyPicked = enrolledItems.some(function(e) { return e.courseName === displayName && e.sectionName && e.sectionName.indexOf(sectionName) === 0; });
+                var alreadyPicked = enrolledItems.some(function(e) { return e.courseName === displayName && e.sectionName && e.sectionName.indexOf(sectionName) === 0; })
+                    || (window.alreadyEnrolled || []).some(function(e) { return e.course_name === displayName && e.section_name && e.section_name.indexOf(sectionName) === 0; });
                 var hasConflict = timeSlot && hasTimeConflictGlobal(days, timeSlot);
                 var conflictWithLabels = hasConflict ? getConflictWithGlobal(days, timeSlot) : [];
                 var conflictText = conflictWithLabels.length ? ('Time conflict with: ' + conflictWithLabels.join(', ')) : '';
@@ -1339,7 +1344,8 @@
                 var s = mlcSchedules[idx] || {};
                 var optName = s.option || opt;
                 var fullSectionName = sectionName + ' - ' + optName;
-                var alreadyPicked = enrolledItems.some(function(e) { return e.courseName === courseName && e.sectionName === fullSectionName; });
+                var alreadyPicked = enrolledItems.some(function(e) { return e.courseName === courseName && e.sectionName === fullSectionName; })
+                    || (window.alreadyEnrolled || []).some(function(e) { return e.course_name === courseName && e.section_name && e.section_name.indexOf(sectionName) === 0 && e.section_name.indexOf(optName) >= 0; });
                 var sectionCode = s.section_code || ('MLC-' + (idx + 1));
                 var timeSlot = s.time_slot || '';
                 var days = s.days || '';

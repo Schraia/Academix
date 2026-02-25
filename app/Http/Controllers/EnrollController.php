@@ -292,6 +292,48 @@ class EnrollController extends Controller
         }
 
         $user = Auth::user();
+        $schoolYear = now()->year;
+
+        // Remove existing PE/MLC enrollments for the same semester so only one PE and one MLC per semester
+        $semesterBasesToReplace = [];
+        foreach ($items as $item) {
+            $courseName = $item['course_name'] ?? '';
+            $sectionName = $item['section_name'] ?? '';
+            if ($courseName === '' || $sectionName === '') {
+                continue;
+            }
+            $base = $this->semesterBaseFromSectionName($sectionName);
+            if ($base === null) {
+                continue;
+            }
+            if ($this->isPeEnrollment($courseName)) {
+                $semesterBasesToReplace['pe'][$base] = true;
+            }
+            if ($this->isMlcEnrollment($courseName, $sectionName)) {
+                $semesterBasesToReplace['mlc'][$base] = true;
+            }
+        }
+
+        foreach (array_keys($semesterBasesToReplace['pe'] ?? []) as $base) {
+            $user->enrollments()
+                ->whereYear('enrolled_at', $schoolYear)
+                ->where('status', 'enrolled')
+                ->where(function ($q) use ($base) {
+                    $q->where('course_name', 'like', 'PPE %')
+                        ->where('section_name', 'like', $base . '%');
+                })
+                ->delete();
+        }
+        foreach (array_keys($semesterBasesToReplace['mlc'] ?? []) as $base) {
+            $user->enrollments()
+                ->whereYear('enrolled_at', $schoolYear)
+                ->where('status', 'enrolled')
+                ->where(function ($q) use ($base) {
+                    $q->where('course_name', 'like', 'MLC%')
+                        ->where('section_name', 'like', $base . '%');
+                })
+                ->delete();
+        }
 
         foreach ($items as $item) {
             $courseName = $item['course_name'] ?? '';
@@ -334,6 +376,46 @@ class EnrollController extends Controller
 
         $request->session()->forget('pending_enrollments');
         return redirect()->route('courses.index')->with('success', 'You have been successfully enrolled.');
+    }
+
+    /**
+     * Extract semester base from section_name (e.g. "CS - 1st Year, 1st Sem - PE-3" -> "CS - 1st Year, 1st Sem").
+     */
+    protected function semesterBaseFromSectionName(string $sectionName): ?string
+    {
+        $patterns = [
+            '/\s*-\s*PE-\d+$/i',
+            '/\s*-\s*MLC-\d+$/i',
+            '/\s*-\s*Literacy\s*\(STC\)$/i',
+            '/\s*-\s*Civic Welfare\s*\(STL\)$/i',
+            '/\s*-\s*Military Science\s*\(STM\)$/i',
+        ];
+        $trimmed = trim($sectionName);
+        foreach ($patterns as $pattern) {
+            if (preg_match($pattern, $trimmed)) {
+                return trim(preg_replace($pattern, '', $trimmed));
+            }
+        }
+        return null;
+    }
+
+    protected function isPeEnrollment(string $courseName): bool
+    {
+        return str_starts_with($courseName, 'PPE ');
+    }
+
+    protected function isMlcEnrollment(string $courseName, string $sectionName): bool
+    {
+        if (str_starts_with($courseName, 'MLC')) {
+            return true;
+        }
+        $mlcTracks = ['Literacy (STC)', 'Civic Welfare (STL)', 'Military Science (STM)'];
+        foreach ($mlcTracks as $track) {
+            if (str_contains($sectionName, $track)) {
+                return true;
+            }
+        }
+        return false;
     }
 }
 
