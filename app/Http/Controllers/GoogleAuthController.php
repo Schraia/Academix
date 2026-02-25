@@ -39,7 +39,11 @@ class GoogleAuthController extends Controller
 
             Auth::login($user);
 
-            // Check if user has enrollments for the current school year
+            // Instructors and admins skip enroll and go straight to dashboard
+            if ($user->isInstructor() || $user->isAdmin()) {
+                return redirect()->intended('/dashboard');
+            }
+            // Students without current-year enrollments go to enroll page
             if (!$user->hasCurrentYearEnrollments()) {
                 return redirect()->route('enroll');
             }

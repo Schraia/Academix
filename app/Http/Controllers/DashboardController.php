@@ -10,8 +10,8 @@ class DashboardController extends Controller
     {
         $user = Auth::user();
 
-        // Check if user has enrollments for the current school year
-        if (! $user->hasCurrentYearEnrollments()) {
+        // Only students without current-year enrollments are sent to enroll page
+        if (! $user->isInstructor() && ! $user->isAdmin() && ! $user->hasCurrentYearEnrollments()) {
             return redirect()->route('enroll');
         }
 

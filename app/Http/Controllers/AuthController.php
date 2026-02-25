@@ -25,8 +25,12 @@ class AuthController extends Controller
         if (Auth::attempt($request->only('email', 'password'), $request->boolean('remember'))) {
             $request->session()->regenerate();
             
-            // Check if user has enrollments for the current school year
             $user = Auth::user();
+            // Instructors and admins skip enroll and go straight to dashboard
+            if ($user->isInstructor() || $user->isAdmin()) {
+                return redirect()->intended('/dashboard');
+            }
+            // Students without current-year enrollments go to enroll page
             if (!$user->hasCurrentYearEnrollments()) {
                 return redirect()->route('enroll');
             }
@@ -55,7 +59,11 @@ class AuthController extends Controller
 
         Auth::login($user);
 
-        // Check if user has enrollments for the current school year
+        // Instructors and admins skip enroll and go straight to dashboard
+        if ($user->isInstructor() || $user->isAdmin()) {
+            return redirect()->intended('/dashboard');
+        }
+        // Students without current-year enrollments go to enroll page
         if (!$user->hasCurrentYearEnrollments()) {
             return redirect()->route('enroll');
         }
