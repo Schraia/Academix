@@ -18,27 +18,28 @@ class CourseController extends Controller
     {
         $user = Auth::user();
         $schoolYear = now()->year;
+        $enrollments = collect();
+        $collegeCourses = collect();
 
-        $enrollments = $user->enrollments()
-            ->whereYear('enrolled_at', $schoolYear)
-            ->where('status', 'enrolled')
-            ->orderBy('enrolled_at', 'desc')
-            ->get();
+        if ($user->role === 'instructor') {
+            $collegeCourses = $user->collegeCourses()->orderBy('name')->get();
+        } else {
+            $enrollments = $user->enrollments()
+                ->whereYear('enrolled_at', $schoolYear)
+                ->where('status', 'enrolled')
+                ->orderBy('enrolled_at', 'desc')
+                ->get();
 
-        $collegeCourseIds = $enrollments->pluck('college_course_id')->filter()->unique()->values();
-        $collegeCourses = $collegeCourseIds->isNotEmpty()
-            ? CollegeCourse::whereIn('id', $collegeCourseIds)->orderBy('name')->get()
-            : collect();
-
-        $allCourses = ($user->isInstructor() || $user->isAdmin())
-            ? Course::orderBy('title')->get()
-            : null;
+            $collegeCourseIds = $enrollments->pluck('college_course_id')->filter()->unique()->values();
+            $collegeCourses = $collegeCourseIds->isNotEmpty()
+                ? CollegeCourse::whereIn('id', $collegeCourseIds)->orderBy('name')->get()
+                : collect();
+        }
 
         return view('courses', [
             'enrollments' => $enrollments,
             'schoolYear' => $schoolYear,
             'collegeCourses' => $collegeCourses,
-            'allCourses' => $allCourses,
         ]);
     }
 

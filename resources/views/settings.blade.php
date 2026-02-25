@@ -32,6 +32,10 @@
         .role-form select { padding: 0.35rem 0.5rem; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.875rem; }
         .role-form button { padding: 0.35rem 0.75rem; background: #dc2626; color: white; border: none; border-radius: 6px; font-size: 0.875rem; cursor: pointer; }
         .role-form button:hover { background: #b91c1c; }
+        .course-form { display: flex; align-items: center; gap: 0.5rem; }
+        .course-form select { padding: 0.35rem 0.5rem; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.875rem; }
+        .course-form button { padding: 0.35rem 0.75rem; background: #dc2626; color: white; border: none; border-radius: 6px; font-size: 0.875rem; cursor: pointer; }
+        .course-form button:hover { background: #b91c1c; }
         .badge-role { font-size: 0.75rem; padding: 0.2rem 0.5rem; border-radius: 4px; font-weight: 600; }
         .badge-student { background: #e5e7eb; color: #374151; }
         .badge-instructor { background: #dbeafe; color: #1d4ed8; }
@@ -61,6 +65,9 @@
             @if(session('success'))
                 <div class="alert-success">{{ session('success') }}</div>
             @endif
+            @if(session('error'))
+                <div class="alert-danger">{{ session('error') }}</div>
+            @endif
             <div class="card">
                 <table>
                     <thead>
@@ -69,6 +76,7 @@
                             <th>Email</th>
                             <th>Current role</th>
                             <th>Set role</th>
+                            <th>Assigned Courses</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -96,6 +104,25 @@
                                         </select>
                                         <button type="submit">Update</button>
                                     </form>
+                                </td>
+                                <td>
+                                    @if($u->role === 'instructor')
+                                        <form action="{{ route('settings.assignCourses') }}" method="POST" class="course-form">
+                                            @csrf
+                                            <input type="hidden" name="user_id" value="{{ $u->id }}">
+                                            <select name="course_id">
+                                                <option value="">Select a course</option>
+                                                @foreach($courses as $course)
+                                                    <option value="{{ $course->id }}" {{ $u->collegeCourses->contains($course) ? 'selected' : '' }}>
+                                                        {{ $course->name }}
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                            <button type="submit">Assign</button>
+                                        </form>
+                                    @else
+                                        N/A
+                                    @endif
                                 </td>
                             </tr>
                         @endforeach
