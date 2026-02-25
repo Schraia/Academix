@@ -41,6 +41,7 @@ Route::middleware('auth')->group(function () {
     Route::middleware('admin')->group(function () {
         Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
         Route::post('/settings/update-role', [SettingsController::class, 'updateRole'])->name('settings.updateRole');
+        Route::post('/settings/assign-courses', [SettingsController::class, 'assignCourses'])->name('settings.assignCourses');
     });
 
     Route::middleware('instructor')->group(function () {
