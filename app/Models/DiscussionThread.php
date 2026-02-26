@@ -16,6 +16,7 @@ class DiscussionThread extends Model
         'content',
         'user_id',
         'course_id',
+        'announcement_id',
         'status',
         'views',
     ];
@@ -28,6 +29,11 @@ class DiscussionThread extends Model
     public function course()
     {
         return $this->belongsTo(Course::class);
+    }
+
+    public function announcement()
+    {
+        return $this->belongsTo(CourseAnnouncement::class, 'announcement_id');
     }
 
     public function messages()
