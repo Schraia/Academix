@@ -34,6 +34,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/courses/{course}/lessons', [CourseController::class, 'lessons'])->name('courses.lessons');
     Route::get('/courses/{course}/grades', [CourseController::class, 'grades'])->name('courses.grades');
     Route::get('/courses/{course}/discussions', [CourseController::class, 'discussions'])->name('courses.discussions');
+    Route::post('/courses/{course}/discussions', [CourseController::class, 'storeDiscussion'])->name('courses.discussions.store');
+    Route::get('/courses/{course}/discussions/{thread}', [CourseController::class, 'showThread'])->name('courses.discussions.thread');
+    Route::post('/courses/{course}/discussions/{thread}/messages', [CourseController::class, 'storeMessage'])->name('courses.discussions.messages.store');
     Route::get('/courses/{course}/announcements', [CourseController::class, 'announcements'])->name('courses.announcements');
     Route::get('/courses/{course}/lessons/{lesson}/preview', [CourseController::class, 'lessonPreview'])->name('courses.lessons.preview');
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');

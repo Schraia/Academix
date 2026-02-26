@@ -74,6 +74,7 @@
         .activity-box h3 { font-size: 0.9375rem; font-weight: 700; color: #1f2937; margin-bottom: 0.75rem; }
         .activity-box .preview { font-size: 0.875rem; color: #4b5563; line-height: 1.5; }
         .activity-box .preview + .preview { margin-top: 0.5rem; }
+        .discussion-reply { min-width: 0; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; padding-left: 1.25rem; font-weight: normal; font-size: 0.875rem; color: #4b5563; line-height: 1.5; }
         .activity-box a.link-go { color: #dc2626; font-weight: 600; font-size: 0.875rem; text-decoration: none; display: inline-flex; align-items: center; gap: 0.25rem; margin-top: 0.5rem; }
         .activity-box a.link-go:hover { text-decoration: underline; }
         .activity-box .badge { font-size: 0.75rem; color: #dc2626; margin-left: 0.25rem; }
@@ -127,6 +128,7 @@
         </div>
 
         <div class="main-content">
+            <a href="{{ route('courses.index') }}" class="back-to-courses" style="display: inline-block; margin-bottom: 1rem; color: #dc2626; font-weight: 600; font-size: 0.9375rem; text-decoration: none;">← Back to Courses</a>
             <div class="main-top">
                 <div class="profile-card">
                     <div class="avatar">👤</div>
@@ -175,10 +177,13 @@
                     <div class="activity-box">
                         <h3>Ongoing Discussion:</h3>
                         @forelse($ongoingThreads as $thread)
-                            <div class="preview">{{ Str::limit($thread->title, 60) }}</div>
-                            @if($thread->messages->first())
-                                @php $msg = $thread->messages->first(); @endphp
-                                <div class="preview">{{ $msg->user->name ?? 'User' }}: {{ Str::limit($msg->content, 80) }}</div>
+                            <div class="preview" style="font-weight: 700;">{{ Str::limit($thread->title, 60) }}</div>
+                            @php $latestMessage = $thread->messages->sortByDesc('created_at')->first(); @endphp
+                            @if($latestMessage)
+                                <div class="discussion-reply" title="{{ $latestMessage->user->name ?? 'User' }}: {{ $latestMessage->content }}">{{ $latestMessage->user->name ?? 'User' }}: {{ $latestMessage->content }}</div>
+                            @elseif($thread->content)
+                                @php $author = $thread->user->name ?? 'User'; @endphp
+                                <div class="discussion-reply" title="{{ $author }}: {{ $thread->content }}">{{ $author }}: {{ $thread->content }}</div>
                             @endif
                         @empty
                             <div class="preview">No discussions yet.</div>
@@ -188,19 +193,30 @@
                     <div class="activity-box">
                         <h3>Last lesson is uploaded</h3>
                         @if($lastLesson)
-                            <div class="preview">{{ $lastLesson->title }}</div>
-                            <div class="preview">{{ Str::limit($lastLesson->description, 100) ?: '—' }}</div>
+                            <div class="preview" style="font-weight: 700;">{{ $lastLesson->title }}</div>
+                            <div class="preview" style="padding-left: 1.25rem; font-weight: normal;">{{ Str::limit($lastLesson->description, 100) ?: '—' }}</div>
+                            @if($lastLesson->attachment_path)
+                                @php $ext = pathinfo($lastLesson->attachment_path, PATHINFO_EXTENSION); $filename = $lastLesson->title . ($ext ? '.' . $ext : ''); @endphp
+                                <div class="preview" style="padding-left: 1.25rem; font-weight: normal; margin-top: 0.25rem;"><a href="{{ route('courses.lessons.preview', [$course, $lastLesson]) }}" style="color: #dc2626; text-decoration: none;">{{ $filename }}</a></div>
+                            @endif
                         @else
                             <div class="preview">No lessons yet.</div>
                         @endif
                     </div>
                     <div class="activity-box">
                         <h3>Recently opened files:</h3>
-                        <ul class="file-list">
+                        <ul class="file-list" style="padding-left: 1.25rem;">
                             @forelse($recentLessons as $lesson)
-                                <li>{{ $course->code ?? 'Course' }} {{ $lesson->title }}.pdf</li>
+                                <li style="padding-left: 0;">
+                                    @if($lesson->attachment_path)
+                                        @php $ext = pathinfo($lesson->attachment_path, PATHINFO_EXTENSION); @endphp
+                                        <a href="{{ route('courses.lessons.preview', [$course, $lesson]) }}" style="color: #dc2626; text-decoration: none;">{{ $course->code ?? 'Course' }} {{ $lesson->title }}{{ $ext ? '.' . $ext : '' }}</a>
+                                    @else
+                                        {{ $course->code ?? 'Course' }} {{ $lesson->title }}
+                                    @endif
+                                </li>
                             @empty
-                                <li>No recent files.</li>
+                                <li style="padding-left: 0;">No recent files.</li>
                             @endforelse
                         </ul>
                     </div>
