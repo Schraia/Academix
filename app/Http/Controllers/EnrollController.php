@@ -10,6 +10,7 @@ use App\Models\Enrollment;
 use App\Models\SectionSubjectSchedule;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
 class EnrollController extends Controller
@@ -76,6 +77,9 @@ class EnrollController extends Controller
         $returnCourseName = $request->session()->get('enroll_return_course_name', '');
         $returnCollegeCourseId = $request->session()->get('enroll_return_college_course_id', '');
 
+        $canTakePeForSemester = $this->buildCanTakePeForSemester($user);
+        $canTakeMlcForSemester = $this->buildCanTakeMlcForSemester($user);
+
         return view('enroll', [
             'alreadyEnrolled' => $alreadyEnrolled,
             'collegeCourses' => $collegeCourses,
@@ -87,7 +91,104 @@ class EnrollController extends Controller
             'pendingEnrollmentsFromSession' => $pendingForFrontend,
             'returnCourseName' => $returnCourseName,
             'returnCollegeCourseId' => $returnCollegeCourseId,
+            'canTakePeForSemester' => $canTakePeForSemester,
+            'canTakeMlcForSemester' => $canTakeMlcForSemester,
         ]);
+    }
+
+    /**
+     * Parse year and semester from section_name (e.g. "Computer Science - 1st Year, 1st Semester - PE-3" -> [1, 1]).
+     */
+    protected function parseYearSemFromSectionName(string $sectionName): ?array
+    {
+        if (preg_match('/(\d)(?:st|nd|rd|th)\s*Year\s*,\s*(\d)(?:st|nd|rd|th)\s*Semester/', $sectionName, $m)) {
+            return [(int) $m[1], (int) $m[2]];
+        }
+        return null;
+    }
+
+    /**
+     * Build map of semester key (e.g. "1-2") => whether user can take PE (prerequisites met).
+     */
+    protected function buildCanTakePeForSemester($user): array
+    {
+        $schoolYear = now()->year;
+        $peEnrollments = $user->enrollments()
+            ->whereYear('enrolled_at', $schoolYear)
+            ->where('status', 'enrolled')
+            ->where(function ($q) {
+                $q->where('course_name', 'like', 'PPE %');
+            })
+            ->get(['section_name']);
+
+        $userPeKeys = [];
+        foreach ($peEnrollments as $e) {
+            $parsed = $this->parseYearSemFromSectionName($e->section_name ?? '');
+            if ($parsed) {
+                $userPeKeys[$parsed[0].'-'.$parsed[1]] = true;
+            }
+        }
+
+        $rules = Schema::hasTable('subject_prerequisites')
+            ? \Illuminate\Support\Facades\DB::table('subject_prerequisites')->where('subject_type', 'PPE')->get()
+            : collect();
+
+        $result = [];
+        for ($y = 1; $y <= 4; $y++) {
+            for ($s = 1; $s <= 2; $s++) {
+                $key = $y.'-'.$s;
+                $rule = $rules->first(fn ($r) => (int) $r->year === $y && (int) $r->semester === $s);
+                if (! $rule) {
+                    $result[$key] = true;
+                } else {
+                    $reqKey = $rule->req_year.'-'.$rule->req_semester;
+                    $result[$key] = ! empty($userPeKeys[$reqKey]);
+                }
+            }
+        }
+        return $result;
+    }
+
+    /**
+     * Build map of semester key => whether user can take MLC (prerequisites met). No rules by default.
+     */
+    protected function buildCanTakeMlcForSemester($user): array
+    {
+        $schoolYear = now()->year;
+        $mlcEnrollments = $user->enrollments()
+            ->whereYear('enrolled_at', $schoolYear)
+            ->where('status', 'enrolled')
+            ->where(function ($q) {
+                $q->where('course_name', 'like', 'MLC%');
+            })
+            ->get(['section_name']);
+
+        $userMlcKeys = [];
+        foreach ($mlcEnrollments as $e) {
+            $parsed = $this->parseYearSemFromSectionName($e->section_name ?? '');
+            if ($parsed) {
+                $userMlcKeys[$parsed[0].'-'.$parsed[1]] = true;
+            }
+        }
+
+        $rules = Schema::hasTable('subject_prerequisites')
+            ? \Illuminate\Support\Facades\DB::table('subject_prerequisites')->where('subject_type', 'MLC')->get()
+            : collect();
+
+        $result = [];
+        for ($y = 1; $y <= 4; $y++) {
+            for ($s = 1; $s <= 2; $s++) {
+                $key = $y.'-'.$s;
+                $rule = $rules->first(fn ($r) => (int) $r->year === $y && (int) $r->semester === $s);
+                if (! $rule) {
+                    $result[$key] = true;
+                } else {
+                    $reqKey = $rule->req_year.'-'.$rule->req_semester;
+                    $result[$key] = ! empty($userMlcKeys[$reqKey]);
+                }
+            }
+        }
+        return $result;
     }
 
     /**

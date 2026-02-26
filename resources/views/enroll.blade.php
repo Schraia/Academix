@@ -234,6 +234,15 @@
         .btn-options.enrolled {
             background: #16a34a;
         }
+        .btn-enroll.saved-enrolled, .btn-options.saved-enrolled {
+            background: #9ca3af !important;
+            color: white;
+            cursor: not-allowed;
+            opacity: 0.9;
+        }
+        .btn-enroll.saved-enrolled:hover, .btn-options.saved-enrolled:hover {
+            background: #9ca3af !important;
+        }
         .btn-remove {
             padding: 0.5rem 1rem;
             background: #ef4444;
@@ -741,6 +750,8 @@
         window.pendingEnrollmentsFromSession = @json($pendingEnrollmentsFromSession ?? []);
         window.returnCourseName = @json($returnCourseName ?? '');
         window.returnCollegeCourseId = @json($returnCollegeCourseId ?? '');
+        window.canTakePeForSemester = @json($canTakePeForSemester ?? []);
+        window.canTakeMlcForSemester = @json($canTakeMlcForSemester ?? []);
         let currentSelectedCategory = null;
         let currentSelectedCourse = null;
         let currentCourseName = null;
@@ -841,6 +852,19 @@
             return [];
         }
 
+        function hasPeEnrolledFromServer(sectionName) {
+            return (window.alreadyEnrolled || []).some(function(e) {
+                return (e.course_name === 'PPE' || (e.course_name && e.course_name.indexOf('PPE') === 0)) && e.section_name && e.section_name.indexOf(sectionName) >= 0;
+            });
+        }
+        function hasMlcEnrolledFromServer(sectionName) {
+            return (window.alreadyEnrolled || []).some(function(e) {
+                if (!e.section_name || e.section_name.indexOf(sectionName) < 0) return false;
+                if (e.course_name && e.course_name.indexOf('MLC') === 0) return true;
+                if (e.section_name.indexOf('Literacy') >= 0 || e.section_name.indexOf('Civic Welfare') >= 0 || e.section_name.indexOf('Military Science') >= 0) return true;
+                return false;
+            });
+        }
         function isSectionEnrolled(courseName, sectionName, isPE, isMLC) {
             var usePrefix = isPE || isMLC;
             if (!usePrefix) {
@@ -854,10 +878,14 @@
             }
             var matchAlready = function(e) {
                 var nameMatch = isPE && courseName === 'PPE' ? (e.course_name === 'PPE' || (e.course_name && e.course_name.indexOf('PPE') === 0)) : (e.course_name === courseName);
-                return nameMatch && (e.section_name === sectionName || (e.section_name && e.section_name.indexOf(sectionName) === 0));
+                if (!nameMatch || !e.section_name) return false;
+                if (e.section_name === sectionName) return true;
+                if (e.section_name.indexOf(sectionName) === 0) return true;
+                if (e.section_name.indexOf(sectionName) >= 0) return true;
+                return false;
             };
             return window.alreadyEnrolled.some(matchAlready) ||
-                enrolledItems.some(function(e) { return (isPE && courseName === 'PPE' ? (e.courseName === 'PPE' || (e.courseName && e.courseName.indexOf('PPE') === 0)) : e.courseName === courseName) && e.sectionName && e.sectionName.indexOf(sectionName) === 0; });
+                enrolledItems.some(function(e) { return (isPE && courseName === 'PPE' ? (e.courseName === 'PPE' || (e.courseName && e.courseName.indexOf('PPE') === 0)) : e.courseName === courseName) && e.sectionName && e.sectionName.indexOf(sectionName) >= 0; });
         }
 
         function toggleCategory(header, categoryType) {
@@ -976,12 +1004,37 @@
                 } else if (isPE) {
                     var peSubjectsJson = escapeAttr(JSON.stringify(sec.peSubjects || []));
                     var peUnits = (sec.credits != null && sec.credits !== '') ? escapeAttr(String(sec.credits)) : '2';
-                    actionBtn = '<button type="button" class="btn-options' + (isEnrolled ? ' enrolled' : '') + '" data-course-name="' + escapeAttr(courseNameForEnroll) + '" data-section-name="' + escapeAttr(sectionNameForEnroll) + '" data-pe-subjects="' + peSubjectsJson + '" data-units="' + peUnits + '" onclick="openPeModal(this)">' + (isEnrolled ? 'Switch' : 'Options') + '</button>';
+                    var peSaved = hasPeEnrolledFromServer(sectionNameForEnroll);
+                    var peKey = (function() { var p = parseSemesterLabel(sectionNameForEnroll); return p ? p.year + '-' + p.semester : ''; })();
+                    var pePrereqMet = !peKey || (window.canTakePeForSemester && window.canTakePeForSemester[peKey] !== false);
+                    if (peSaved) {
+                        actionBtn = '<button type="button" class="btn-options enrolled saved-enrolled" disabled>Enrolled</button>';
+                    } else if (!pePrereqMet) {
+                        actionBtn = '<button type="button" class="btn-options saved-enrolled" disabled title="Complete 1st Year 1st Semester PE first">Prerequisite required</button>';
+                    } else {
+                        actionBtn = '<button type="button" class="btn-options' + (isEnrolled ? ' enrolled' : '') + '" data-course-name="' + escapeAttr(courseNameForEnroll) + '" data-section-name="' + escapeAttr(sectionNameForEnroll) + '" data-pe-subjects="' + peSubjectsJson + '" data-units="' + peUnits + '" onclick="openPeModal(this)">' + (isEnrolled ? 'Switch' : 'Options') + '</button>';
+                    }
                 } else if (isMLC) {
                     var mlcUnits = (sec.credits != null && sec.credits !== '') ? escapeAttr(String(sec.credits)) : '3';
-                    actionBtn = '<button type="button" class="btn-options' + (isEnrolled ? ' enrolled' : '') + '" data-course-name="' + escapeAttr(courseNameForEnroll) + '" data-section-name="' + escapeAttr(sectionNameForEnroll) + '" data-units="' + mlcUnits + '" onclick="openMlcModal(this)">' + (isEnrolled ? 'Switch' : 'Options') + '</button>';
+                    var mlcSaved = hasMlcEnrolledFromServer(sectionNameForEnroll);
+                    var mlcKey = (function() { var p = parseSemesterLabel(sectionNameForEnroll); return p ? p.year + '-' + p.semester : ''; })();
+                    var mlcPrereqMet = !mlcKey || (window.canTakeMlcForSemester && window.canTakeMlcForSemester[mlcKey] !== false);
+                    if (mlcSaved) {
+                        actionBtn = '<button type="button" class="btn-options enrolled saved-enrolled" disabled>Enrolled</button>';
+                    } else if (!mlcPrereqMet) {
+                        actionBtn = '<button type="button" class="btn-options saved-enrolled" disabled title="Complete prerequisite first">Prerequisite required</button>';
+                    } else {
+                        actionBtn = '<button type="button" class="btn-options' + (isEnrolled ? ' enrolled' : '') + '" data-course-name="' + escapeAttr(courseNameForEnroll) + '" data-section-name="' + escapeAttr(sectionNameForEnroll) + '" data-units="' + mlcUnits + '" onclick="openMlcModal(this)">' + (isEnrolled ? 'Switch' : 'Options') + '</button>';
+                    }
                 } else {
-                    if (isEnrolled && enrolledItemMatch) {
+                    var inCart = enrolledItems.some(function(e) {
+                        if (e.courseName !== courseNameForEnroll) return false;
+                        return (e.sectionName && e.sectionName.indexOf(sectionNameForEnroll) === 0) || e.sectionName === sectionNameForEnroll;
+                    });
+                    var fromServerOnly = isEnrolled && !inCart;
+                    if (fromServerOnly) {
+                        actionBtn = '<button type="button" class="btn-enroll enrolled saved-enrolled" disabled>Enrolled</button>';
+                    } else if (isEnrolled && enrolledItemMatch) {
                         var matchSectionName = enrolledItemMatch.sectionName || sectionNameForEnroll;
                         var matchSectionCode = enrolledItemMatch.section_code || '';
                         var matchDays = enrolledItemMatch.days || '';
@@ -1055,8 +1108,8 @@
                 var timeSlot = opt.time_slot || '';
                 var days = opt.days || '';
                 var scheduleText = days ? (days + ' ' + timeSlot) : timeSlot;
-                var alreadyPicked = enrolledItems.some(function(e) { return e.courseName === displayName && e.sectionName && e.sectionName.indexOf(sectionName) === 0; })
-                    || (window.alreadyEnrolled || []).some(function(e) { return e.course_name === displayName && e.section_name && e.section_name.indexOf(sectionName) === 0; });
+                var alreadyPicked = enrolledItems.some(function(e) { return e.courseName === displayName && e.sectionName && e.sectionName.indexOf(sectionName) >= 0; })
+                    || (window.alreadyEnrolled || []).some(function(e) { return e.course_name === displayName && e.section_name && e.section_name.indexOf(sectionName) >= 0; });
                 var hasConflict = timeSlot && hasTimeConflictGlobal(days, timeSlot);
                 var conflictWithLabels = hasConflict ? getConflictWithGlobal(days, timeSlot) : [];
                 var conflictText = conflictWithLabels.length ? ('Time conflict with: ' + conflictWithLabels.join(', ')) : '';
@@ -1119,6 +1172,12 @@
         }
         function closeRestrictionModal() {
             document.getElementById('restrictionModal').classList.remove('visible');
+        }
+        function showAlreadyEnrolledMessage(type) {
+            var msg = type === 'PE'
+                ? 'You are already enrolled in Physical Education (PE) for this semester. Your selection cannot be changed after saving.'
+                : 'You are already enrolled in MLC for this semester. Your selection cannot be changed after saving.';
+            showRestrictionModal(msg);
         }
         document.getElementById('restrictionModal').addEventListener('click', function(e) {
             if (e.target === this) closeRestrictionModal();
@@ -1345,7 +1404,7 @@
                 var optName = s.option || opt;
                 var fullSectionName = sectionName + ' - ' + optName;
                 var alreadyPicked = enrolledItems.some(function(e) { return e.courseName === courseName && e.sectionName === fullSectionName; })
-                    || (window.alreadyEnrolled || []).some(function(e) { return e.course_name === courseName && e.section_name && e.section_name.indexOf(sectionName) === 0 && e.section_name.indexOf(optName) >= 0; });
+                    || (window.alreadyEnrolled || []).some(function(e) { return e.course_name === courseName && e.section_name && e.section_name.indexOf(sectionName) >= 0 && e.section_name.indexOf(optName) >= 0; });
                 var sectionCode = s.section_code || ('MLC-' + (idx + 1));
                 var timeSlot = s.time_slot || '';
                 var days = s.days || '';
