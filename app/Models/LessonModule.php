@@ -20,11 +20,22 @@ class LessonModule extends Model
         'content',
         'video_url',
         'attachment_path',
+        'attachment_original_name',
         'status',
+        'published_at',
+    ];
+
+    protected $casts = [
+        'published_at' => 'datetime',
     ];
 
     public function course()
     {
         return $this->belongsTo(Course::class);
+    }
+
+    public function progressRecords()
+    {
+        return $this->hasMany(LessonProgress::class, 'lesson_module_id');
     }
 }

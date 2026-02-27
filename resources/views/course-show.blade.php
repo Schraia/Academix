@@ -191,7 +191,7 @@
                         <a href="{{ route('courses.discussions', $course) }}" class="link-go">Go to Discussions → @if($discussionCount > 0)<span class="badge">{{ $discussionCount }} New Notifications</span>@endif</a>
                     </div>
                     <div class="activity-box">
-                        <h3>Last lesson is uploaded</h3>
+                        <h3>Last lesson uploaded:</h3>
                         @if($lastLesson)
                             <div class="preview" style="font-weight: 700;">{{ $lastLesson->title }}</div>
                             <div class="preview" style="padding-left: 1.25rem; font-weight: normal;">{{ Str::limit($lastLesson->description, 100) ?: '—' }}</div>
@@ -199,6 +199,7 @@
                                 @php $ext = pathinfo($lastLesson->attachment_path, PATHINFO_EXTENSION); $filename = $lastLesson->title . ($ext ? '.' . $ext : ''); @endphp
                                 <div class="preview" style="padding-left: 1.25rem; font-weight: normal; margin-top: 0.25rem;"><a href="{{ route('courses.lessons.preview', [$course, $lastLesson]) }}" style="color: #dc2626; text-decoration: none;">{{ $filename }}</a></div>
                             @endif
+                            <div class="preview" style="padding-left: 1.25rem; font-size: 0.8125rem; color: #6b7280; margin-top: 0.25rem;">{{ ($lastLesson->published_at ?? $lastLesson->updated_at)->format('M j, Y g:i A') }}</div>
                         @else
                             <div class="preview">No lessons yet.</div>
                         @endif

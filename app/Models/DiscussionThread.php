@@ -19,6 +19,11 @@ class DiscussionThread extends Model
         'announcement_id',
         'status',
         'views',
+        'last_activity_at',
+    ];
+
+    protected $casts = [
+        'last_activity_at' => 'datetime',
     ];
 
     public function user()

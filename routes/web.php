@@ -39,6 +39,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/courses/{course}/discussions/{thread}/messages', [CourseController::class, 'storeMessage'])->name('courses.discussions.messages.store');
     Route::get('/courses/{course}/announcements', [CourseController::class, 'announcements'])->name('courses.announcements');
     Route::get('/courses/{course}/lessons/{lesson}/preview', [CourseController::class, 'lessonPreview'])->name('courses.lessons.preview');
+    Route::post('/courses/{course}/lessons/{lesson}/progress', [CourseController::class, 'toggleLessonProgress'])->name('courses.lessons.progress.toggle');
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
     Route::middleware('admin')->group(function () {
@@ -64,6 +65,12 @@ Route::middleware('auth')->group(function () {
         Route::post('/courses/{course}/announcements/{announcement}', [CourseController::class, 'updateAnnouncement'])->name('courses.announcements.update');
         Route::post('/courses/{course}/announcements/{announcement}/toggle', [CourseController::class, 'toggleAnnouncement'])->name('courses.announcements.toggle');
         Route::delete('/courses/{course}/announcements/{announcement}', [CourseController::class, 'destroyAnnouncement'])->name('courses.announcements.destroy');
+        Route::get('/courses/{course}/grade-weights', [CourseController::class, 'gradeWeights'])->name('courses.grade-weights');
+        Route::post('/courses/{course}/grade-weights', [CourseController::class, 'updateGradeWeights'])->name('courses.grade-weights.update');
+        Route::get('/courses/{course}/grade-section', [CourseController::class, 'gradeSectionForm'])->name('courses.grade-section');
+        Route::post('/courses/{course}/grade-section', [CourseController::class, 'storeGradeSection'])->name('courses.grade-section.store');
+        Route::get('/courses/{course}/rollcall', [CourseController::class, 'rollCall'])->name('courses.rollcall');
+        Route::post('/courses/{course}/rollcall', [CourseController::class, 'storeRollCall'])->name('courses.rollcall.store');
         Route::get('/courses/{course}/grades/{grade}/edit', [CourseController::class, 'editGrade'])->name('courses.grades.edit');
         Route::post('/courses/{course}/grades/{grade}', [CourseController::class, 'updateGrade'])->name('courses.grades.update');
         Route::post('/courses/{course}/grades/{grade}/toggle', [CourseController::class, 'toggleGrade'])->name('courses.grades.toggle');

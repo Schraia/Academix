@@ -87,4 +87,12 @@ class User extends Authenticatable
     {
         return $this->belongsToMany(Course::class, 'course_instructor');
     }
+
+    public function collegeCourses()
+    {
+        $courseIds = $this->courses()->pluck('courses.id');
+        return CollegeCourse::whereHas('curriculum', function ($q) use ($courseIds) {
+            $q->whereIn('course_id', $courseIds);
+        });
+    }
 }

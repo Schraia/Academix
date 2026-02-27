@@ -12,7 +12,9 @@ class CourseGrade extends Model
     protected $fillable = [
         'user_id',
         'course_id',
+        'section_code',
         'name',
+        'category',
         'score',
         'max_score',
         'graded_at',
