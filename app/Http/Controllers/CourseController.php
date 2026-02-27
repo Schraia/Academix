@@ -46,6 +46,7 @@ class CourseController extends Controller
             $collegeCourses = $collegeCourseIds->isNotEmpty()
                 ? CollegeCourse::whereIn('id', $collegeCourseIds)->orderBy('name')->get()
                 : collect();
+            $courses = collect();
         }
 
         return view('courses', [
