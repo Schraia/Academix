@@ -12,9 +12,14 @@
             box-sizing: border-box;
         }
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: #f3f4f6;
-        }
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: linear-gradient(
+        135deg,
+        #f9fafb 0%,
+        #eef2f7 40%,
+        #e5e7eb 100%
+    );
+}
         .dashboard-container {
             display: flex;
             min-height: 100vh;
@@ -23,11 +28,25 @@
             width: 250px;
             min-height: 100vh;
             flex-shrink: 0;
-            background: linear-gradient(180deg, #ef4444 0%, #dc2626 100%);
+            background: linear-gradient(180deg, #b91c1c 0%, #7f1d1d 100%);
             color: white;
             display: flex;
             flex-direction: column;
-            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+            box-shadow: 4px 0 25px rgba(0, 0, 0, 0.25);
+            position: relative;
+            overflow: hidden;
+            overflow-x: hidden;
+        }
+
+        .sidebar::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 3px;
+            height: 100%;
+            background: linear-gradient(to bottom, rgba(255,255,255,0.5), transparent);
+            opacity: 0.3;
         }
         .sidebar-header {
             padding: 2rem 1.5rem;
@@ -46,16 +65,33 @@
         .nav-item {
             padding: 1rem 1.5rem;
             cursor: pointer;
-            transition: background-color 0.3s;
+            transition: all 0.3s ease;
             display: flex;
             align-items: center;
             gap: 0.75rem;
+            position: relative;
+            font-weight: 500;
+            border-left: 4px solid transparent;
         }
+
         .nav-item:hover {
-            background-color: rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.08);
+            padding-left: 1.75rem;
         }
+
+        .nav-item:hover svg {
+            transform: scale(1.1);
+        }
+
+        .nav-item svg {
+            width: 20px;
+            height: 20px;
+            transition: all 0.3s ease;
+        }
+
         .nav-item.active {
-            background-color: rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.15);
+            border-left: 4px solid white;
         }
         .nav-item svg {
             width: 20px;
@@ -64,10 +100,10 @@
         .nav-logout {
             margin-top: auto;
             padding: 1rem 1.5rem;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
             position: sticky;
             bottom: 0;
-            background: linear-gradient(180deg, #ef4444 0%, #dc2626 100%);
+            background: transparent; 
         }
         .logout-btn {
             width: 100%;
@@ -75,43 +111,71 @@
             background: rgba(255, 255, 255, 0.1);
             color: white;
             border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 8px;
+            border-radius: 10px;
             cursor: pointer;
             font-size: 1rem;
             font-weight: 600;
-            transition: background-color 0.3s;
+            transition: all 0.3s ease;
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 0.5rem;
         }
+
         .logout-btn:hover {
-            background: rgba(255, 255, 255, 0.2);
+            background: white;
+            color: #b91c1c;
+            transform: translateY(-2px);
         }
         .logout-btn svg {
             width: 20px;
             height: 20px;
         }
         .main-content {
-            flex: 1;
-            padding: 3rem;
-            display: flex;
-            gap: 2rem;
-        }
+    flex: 1;
+    padding: 3rem;
+    display: flex;
+    gap: 2rem;
+    position: relative;
+}
+
+
+.main-content::before {
+    content: '';
+    position: absolute;
+    top: 50px;
+    right: 80px;
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, rgba(185,28,28,0.18), transparent 70%);
+    z-index: 0;
+    pointer-events: none;
+}
         .course-selection {
             width: 33.333%;
-            background: white;
-            padding: 2rem;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(8px);
+            background: rgba(255, 255, 255, 0.85);
+            padding: 2.5rem;
+            border-radius: 20px;
+            box-shadow: 
+                0 20px 40px rgba(0, 0, 0, 0.06),
+                0 2px 6px rgba(0, 0, 0, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            position: relative;
+    z-index: 1;
         }
         .sections-container {
             width: 66.666%;
-            background: white;
-            padding: 2rem;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            display: none;
+            backdrop-filter: blur(8px);
+            background: rgba(255, 255, 255, 0.85);
+            padding: 2.5rem;
+            border-radius: 20px;
+            box-shadow: 
+                0 20px 40px rgba(0, 0, 0, 0.06),
+                0 2px 6px rgba(0, 0, 0, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            position: relative;
+    z-index: 1;
         }
         .sections-container.visible {
             display: block;
@@ -134,20 +198,23 @@
             gap: 1rem;
         }
         .section-item {
-            padding: 1rem;
-            background: #f9fafb;
-            border: 1px solid #e5e7eb;
-            border-radius: 8px;
-            transition: all 0.3s;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 1rem;
-        }
-        .section-item:hover {
-            background: #f3f4f6;
-            border-color: #d1d5db;
-        }
+    padding: 1.5rem 1.75rem;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 18px;
+    transition: all 0.3s ease;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 2rem;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.05);
+}
+
+.section-item:hover {
+    transform: translateY(-6px);
+    border-color: #b91c1c;
+    box-shadow: 0 14px 35px rgba(185, 28, 28, 0.18);
+}
         .section-item-content {
             flex: 1;
         }
@@ -158,50 +225,63 @@
             margin-bottom: 0.5rem;
         }
         .section-name {
-            font-size: 1.125rem;
-            font-weight: 600;
-            color: #1f2937;
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: #111827;
+            margin-bottom: 0.3rem;
         }
+
         .section-info {
-            font-size: 0.875rem;
-            color: #6b7280;
+            font-size: 0.85rem;
+            color: #9ca3af;
         }
         .section-details {
             display: flex;
-            gap: 2rem;
-            margin-top: 0.5rem;
+            gap: 3rem;
+            margin-top: 1rem;
         }
+
         .section-detail-item {
             display: flex;
             flex-direction: column;
         }
+
         .section-detail-label {
-            font-size: 0.75rem;
-            color: #9ca3af;
+            font-size: 0.7rem;
             text-transform: uppercase;
+            letter-spacing: 0.6px;
+            color: #9ca3af;
             margin-bottom: 0.25rem;
         }
+
         .section-detail-value {
-            font-size: 0.9375rem;
+            font-size: 0.95rem;
+            font-weight: 600;
             color: #374151;
-            font-weight: 500;
         }
         .section-item-actions {
             flex-shrink: 0;
         }
+        .btn-enroll,
+        .btn-view,
+        .btn-options,
+        .btn-remove {
+            padding: 0.55rem 1.3rem;
+            border-radius: 999px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            border: none;
+            cursor: pointer;
+            transition: all 0.25s ease;
+        }
         .btn-enroll {
-            padding: 0.5rem 1rem;
             background: #16a34a;
             color: white;
-            border: none;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            font-size: 0.875rem;
-            transition: background 0.3s;
-        }
+                }
         .btn-enroll:hover:not(:disabled) {
             background: #15803d;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(22,163,74,0.35);
         }
         .btn-enroll:disabled {
             background: #9ca3af;
@@ -212,6 +292,11 @@
         }
         .btn-enroll.enrolled:hover:not(:disabled) {
             background: #dc2626;
+        }
+        .btn-view,
+        .btn-options {
+            background: #b91c1c;
+            color: white;
         }
         .btn-options {
             padding: 0.5rem 1rem;
@@ -234,26 +319,22 @@
         .btn-options.enrolled {
             background: #16a34a;
         }
-        .btn-enroll.saved-enrolled, .btn-options.saved-enrolled {
-            background: #9ca3af !important;
-            color: white;
-            cursor: not-allowed;
-            opacity: 0.9;
-        }
-        .btn-enroll.saved-enrolled:hover, .btn-options.saved-enrolled:hover {
-            background: #9ca3af !important;
-        }
-        .btn-remove {
-            padding: 0.5rem 1rem;
-            background: #ef4444;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            font-size: 0.875rem;
-            transition: background 0.3s;
-        }
+        .btn-remove,
+.btn-enroll.enrolled {
+    background: #ef4444;
+}
+.btn-remove:hover,
+.btn-enroll.enrolled:hover {
+    background: #dc2626;
+    box-shadow: 0 8px 20px rgba(239,68,68,0.35);
+}
+
+
+button:disabled {
+    background: #9ca3af !important;
+    cursor: not-allowed;
+    box-shadow: none !important;
+}
         .btn-remove:hover { background: #dc2626; }
         .enroll-modal-details { margin: 1rem 0; }
         .enroll-modal-details p { margin: 0.5rem 0; color: #374151; }
@@ -323,14 +404,13 @@
             border-color: #16a34a;
         }
         .modal-close {
-            margin-top: 1rem;
-            padding: 0.5rem 1rem;
-            background: #6b7280;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-        }
+    padding: 0.55rem 1.3rem;
+    background: #6b7280;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+}
         .modal-close:hover {
             background: #4b5563;
         }
@@ -347,7 +427,7 @@
         .k12-modal-actions { display: flex; gap: 0.75rem; margin-top: 1rem; align-items: center; }
         .btn-view {
             padding: 0.5rem 1rem;
-            background: #2563eb;
+            background: #b91c1c;
             color: white;
             border: none;
             border-radius: 8px;
@@ -355,7 +435,12 @@
             cursor: pointer;
             font-size: 0.875rem;
         }
-        .btn-view:hover { background: #1d4ed8; }
+        .btn-view:hover,
+        .btn-options:hover {
+            background: #7f1d1d;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(185,28,28,0.35);
+        }
         .btn-view.enrolled { background: #16a34a; }
         .save-enrollments-wrap {
             margin-top: 1.5rem;
@@ -398,34 +483,63 @@
         .course-category {
             margin-bottom: 1rem;
         }
+        .course-category .sub-subcategory {
+            position: relative;
+            transition: all 0.25s ease;
+        }
+
+        .course-category .sub-subcategory.selected {
+            font-weight: 600;
+            color: #b91c1c;
+            border-left: 3px solid #b91c1c !important;
+            padding-left: 1.25rem !important;
+
+            background: rgba(185, 28, 28, 0.06);
+            box-shadow: 0 0 0 1px rgba(185, 28, 28, 0.15),
+                        0 4px 12px rgba(185, 28, 28, 0.15);
+        }
+
+        .course-category .sub-subcategory.selected:hover {
+            background: rgba(185, 28, 28, 0.1);
+            box-shadow: 0 0 0 1px rgba(185, 28, 28, 0.25),
+                        0 6px 18px rgba(185, 28, 28, 0.25);
+        }
         .category-header {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 1rem;
-            background: #f9fafb;
+            padding: 1.1rem 1.2rem;
+            background: #ffffff;
             border: 1px solid #e5e7eb;
-            border-radius: 8px;
+            border-radius: 12px;
             cursor: pointer;
-            transition: all 0.3s;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
         }
+
         .category-header:hover {
-            background: #f3f4f6;
-            border-color: #d1d5db;
-        }
-        .category-header.active {
-            background: #fee2e2;
             border-color: #ef4444;
+            box-shadow: 0 6px 18px rgba(239, 68, 68, 0.15);
+            transform: translateY(-2px);
+        }
+
+        .category-header.active {
+            background: linear-gradient(90deg, #fee2e2, #ffffff);
+            border-color: #ef4444;
+            box-shadow: 0 8px 24px rgba(239, 68, 68, 0.2);
         }
         .category-title {
-            font-size: 1.125rem;
-            font-weight: 600;
+            font-size: 1.1rem;
+            font-weight: 700;
             color: #1f2937;
+            letter-spacing: 0.3px;
         }
+
         .category-subtitle {
-            font-size: 0.875rem;
-            color: #6b7280;
+            font-size: 0.8rem;
+            color: #9ca3af;
             margin-left: 0.5rem;
+            font-weight: 500;
         }
         .caret {
             width: 20px;
@@ -440,15 +554,45 @@
         .category-content {
             max-height: 0;
             overflow: hidden;
-            transition: max-height 0.3s ease-out;
-            margin-top: 0.5rem;
-            padding-left: 1rem;
+            transition: all 0.4s ease;
+            margin-top: 0.75rem;
+            padding-left: 0.75rem;
+            opacity: 0;
+            transform: translateY(-5px);
         }
+
         .category-content.expanded {
             max-height: 1000px;
+            opacity: 1;
+            transform: translateY(0);
         }
-        .subcategory {
-            margin-bottom: 0.5rem;
+        .sub-subcategory {
+            position: relative;
+            padding: 0.9rem 1.2rem;
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            margin-bottom: 0.75rem;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            font-weight: 500;
+            color: #374151;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+            overflow: hidden;
+        }
+
+      
+        .sub-subcategory::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 4px;
+            height: 100%;
+            background: transparent;
+            transition: all 0.25s ease;
+            border-top-left-radius: 12px;
+            border-bottom-left-radius: 12px;
         }
         .subcategory-header {
             display: flex;
@@ -501,14 +645,30 @@
             color: #4b5563;
             font-weight: 500;
         }
+        .course-category .sub-subcategory,
+        .course-category .sub-subcategory .sub-subcategory-title {
+            font-weight: 600 !important;
+            color: #111827 !important;   
+        }
+
+        .course-category .sub-subcategory:hover {
+            color: #7f1d1d !important;
+        }
+
+        .course-category .sub-subcategory.selected {
+            font-weight: 700 !important;
+            color: #7f1d1d !important;
+        }
+
+        
     </style>
 </head>
 <body>
     <div class="dashboard-container">
         <div class="sidebar">
             <div class="sidebar-header">
-                <h2>Academix</h2>
-            </div>
+    <img src="{{ asset('images/logo.png') }}" alt="Academix Logo" class="sidebar-logo">
+</div>
             <nav class="nav-menu">
                 <a href="{{ route('dashboard') }}" class="nav-item" style="text-decoration: none; color: inherit;">
                     <svg fill="currentColor" viewBox="0 0 20 20">
@@ -750,8 +910,6 @@
         window.pendingEnrollmentsFromSession = @json($pendingEnrollmentsFromSession ?? []);
         window.returnCourseName = @json($returnCourseName ?? '');
         window.returnCollegeCourseId = @json($returnCollegeCourseId ?? '');
-        window.canTakePeForSemester = @json($canTakePeForSemester ?? []);
-        window.canTakeMlcForSemester = @json($canTakeMlcForSemester ?? []);
         let currentSelectedCategory = null;
         let currentSelectedCourse = null;
         let currentCourseName = null;
@@ -852,19 +1010,6 @@
             return [];
         }
 
-        function hasPeEnrolledFromServer(sectionName) {
-            return (window.alreadyEnrolled || []).some(function(e) {
-                return (e.course_name === 'PPE' || (e.course_name && e.course_name.indexOf('PPE') === 0)) && e.section_name && e.section_name.indexOf(sectionName) >= 0;
-            });
-        }
-        function hasMlcEnrolledFromServer(sectionName) {
-            return (window.alreadyEnrolled || []).some(function(e) {
-                if (!e.section_name || e.section_name.indexOf(sectionName) < 0) return false;
-                if (e.course_name && e.course_name.indexOf('MLC') === 0) return true;
-                if (e.section_name.indexOf('Literacy') >= 0 || e.section_name.indexOf('Civic Welfare') >= 0 || e.section_name.indexOf('Military Science') >= 0) return true;
-                return false;
-            });
-        }
         function isSectionEnrolled(courseName, sectionName, isPE, isMLC) {
             var usePrefix = isPE || isMLC;
             if (!usePrefix) {
@@ -876,16 +1021,8 @@
                     return e.sectionName === sectionName || (e.sectionName && e.sectionName.indexOf(sectionName) === 0);
                 });
             }
-            var matchAlready = function(e) {
-                var nameMatch = isPE && courseName === 'PPE' ? (e.course_name === 'PPE' || (e.course_name && e.course_name.indexOf('PPE') === 0)) : (e.course_name === courseName);
-                if (!nameMatch || !e.section_name) return false;
-                if (e.section_name === sectionName) return true;
-                if (e.section_name.indexOf(sectionName) === 0) return true;
-                if (e.section_name.indexOf(sectionName) >= 0) return true;
-                return false;
-            };
-            return window.alreadyEnrolled.some(matchAlready) ||
-                enrolledItems.some(function(e) { return (isPE && courseName === 'PPE' ? (e.courseName === 'PPE' || (e.courseName && e.courseName.indexOf('PPE') === 0)) : e.courseName === courseName) && e.sectionName && e.sectionName.indexOf(sectionName) >= 0; });
+            return window.alreadyEnrolled.some(function(e) { return e.course_name === courseName && (e.section_name === sectionName || (e.section_name && e.section_name.indexOf(sectionName) === 0)); }) ||
+                enrolledItems.some(function(e) { return (isPE && courseName === 'PPE' ? (e.courseName === 'PPE' || (e.courseName && e.courseName.indexOf('PPE') === 0)) : e.courseName === courseName) && e.sectionName && e.sectionName.indexOf(sectionName) === 0; });
         }
 
         function toggleCategory(header, categoryType) {
@@ -1004,37 +1141,12 @@
                 } else if (isPE) {
                     var peSubjectsJson = escapeAttr(JSON.stringify(sec.peSubjects || []));
                     var peUnits = (sec.credits != null && sec.credits !== '') ? escapeAttr(String(sec.credits)) : '2';
-                    var peSaved = hasPeEnrolledFromServer(sectionNameForEnroll);
-                    var peKey = (function() { var p = parseSemesterLabel(sectionNameForEnroll); return p ? p.year + '-' + p.semester : ''; })();
-                    var pePrereqMet = !peKey || (window.canTakePeForSemester && window.canTakePeForSemester[peKey] !== false);
-                    if (peSaved) {
-                        actionBtn = '<button type="button" class="btn-options enrolled saved-enrolled" disabled>Enrolled</button>';
-                    } else if (!pePrereqMet) {
-                        actionBtn = '<button type="button" class="btn-options saved-enrolled" disabled title="Complete 1st Year 1st Semester PE first">Prerequisite required</button>';
-                    } else {
-                        actionBtn = '<button type="button" class="btn-options' + (isEnrolled ? ' enrolled' : '') + '" data-course-name="' + escapeAttr(courseNameForEnroll) + '" data-section-name="' + escapeAttr(sectionNameForEnroll) + '" data-pe-subjects="' + peSubjectsJson + '" data-units="' + peUnits + '" onclick="openPeModal(this)">' + (isEnrolled ? 'Switch' : 'Options') + '</button>';
-                    }
+                    actionBtn = '<button type="button" class="btn-options' + (isEnrolled ? ' enrolled' : '') + '" data-course-name="' + escapeAttr(courseNameForEnroll) + '" data-section-name="' + escapeAttr(sectionNameForEnroll) + '" data-pe-subjects="' + peSubjectsJson + '" data-units="' + peUnits + '" onclick="openPeModal(this)">' + (isEnrolled ? 'Switch' : 'Options') + '</button>';
                 } else if (isMLC) {
                     var mlcUnits = (sec.credits != null && sec.credits !== '') ? escapeAttr(String(sec.credits)) : '3';
-                    var mlcSaved = hasMlcEnrolledFromServer(sectionNameForEnroll);
-                    var mlcKey = (function() { var p = parseSemesterLabel(sectionNameForEnroll); return p ? p.year + '-' + p.semester : ''; })();
-                    var mlcPrereqMet = !mlcKey || (window.canTakeMlcForSemester && window.canTakeMlcForSemester[mlcKey] !== false);
-                    if (mlcSaved) {
-                        actionBtn = '<button type="button" class="btn-options enrolled saved-enrolled" disabled>Enrolled</button>';
-                    } else if (!mlcPrereqMet) {
-                        actionBtn = '<button type="button" class="btn-options saved-enrolled" disabled title="Complete prerequisite first">Prerequisite required</button>';
-                    } else {
-                        actionBtn = '<button type="button" class="btn-options' + (isEnrolled ? ' enrolled' : '') + '" data-course-name="' + escapeAttr(courseNameForEnroll) + '" data-section-name="' + escapeAttr(sectionNameForEnroll) + '" data-units="' + mlcUnits + '" onclick="openMlcModal(this)">' + (isEnrolled ? 'Switch' : 'Options') + '</button>';
-                    }
+                    actionBtn = '<button type="button" class="btn-options' + (isEnrolled ? ' enrolled' : '') + '" data-course-name="' + escapeAttr(courseNameForEnroll) + '" data-section-name="' + escapeAttr(sectionNameForEnroll) + '" data-units="' + mlcUnits + '" onclick="openMlcModal(this)">' + (isEnrolled ? 'Switch' : 'Options') + '</button>';
                 } else {
-                    var inCart = enrolledItems.some(function(e) {
-                        if (e.courseName !== courseNameForEnroll) return false;
-                        return (e.sectionName && e.sectionName.indexOf(sectionNameForEnroll) === 0) || e.sectionName === sectionNameForEnroll;
-                    });
-                    var fromServerOnly = isEnrolled && !inCart;
-                    if (fromServerOnly) {
-                        actionBtn = '<button type="button" class="btn-enroll enrolled saved-enrolled" disabled>Enrolled</button>';
-                    } else if (isEnrolled && enrolledItemMatch) {
+                    if (isEnrolled && enrolledItemMatch) {
                         var matchSectionName = enrolledItemMatch.sectionName || sectionNameForEnroll;
                         var matchSectionCode = enrolledItemMatch.section_code || '';
                         var matchDays = enrolledItemMatch.days || '';
@@ -1108,8 +1220,7 @@
                 var timeSlot = opt.time_slot || '';
                 var days = opt.days || '';
                 var scheduleText = days ? (days + ' ' + timeSlot) : timeSlot;
-                var alreadyPicked = enrolledItems.some(function(e) { return e.courseName === displayName && e.sectionName && e.sectionName.indexOf(sectionName) >= 0; })
-                    || (window.alreadyEnrolled || []).some(function(e) { return e.course_name === displayName && e.section_name && e.section_name.indexOf(sectionName) >= 0; });
+                var alreadyPicked = enrolledItems.some(function(e) { return e.courseName === displayName && e.sectionName && e.sectionName.indexOf(sectionName) === 0; });
                 var hasConflict = timeSlot && hasTimeConflictGlobal(days, timeSlot);
                 var conflictWithLabels = hasConflict ? getConflictWithGlobal(days, timeSlot) : [];
                 var conflictText = conflictWithLabels.length ? ('Time conflict with: ' + conflictWithLabels.join(', ')) : '';
@@ -1172,12 +1283,6 @@
         }
         function closeRestrictionModal() {
             document.getElementById('restrictionModal').classList.remove('visible');
-        }
-        function showAlreadyEnrolledMessage(type) {
-            var msg = type === 'PE'
-                ? 'You are already enrolled in Physical Education (PE) for this semester. Your selection cannot be changed after saving.'
-                : 'You are already enrolled in MLC for this semester. Your selection cannot be changed after saving.';
-            showRestrictionModal(msg);
         }
         document.getElementById('restrictionModal').addEventListener('click', function(e) {
             if (e.target === this) closeRestrictionModal();
@@ -1403,8 +1508,7 @@
                 var s = mlcSchedules[idx] || {};
                 var optName = s.option || opt;
                 var fullSectionName = sectionName + ' - ' + optName;
-                var alreadyPicked = enrolledItems.some(function(e) { return e.courseName === courseName && e.sectionName === fullSectionName; })
-                    || (window.alreadyEnrolled || []).some(function(e) { return e.course_name === courseName && e.section_name && e.section_name.indexOf(sectionName) >= 0 && e.section_name.indexOf(optName) >= 0; });
+                var alreadyPicked = enrolledItems.some(function(e) { return e.courseName === courseName && e.sectionName === fullSectionName; });
                 var sectionCode = s.section_code || ('MLC-' + (idx + 1));
                 var timeSlot = s.time_slot || '';
                 var days = s.days || '';
