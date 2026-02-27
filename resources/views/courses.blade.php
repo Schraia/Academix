@@ -89,12 +89,12 @@
             @endif
 
             <div class="courses-card">
-                @if($enrollments->isEmpty() && empty($allCourses))
+                @if($enrollments->isEmpty() && $courses->isEmpty())
                     <div class="empty-state">
                         <p>You are not enrolled in any courses for this school year.</p>
                         <p style="margin-top: 0.5rem;"><a href="{{ route('enroll') }}">Enroll online</a></p>
                     </div>
-                @elseif($enrollments->isEmpty())
+                @elseif($enrollments->isEmpty() && Auth::user()->isStudent())
                     <div class="empty-state">
                         <p>You are not enrolled in any courses. Use the list below to open a course.</p>
                     </div>
@@ -102,21 +102,40 @@
                     <table class="courses-table">
                         <thead>
                             <tr>
-                                <th>Courses</th>
+                                <th>Course Code</th>
+                                <th>Course Title</th>
                                 <th>Section</th>
-                                <th>Status</th>
-                                <th>Enrolled at</th>
+                                <th>Instructor</th>
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach($enrollments as $e)
-                            <tr>
-                                <td><a href="{{ route('courses.show', $e->course_id) }}" style="color: #dc2626; text-decoration: underline;">{{ $e->course_name ?? '—' }}</a></td>
-                                <td>{{ $e->section_name ?? '—' }}</td>
-                                <td>{{ ucfirst($e->status) }}</td>
-                                <td>{{ $e->enrolled_at->format('M j, Y') }}</td>
-                            </tr>
-                            @endforeach
+                            @if(Auth::user()->isInstructor())
+                                @forelse($courses as $course)
+                                    <tr>
+                                        <td>{{ $course->code }}</td>
+                                        <td><a href="{{ route('courses.show', $course) }}">{{ $course->title }}</a></td>
+                                        <td>Instructor</td>
+                                        <td>{{ Auth::user()->name }}</td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="4" class="empty-state">You have not been assigned any courses.</td>
+                                    </tr>
+                                @endforelse
+                            @else
+                                @forelse($enrollments as $enrollment)
+                                    <tr>
+                                        <td>{{ $enrollment->course->code }}</td>
+                                        <td><a href="{{ route('courses.show', $enrollment->course) }}">{{ $enrollment->course->title }}</a></td>
+                                        <td>{{ $enrollment->section_name }}</td>
+                                        <td>{{ $enrollment->course->instructor_name ?? 'TBA' }}</td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="4" class="empty-state">No courses found for your enrollment.</td>
+                                    </tr>
+                                @endforelse
+                            @endif
                         </tbody>
                     </table>
                 @endif
