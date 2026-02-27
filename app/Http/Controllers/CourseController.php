@@ -22,7 +22,7 @@ class CourseController extends Controller
         $collegeCourses = collect();
 
         if ($user->role === 'instructor') {
-            $collegeCourses = $user->collegeCourses()->orderBy('name')->get();
+            $courses = $user->courses()->orderBy('title')->get();
         } else {
             $enrollments = $user->enrollments()
                 ->whereYear('enrolled_at', $schoolYear)
@@ -34,12 +34,14 @@ class CourseController extends Controller
             $collegeCourses = $collegeCourseIds->isNotEmpty()
                 ? CollegeCourse::whereIn('id', $collegeCourseIds)->orderBy('name')->get()
                 : collect();
+            $courses = collect();
         }
 
         return view('courses', [
             'enrollments' => $enrollments,
             'schoolYear' => $schoolYear,
             'collegeCourses' => $collegeCourses,
+            'courses' => $courses,
         ]);
     }
 

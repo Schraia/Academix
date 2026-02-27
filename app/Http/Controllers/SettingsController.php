@@ -2,17 +2,16 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\CollegeCourse;
+use App\Models\Course;
 use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 
 class SettingsController extends Controller
 {
     public function index()
     {
-        $users = User::with('collegeCourses')->orderBy('name')->get();
-        $courses = CollegeCourse::orderBy('name')->get();
+        $users = User::with('courses')->orderBy('name')->get();
+        $courses = Course::orderBy('title')->get();
 
         return view('settings', [
             'users' => $users,
@@ -37,7 +36,8 @@ class SettingsController extends Controller
     {
         $request->validate([
             'user_id' => 'required|exists:users,id',
-            'course_id' => 'nullable|exists:college_courses,id',
+            'courses' => 'nullable|array',
+            'courses.*' => 'exists:courses,id',
         ]);
 
         $user = User::findOrFail($request->user_id);
@@ -46,7 +46,7 @@ class SettingsController extends Controller
             return back()->with('error', 'Can only assign courses to instructors.');
         }
 
-        $user->collegeCourses()->sync($request->course_id);
+        $user->courses()->sync($request->courses);
 
         return back()->with('success', "Updated course assignments for {$user->name}.");
     }

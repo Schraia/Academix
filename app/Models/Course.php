@@ -49,9 +49,9 @@ class Course extends Model
         return $this->hasMany(CourseGrade::class, 'course_id');
     }
 
-    public function courseAnnouncements()
+    public function users()
     {
-        return $this->hasMany(CourseAnnouncement::class, 'course_id');
+        return $this->belongsToMany(User::class, 'course_instructor');
     }
 }
 
