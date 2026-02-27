@@ -1,0 +1,19 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Support\Facades\DB;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        DB::table('discussions_threads')->whereNull('last_activity_at')->update([
+            'last_activity_at' => DB::raw('created_at'),
+        ]);
+    }
+
+    public function down(): void
+    {
+        // no-op
+    }
+};

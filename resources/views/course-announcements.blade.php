@@ -3,12 +3,15 @@
 @section('page_heading', 'Announcements')
 @section('content')
     <p class="page-subtitle" style="margin-bottom: 1rem;">{{ $course->code ?? $course->title }}</p>
+    @if($isInstructor ?? false)
+    <p style="margin-bottom: 1rem;"><a href="{{ route('courses.upload.announcements', $course) }}?return_to=announcements" style="display: inline-flex; align-items: center; padding: 0.5rem 1rem; background: #dc2626; color: white; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 0.9375rem;">Upload Announcement</a></p>
+    @endif
     <div class="courses-card" style="padding: 1.5rem;">
         @forelse($announcements ?? [] as $a)
             <div id="ann-item-{{ $a->id }}" class="announcement-item" style="padding: 1rem 0; border-bottom: 1px solid #e5e7eb;">
                 <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
                     <strong>{{ $a->title }}</strong>
-                    <button type="button" class="btn-toggle-announcement" data-target="ann-content-{{ $a->id }}" aria-expanded="true" style="padding: 0.2rem 0.5rem; font-size: 0.8rem; color: #dc2626; background: none; border: 1px solid #dc2626; border-radius: 6px; cursor: pointer;">Hide</button>
+                    <button type="button" class="btn-toggle-announcement" data-target="ann-content-{{ $a->id }}" aria-expanded="false" style="padding: 0.2rem 0.5rem; font-size: 0.8rem; color: #dc2626; background: none; border: 1px solid #dc2626; border-radius: 6px; cursor: pointer;">Show</button>
                     @if($isInstructor ?? false)
                     <a href="{{ route('courses.announcements.edit', [$course, $a]) }}" style="font-size: 0.8rem; color: #6b7280;">Edit</a>
                     <form action="{{ route('courses.announcements.toggle', [$course, $a]) }}" method="POST" style="display: inline;">@csrf<button type="submit" style="padding: 0; font-size: 0.8rem; color: #6b7280; background: none; border: none; cursor: pointer;">{{ $a->is_visible ? 'Hide from students' : 'Show to students' }}</button></form>
@@ -19,7 +22,7 @@
                 <p style="margin-top: 0.25rem;">
                     <a href="{{ route('courses.discussions', [$course, 'reply_announcement' => $a->id]) }}" class="reply-link" style="font-size: 0.8125rem; color: #6b7280; text-decoration: none;">Reply</a>
                 </p>
-                <div id="ann-content-{{ $a->id }}" class="announcement-content">
+                <div id="ann-content-{{ $a->id }}" class="announcement-content" hidden>
                     @if($a->image_path)
                         <p style="margin-top: 0.5rem;">
                             <button type="button" class="ann-image-thumb" data-full-src="{{ asset('storage/' . $a->image_path) }}" data-filename="{{ basename($a->image_path) }}" style="padding: 0; border: none; background: none; cursor: pointer; border-radius: 8px; display: block;">

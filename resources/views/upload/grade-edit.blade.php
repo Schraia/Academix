@@ -25,6 +25,15 @@
                 @error('name') <p class="error">{{ $message }}</p> @enderror
             </div>
             <div class="form-group">
+                <label for="category">Category *</label>
+                <select id="category" name="category" required style="width: 100%; padding: 0.5rem 0.75rem; border: 1px solid #d1d5db; border-radius: 8px; font-size: 1rem;">
+                    <option value="exam" {{ old('category', $grade->category ?? '') === 'exam' ? 'selected' : '' }}>Exam</option>
+                    <option value="quiz" {{ old('category', $grade->category ?? '') === 'quiz' ? 'selected' : '' }}>Quiz</option>
+                    <option value="activity" {{ old('category', $grade->category ?? '') === 'activity' ? 'selected' : '' }}>Activity</option>
+                </select>
+                @error('category') <p class="error">{{ $message }}</p> @enderror
+            </div>
+            <div class="form-group">
                 <label for="score">Score</label>
                 <input type="number" id="score" name="score" step="0.01" value="{{ old('score', $grade->score) }}" placeholder="e.g. 85">
             </div>
