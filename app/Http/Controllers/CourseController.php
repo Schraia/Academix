@@ -5,9 +5,13 @@ namespace App\Http\Controllers;
 use App\Models\CollegeCourse;
 use App\Models\Course;
 use App\Models\CourseAnnouncement;
+use App\Models\Curriculum;
 use App\Models\CourseGrade;
+use App\Models\DiscussionMessage;
+use App\Models\DiscussionThread;
 use App\Models\Enrollment;
 use App\Models\LessonModule;
+use App\Models\UserCourseSectionView;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -21,8 +25,16 @@ class CourseController extends Controller
         $enrollments = collect();
         $collegeCourses = collect();
 
+        $allCourses = collect();
+
         if ($user->role === 'instructor') {
-            $courses = $user->courses()->orderBy('title')->get();
+            $collegeCourses = $user->collegeCourses()->orderBy('name')->get();
+            $courseIds = Curriculum::whereIn('college_course_id', $collegeCourses->pluck('id'))->pluck('course_id')->unique()->values();
+            $allCourses = $courseIds->isNotEmpty()
+                ? Course::whereIn('id', $courseIds)->orderBy('title')->get()
+                : collect();
+        } elseif ($user->role === 'admin') {
+            $allCourses = Course::orderBy('title')->get();
         } else {
             $enrollments = $user->enrollments()
                 ->whereYear('enrolled_at', $schoolYear)
@@ -38,10 +50,10 @@ class CourseController extends Controller
         }
 
         return view('courses', [
-            'enrollments' => $enrollments,
+            'enrollments' => $enrollments ?? collect(),
             'schoolYear' => $schoolYear,
-            'collegeCourses' => $collegeCourses,
-            'courses' => $courses,
+            'collegeCourses' => $collegeCourses ?? collect(),
+            'allCourses' => $allCourses,
         ]);
     }
 
@@ -66,13 +78,39 @@ class CourseController extends Controller
         $course->load(['lessonModules' => fn ($q) => $q->where('status', 'published')]);
         $course->load(['discussionThreads' => fn ($q) => $q->with(['user', 'messages.user'])->latest()->limit(5)]);
 
+        $view = UserCourseSectionView::firstOrCreate(
+            ['user_id' => $user->id, 'course_id' => $course->id],
+            ['announcements_seen_at' => null, 'lessons_seen_at' => null, 'grades_seen_at' => null, 'discussions_seen_at' => null]
+        );
+
         $ongoingThreads = $course->discussionThreads->take(2);
         $lastLesson = $course->lessonModules->sortByDesc('updated_at')->first();
-        $recentLessons = $course->lessonModules->take(4);
-        $discussionCount = $course->discussionThreads()->count();
-        $newGradedCount = $course->courseGrades()->where('user_id', $user->id)->whereNotNull('graded_at')->count();
-        $lessonUploadCount = $course->lessonModules->count();
-        $announcementCount = $course->courseAnnouncements()->count();
+        $recentLessons = $course->lessonModules->take(5);
+
+        $announcementQuery = $course->courseAnnouncements();
+        if (! $user->isInstructor() && ! $user->isAdmin()) {
+            $announcementQuery->where('is_visible', true);
+        }
+        $announcementCount = $view->announcements_seen_at
+            ? (clone $announcementQuery)->where('created_at', '>', $view->announcements_seen_at)->count()
+            : (clone $announcementQuery)->count();
+
+        $lessonModulesQuery = $course->lessonModules()->where('status', 'published');
+        $lessonUploadCount = $view->lessons_seen_at
+            ? (clone $lessonModulesQuery)->where('updated_at', '>', $view->lessons_seen_at)->count()
+            : $course->lessonModules()->where('status', 'published')->count();
+
+        $gradesQuery = $course->courseGrades()->where('user_id', $user->id)->whereNotNull('graded_at');
+        if (! $user->isInstructor() && ! $user->isAdmin()) {
+            $gradesQuery->where('is_visible', true);
+        }
+        $newGradedCount = $view->grades_seen_at
+            ? (clone $gradesQuery)->where('graded_at', '>', $view->grades_seen_at)->count()
+            : (clone $gradesQuery)->count();
+
+        $discussionCount = $view->discussions_seen_at
+            ? $course->discussionThreads()->where('created_at', '>', $view->discussions_seen_at)->count()
+            : $course->discussionThreads()->count();
 
         return view('course-show', [
             'course' => $course,
@@ -123,6 +161,10 @@ class CourseController extends Controller
     {
         $this->ensureCanAccessCourse($course);
         $user = Auth::user();
+        UserCourseSectionView::updateOrCreate(
+            ['user_id' => $user->id, 'course_id' => $course->id],
+            ['lessons_seen_at' => now()]
+        );
         $isInstructor = $user->isInstructor() || $user->isAdmin();
         $course->load(['lessonModules' => fn ($q) => $q->orderBy('order')]);
         if (! $isInstructor) {
@@ -135,6 +177,10 @@ class CourseController extends Controller
     {
         $this->ensureCanAccessCourse($course);
         $user = Auth::user();
+        UserCourseSectionView::updateOrCreate(
+            ['user_id' => $user->id, 'course_id' => $course->id],
+            ['grades_seen_at' => now()]
+        );
         $isInstructor = $user->isInstructor() || $user->isAdmin();
         if ($isInstructor) {
             $grades = $course->courseGrades()->with('user')->orderBy('graded_at', 'desc')->get();
@@ -144,17 +190,84 @@ class CourseController extends Controller
         return view('course-grades', ['course' => $course, 'grades' => $grades, 'isInstructor' => $isInstructor]);
     }
 
-    public function discussions(Course $course)
+    public function discussions(Request $request, Course $course)
     {
         $this->ensureCanAccessCourse($course);
-        $threads = $course->discussionThreads()->with('user')->latest()->paginate(15);
-        return view('course-discussions', ['course' => $course, 'threads' => $threads]);
+        $user = Auth::user();
+        UserCourseSectionView::updateOrCreate(
+            ['user_id' => $user->id, 'course_id' => $course->id],
+            ['discussions_seen_at' => now()]
+        );
+        $threads = $course->discussionThreads()->with(['user', 'announcement.user'])->withCount('messages')->latest()->paginate(15);
+        $replyTitle = null;
+        $replyAnnouncementId = null;
+        if ($request->query('reply_announcement')) {
+            $ann = $course->courseAnnouncements()->find($request->query('reply_announcement'));
+            $replyTitle = $ann ? $ann->title : $request->query('reply_title');
+            $replyAnnouncementId = $ann ? $ann->id : null;
+        } elseif ($request->query('reply_title')) {
+            $replyTitle = $request->query('reply_title');
+        }
+        return view('course-discussions', ['course' => $course, 'threads' => $threads, 'replyTitle' => $replyTitle, 'replyAnnouncementId' => $replyAnnouncementId]);
+    }
+
+    public function storeDiscussion(Request $request, Course $course)
+    {
+        $this->ensureCanAccessCourse($course);
+        $request->validate([
+            'title' => 'required|string|max:255',
+            'content' => 'required|string',
+            'announcement_id' => 'nullable|integer|exists:course_announcements,id',
+        ]);
+        $data = [
+            'title' => $request->title,
+            'content' => $request->content,
+            'user_id' => Auth::id(),
+            'course_id' => $course->id,
+        ];
+        if ($request->filled('announcement_id')) {
+            $ann = $course->courseAnnouncements()->find($request->announcement_id);
+            if ($ann) {
+                $data['announcement_id'] = $ann->id;
+            }
+        }
+        DiscussionThread::create($data);
+        return redirect()->route('courses.discussions', $course)->with('success', 'Discussion started.');
+    }
+
+    public function showThread(Course $course, DiscussionThread $thread)
+    {
+        $this->ensureCanAccessCourse($course);
+        if ($thread->course_id !== $course->id) {
+            abort(404);
+        }
+        $thread->load(['user', 'announcement.user', 'messages' => fn ($q) => $q->with('user')->orderBy('created_at')]);
+        return view('course-discussion-thread', ['course' => $course, 'thread' => $thread]);
+    }
+
+    public function storeMessage(Request $request, Course $course, DiscussionThread $thread)
+    {
+        $this->ensureCanAccessCourse($course);
+        if ($thread->course_id !== $course->id) {
+            abort(404);
+        }
+        $request->validate(['content' => 'required|string']);
+        DiscussionMessage::create([
+            'content' => $request->content,
+            'user_id' => Auth::id(),
+            'thread_id' => $thread->id,
+        ]);
+        return redirect()->route('courses.discussions.thread', [$course, $thread])->with('success', 'Reply posted.');
     }
 
     public function announcements(Course $course)
     {
         $this->ensureCanAccessCourse($course);
         $user = Auth::user();
+        UserCourseSectionView::updateOrCreate(
+            ['user_id' => $user->id, 'course_id' => $course->id],
+            ['announcements_seen_at' => now()]
+        );
         $isInstructor = $user->isInstructor() || $user->isAdmin();
         $query = $course->courseAnnouncements()->with('user')->latest();
         if (! $isInstructor) {
@@ -193,7 +306,7 @@ class CourseController extends Controller
     public function lessonPreview(Course $course, LessonModule $lesson)
     {
         $this->ensureCanAccessCourse($course);
-        if ($lesson->course_id !== $course->getKey()) {
+        if ($lesson->course_id !== $course->id) {
             abort(404);
         }
         $user = Auth::user();
@@ -218,7 +331,7 @@ class CourseController extends Controller
 
     public function editLesson(Course $course, LessonModule $lesson)
     {
-        if ($lesson->course_id !== $course->getKey()) {
+        if ($lesson->course_id !== $course->id) {
             abort(404);
         }
         return view('upload.lesson-edit', ['course' => $course, 'lesson' => $lesson]);
@@ -226,7 +339,7 @@ class CourseController extends Controller
 
     public function updateLesson(Request $request, Course $course, LessonModule $lesson)
     {
-        if ($lesson->course_id !== $course->getKey()) {
+        if ($lesson->course_id !== $course->id) {
             abort(404);
         }
         $request->validate([
@@ -252,7 +365,7 @@ class CourseController extends Controller
 
     public function toggleLesson(Course $course, LessonModule $lesson)
     {
-        if ($lesson->course_id !== $course->getKey()) {
+        if ($lesson->course_id !== $course->id) {
             abort(404);
         }
         $lesson->update(['status' => $lesson->status === 'published' ? 'draft' : 'published']);
@@ -261,7 +374,7 @@ class CourseController extends Controller
 
     public function destroyLesson(Course $course, LessonModule $lesson)
     {
-        if ($lesson->course_id !== $course->getKey()) {
+        if ($lesson->course_id !== $course->id) {
             abort(404);
         }
         if ($lesson->attachment_path) {
@@ -273,7 +386,7 @@ class CourseController extends Controller
 
     public function editAnnouncement(Course $course, CourseAnnouncement $announcement)
     {
-        if ($announcement->course_id !== $course->getKey()) {
+        if ($announcement->course_id !== $course->id) {
             abort(404);
         }
         return view('upload.announcement-edit', ['course' => $course, 'announcement' => $announcement]);
@@ -281,7 +394,7 @@ class CourseController extends Controller
 
     public function updateAnnouncement(Request $request, Course $course, CourseAnnouncement $announcement)
     {
-        if ($announcement->course_id !== $course->getKey()) {
+        if ($announcement->course_id !== $course->id) {
             abort(404);
         }
         $request->validate([
@@ -302,7 +415,7 @@ class CourseController extends Controller
 
     public function toggleAnnouncement(Course $course, CourseAnnouncement $announcement)
     {
-        if ($announcement->course_id !== $course->getKey()) {
+        if ($announcement->course_id !== $course->id) {
             abort(404);
         }
         $announcement->update(['is_visible' => ! $announcement->is_visible]);
@@ -311,7 +424,7 @@ class CourseController extends Controller
 
     public function destroyAnnouncement(Course $course, CourseAnnouncement $announcement)
     {
-        if ($announcement->course_id !== $course->getKey()) {
+        if ($announcement->course_id !== $course->id) {
             abort(404);
         }
         if ($announcement->image_path) {
@@ -323,7 +436,7 @@ class CourseController extends Controller
 
     public function editGrade(Course $course, CourseGrade $grade)
     {
-        if ($grade->course_id !== $course->getKey()) {
+        if ($grade->course_id !== $course->id) {
             abort(404);
         }
         $grade->load('user');
@@ -332,7 +445,7 @@ class CourseController extends Controller
 
     public function updateGrade(Request $request, Course $course, CourseGrade $grade)
     {
-        if ($grade->course_id !== $course->getKey()) {
+        if ($grade->course_id !== $course->id) {
             abort(404);
         }
         $request->validate([
@@ -350,7 +463,7 @@ class CourseController extends Controller
 
     public function toggleGrade(Course $course, CourseGrade $grade)
     {
-        if ($grade->course_id !== $course->getKey()) {
+        if ($grade->course_id !== $course->id) {
             abort(404);
         }
         $grade->update(['is_visible' => ! $grade->is_visible]);
@@ -359,7 +472,7 @@ class CourseController extends Controller
 
     public function destroyGrade(Course $course, CourseGrade $grade)
     {
-        if ($grade->course_id !== $course->getKey()) {
+        if ($grade->course_id !== $course->id) {
             abort(404);
         }
         $grade->delete();
