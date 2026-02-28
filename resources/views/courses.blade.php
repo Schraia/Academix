@@ -41,10 +41,7 @@
             background: linear-gradient(to bottom, rgba(255,255,255,0.5), transparent);
             opacity: 0.3;
         }
-        .sidebar-header {
-            padding: 2rem 1.5rem;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        }
+        .sidebar-header { padding: 2rem 1.5rem; border-bottom: 1px solid rgba(255, 255, 255, 0.1); display: flex; justify-content: center; align-items: center; }
         .sidebar-header h2 {
             font-size: 1.5rem;
             font-weight: 700;

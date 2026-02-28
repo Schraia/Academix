@@ -10,7 +10,7 @@
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f3f4f6; }
         .dashboard-container { display: flex; min-height: 100vh; }
         .sidebar { width: 250px; min-height: 100vh; flex-shrink: 0; background: linear-gradient(180deg, #ef4444 0%, #dc2626 100%); color: white; display: flex; flex-direction: column; box-shadow: 2px 0 10px rgba(0,0,0,0.1); }
-        .sidebar-header { padding: 2rem 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .sidebar-header { padding: 2rem 1.5rem; border-bottom: 1px solid rgba(255, 255, 255, 0.1); display: flex; justify-content: center; align-items: center; }
         .sidebar-header h2 { font-size: 1.5rem; font-weight: 700; }
         .nav-menu { flex: 1; padding: 1rem 0; }
         .nav-item { padding: 1rem 1.5rem; display: flex; align-items: center; gap: 0.75rem; color: inherit; text-decoration: none; transition: background-color 0.3s; cursor: pointer; }
@@ -41,7 +41,7 @@
 <body>
     <div class="dashboard-container">
         <div class="sidebar">
-            <div class="sidebar-header"><h2>Academix</h2></div>
+            <div class="sidebar-header"><img src="{{ asset('images/logo.png') }}" alt="Academix Logo" class="sidebar-logo"></div>
             <nav class="nav-menu">
                 <a href="{{ route('dashboard') }}" class="nav-item" style="text-decoration: none; color: inherit;">
                     <svg fill="currentColor" viewBox="0 0 20 20"><path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"/></svg>

@@ -23,19 +23,27 @@
             width: 250px;
             min-height: 100vh;
             flex-shrink: 0;
-            background: linear-gradient(180deg, #ef4444 0%, #dc2626 100%);
+            background: linear-gradient(180deg, #b91c1c 0%, #7f1d1d 100%);
             color: white;
             display: flex;
             flex-direction: column;
-            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+            box-shadow: 4px 0 25px rgba(0, 0, 0, 0.25);
+            position: relative;
+            overflow: hidden;
+            overflow-x: hidden;
         }
-        .sidebar-header {
-            padding: 1.25rem 1.5rem;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            display: flex;
-            align-items: center;
-            justify-content: center;
+
+        .sidebar::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 3px;
+            height: 100%;
+            background: linear-gradient(to bottom, rgba(255,255,255,0.5), transparent);
+            opacity: 0.3;
         }
+        .sidebar-header { padding: 2rem 1.5rem; border-bottom: 1px solid rgba(255, 255, 255, 0.1); display: flex; justify-content: center; align-items: center; }
         .sidebar-header h2 {
             font-size: 1.5rem;
             font-weight: 700;
@@ -49,16 +57,33 @@
         .nav-item {
             padding: 1rem 1.5rem;
             cursor: pointer;
-            transition: background-color 0.3s;
+            transition: all 0.3s ease;
             display: flex;
             align-items: center;
             gap: 0.75rem;
+            position: relative;
+            font-weight: 500;
+            border-left: 4px solid transparent;
         }
+
         .nav-item:hover {
-            background-color: rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.08);
+            padding-left: 1.75rem;
         }
+
+        .nav-item:hover svg {
+            transform: scale(1.1);
+        }
+
+        .nav-item svg {
+            width: 20px;
+            height: 20px;
+            transition: all 0.3s ease;
+        }
+
         .nav-item.active {
-            background-color: rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.15);
+            border-left: 4px solid white;
         }
         .nav-item svg {
             width: 20px;
@@ -67,10 +92,10 @@
         .nav-logout {
             margin-top: auto;
             padding: 1rem 1.5rem;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
             position: sticky;
             bottom: 0;
-            background: linear-gradient(180deg, #ef4444 0%, #dc2626 100%);
+            background: transparent; 
         }
         .logout-btn {
             width: 100%;
@@ -78,18 +103,21 @@
             background: rgba(255, 255, 255, 0.1);
             color: white;
             border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 8px;
+            border-radius: 10px;
             cursor: pointer;
             font-size: 1rem;
             font-weight: 600;
-            transition: background-color 0.3s;
+            transition: all 0.3s ease;
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 0.5rem;
         }
+
         .logout-btn:hover {
-            background: rgba(255, 255, 255, 0.2);
+            background: white;
+            color: #b91c1c;
+            transform: translateY(-2px);
         }
         .logout-btn svg {
             width: 20px;
@@ -359,7 +387,7 @@
     <div class="dashboard-container">
         <div class="sidebar">
             <div class="sidebar-header">
-                <h2>Academix</h2>
+                <img src="{{ asset('images/logo.png') }}" alt="Academix Logo" class="sidebar-logo">
             </div>
             <nav class="nav-menu">
                 <div class="nav-item active">
