@@ -8,6 +8,8 @@ use App\Http\Controllers\EnrollController;
 use App\Http\Controllers\CourseController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\CourseUploadController;
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\CertificatesController;
 
 Route::get('/', function () {
     return redirect('/login');
@@ -40,6 +42,13 @@ Route::middleware('auth')->group(function () {
     Route::get('/courses/{course}/announcements', [CourseController::class, 'announcements'])->name('courses.announcements');
     Route::get('/courses/{course}/lessons/{lesson}/preview', [CourseController::class, 'lessonPreview'])->name('courses.lessons.preview');
     Route::post('/courses/{course}/lessons/{lesson}/progress', [CourseController::class, 'toggleLessonProgress'])->name('courses.lessons.progress.toggle');
+    Route::get('/profile', [ProfileController::class, 'show'])->name('profile.show');
+    Route::get('/profile/progress', [ProfileController::class, 'progressBreakdown'])->name('profile.progress');
+    Route::get('/profile/enrollments', [ProfileController::class, 'enrollmentsIndex'])->name('profile.enrollments');
+    Route::post('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::post('/profile/picture/remove', [ProfileController::class, 'removePicture'])->name('profile.picture.remove');
+    Route::post('/profile/discussions/{thread}/unfollow', [ProfileController::class, 'unfollowDiscussion'])->name('profile.discussions.unfollow');
+    Route::get('/certificates', [CertificatesController::class, 'index'])->name('certificates.index');
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
     Route::middleware('admin')->group(function () {
