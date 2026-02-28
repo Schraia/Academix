@@ -49,6 +49,8 @@ Route::middleware('auth')->group(function () {
     Route::post('/profile/picture/remove', [ProfileController::class, 'removePicture'])->name('profile.picture.remove');
     Route::post('/profile/discussions/{thread}/unfollow', [ProfileController::class, 'unfollowDiscussion'])->name('profile.discussions.unfollow');
     Route::get('/certificates', [CertificatesController::class, 'index'])->name('certificates.index');
+    Route::get('/certificates/course/{course}', [CertificatesController::class, 'show'])->name('certificates.show');
+    Route::get('/certificates/{certificate}/download', [CertificatesController::class, 'download'])->name('certificates.download');
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
     Route::middleware('admin')->group(function () {
@@ -66,6 +68,8 @@ Route::middleware('auth')->group(function () {
         Route::post('/courses/{course}/upload/announcements', [CourseUploadController::class, 'storeAnnouncement'])->name('courses.upload.announcements.store');
         Route::get('/courses/{course}/upload/grades', [CourseUploadController::class, 'gradesForm'])->name('courses.upload.grades');
         Route::post('/courses/{course}/upload/grades', [CourseUploadController::class, 'storeGrade'])->name('courses.upload.grades.store');
+        Route::get('/courses/{course}/upload/certificates', [CourseUploadController::class, 'certificatesForm'])->name('courses.upload.certificates');
+        Route::post('/courses/{course}/upload/certificates', [CourseUploadController::class, 'storeCertificate'])->name('courses.upload.certificates.store');
         Route::get('/courses/{course}/lessons/{lesson}/edit', [CourseController::class, 'editLesson'])->name('courses.lessons.edit');
         Route::post('/courses/{course}/lessons/{lesson}', [CourseController::class, 'updateLesson'])->name('courses.lessons.update');
         Route::post('/courses/{course}/lessons/{lesson}/toggle', [CourseController::class, 'toggleLesson'])->name('courses.lessons.toggle');

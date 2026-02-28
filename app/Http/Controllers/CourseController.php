@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\CollegeCourse;
 use App\Models\Course;
 use App\Models\CourseAnnouncement;
-use App\Models\Curriculum;
 use App\Models\CourseAttendance;
 use App\Models\CourseGrade;
 use App\Models\CourseGradeWeight;
@@ -31,11 +30,8 @@ class CourseController extends Controller
         $allCourses = collect();
 
         if ($user->role === 'instructor') {
-            $collegeCourses = $user->collegeCourses()->orderBy('name')->get();
-            $courseIds = Curriculum::whereIn('college_course_id', $collegeCourses->pluck('id'))->pluck('course_id')->unique()->values();
-            $allCourses = $courseIds->isNotEmpty()
-                ? Course::whereIn('id', $courseIds)->orderBy('title')->get()
-                : collect();
+            $allCourses = $user->courses()->orderBy('title')->get();
+            $collegeCourses = collect();
         } elseif ($user->role === 'admin') {
             $allCourses = Course::orderBy('title')->get();
         } else {

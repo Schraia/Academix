@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Certificate;
 use App\Models\Course;
 use App\Models\CourseAnnouncement;
 use App\Models\CourseGrade;
@@ -10,6 +11,7 @@ use App\Models\LessonModule;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class CourseUploadController extends Controller
 {
@@ -143,5 +145,59 @@ class CourseUploadController extends Controller
             return redirect()->route('courses.grades', $course)->with('success', 'Grade recorded.');
         }
         return redirect()->route('courses.show', $course)->with('success', 'Grade recorded.');
+    }
+
+    public function certificatesForm(Request $request, Course $course)
+    {
+        $enrolled = Enrollment::where('course_id', $course->getKey())
+            ->where('status', 'enrolled')
+            ->with('user:id,name,email')
+            ->get();
+
+        return view('upload.certificate', [
+            'course' => $course,
+            'enrolledUsers' => $enrolled,
+            'prefillUserId' => $request->query('user_id'),
+        ]);
+    }
+
+    public function storeCertificate(Request $request, Course $course)
+    {
+        $request->validate([
+            'user_id' => 'required|exists:users,id',
+            'issued_date' => 'required|date',
+            'expiry_date' => 'nullable|date|after_or_equal:issued_date',
+            'certificate_file' => 'nullable|file|mimes:pdf,png,jpg,jpeg|max:10240',
+        ]);
+
+        $enrollment = Enrollment::where('course_id', $course->getKey())
+            ->where('user_id', $request->user_id)
+            ->where('status', 'enrolled')
+            ->first();
+
+        if (! $enrollment) {
+            return back()->withErrors(['user_id' => 'Selected user is not enrolled in this course.']);
+        }
+
+        $certificateUrl = null;
+        if ($request->hasFile('certificate_file')) {
+            $file = $request->file('certificate_file');
+            $certificateUrl = $file->store('certificates', 'public');
+        }
+
+        do {
+            $certificateNumber = 'CERT-' . strtoupper(Str::random(10));
+        } while (Certificate::where('certificate_number', $certificateNumber)->exists());
+
+        Certificate::create([
+            'user_id' => $request->user_id,
+            'course_id' => $course->getKey(),
+            'certificate_number' => $certificateNumber,
+            'issued_date' => $request->issued_date,
+            'expiry_date' => $request->expiry_date,
+            'certificate_url' => $certificateUrl,
+        ]);
+
+        return redirect()->route('courses.show', $course)->with('success', 'Certificate issued.');
     }
 }

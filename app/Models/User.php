@@ -91,6 +91,11 @@ class User extends Authenticatable
         return $this->belongsToMany(Course::class, 'course_instructor');
     }
 
+    public function certificates()
+    {
+        return $this->hasMany(Certificate::class);
+    }
+
     public function collegeCourses()
     {
         $courseIds = $this->courses()->pluck('courses.id');
