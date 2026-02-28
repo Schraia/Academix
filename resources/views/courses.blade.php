@@ -279,18 +279,14 @@
 
     <!-- LIST VIEW -->
     <div id="listView" class="courses-card">
-        @if($enrollments->isEmpty() && empty($allCourses))
+        @if($enrollments->isEmpty() && $allCourses->isEmpty())
             <div class="empty-state">
                 <p>You are not enrolled in any courses for this school year.</p>
                 <p style="margin-top: 0.5rem;">
                     <a href="{{ route('enroll') }}">Enroll online</a>
                 </p>
             </div>
-        @elseif($enrollments->isEmpty())
-            <div class="empty-state">
-                <p>You are not enrolled in any courses.</p>
-            </div>
-        @else
+        @elseif($enrollments->isNotEmpty())
             <table class="courses-table">
                 <thead>
                     <tr>
@@ -315,12 +311,30 @@
                     @endforeach
                 </tbody>
             </table>
+        @else
+            <table class="courses-table">
+                <thead>
+                    <tr>
+                        <th>Course</th>
+                        <th>Code</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($allCourses as $c)
+                    <tr>
+                        <td><a href="{{ route('courses.show', $c) }}" style="color: #dc2626; text-decoration: underline;">{{ $c->title }}</a></td>
+                        <td>{{ $c->code ?? '—' }}</td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
         @endif
     </div>
 
     <!-- CARD VIEW -->
     <div id="cardView" class="cards-container d-none">
-        @foreach($enrollments as $e)
+        @if($enrollments->isNotEmpty())
+            @foreach($enrollments as $e)
             <div class="course-card">
                 <div class="course-card-image"></div>
                 <div class="course-card-body">
@@ -328,36 +342,32 @@
                     <p>{{ $e->section_name }}</p>
                     <div class="course-card-footer">
                         <span>{{ ucfirst($e->status) }}</span>
-                        <a href="{{ route('courses.show', $e->course_id) }}" class="card-open">
-                            Open
-                        </a>
+                        <a href="{{ route('courses.show', $e->course_id) }}" class="card-open">Open</a>
                     </div>
                 </div>
             </div>
-        @endforeach
+            @endforeach
+        @else
+            @foreach($allCourses as $c)
+            <div class="course-card">
+                <div class="course-card-image">
+                    @if($c->banner_path)<img src="{{ asset('storage/' . $c->banner_path) }}" alt="" style="width:100%;height:100%;object-fit:cover;">@endif
+                </div>
+                <div class="course-card-body">
+                    <h3>{{ $c->title }}</h3>
+                    <p>{{ $c->code ?? '—' }}</p>
+                    <div class="course-card-footer">
+                        <span>Assigned</span>
+                        <a href="{{ route('courses.show', $c) }}" class="card-open">Open</a>
+                    </div>
+                </div>
+            </div>
+            @endforeach
+        @endif
     </div>
 
 </div>
 
-            @if(isset($allCourses) && $allCourses->isNotEmpty())
-                <h2 class="page-title" style="margin-top: 2rem; font-size: 1.25rem;">All courses</h2>
-                <p class="page-subtitle" style="margin-bottom: 0.75rem;">Open any course to manage content (instructors).</p>
-                <div class="courses-card">
-                    <table class="courses-table">
-                        <thead>
-                            <tr><th>Course</th><th>Code</th></tr>
-                        </thead>
-                        <tbody>
-                            @foreach($allCourses as $c)
-                                <tr>
-                                    <td><a href="{{ route('courses.show', $c) }}" style="color: #dc2626; text-decoration: underline;">{{ $c->title }}</a></td>
-                                    <td>{{ $c->code ?? '—' }}</td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
-            @endif
         </div>
     </div>
 </body>

@@ -200,7 +200,7 @@
                 </div>
 
                 <div class="profile-col-center">
-                    <div class="card" style="margin-bottom: 0;">
+                    <div class="card" style="margin-bottom: 0;" id="grades-section">
                         <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem;">
                             <h3 style="margin-bottom: 0;">Grades Across Courses</h3>
                             <a href="{{ route('profile.enrollments') }}" class="btn-outline" style="margin-top: 0;">View all by year & semester →</a>
@@ -272,7 +272,7 @@
                 <p style="margin-top: 0.5rem; font-weight: 600; color: #1f2937;">{{ $progressPercent }}%</p>
             </div>
 
-            <div class="card">
+            <div class="card" id="diagnostics">
                 <h3>Learning Diagnostics</h3>
                 <p class="progress-text">Lesson completions per week</p>
                 <div class="diagnostics-chart">

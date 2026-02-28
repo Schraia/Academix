@@ -157,6 +157,7 @@
                                 <a href="{{ route('courses.upload.lessons', $course) }}">Lessons</a>
                                 <a href="{{ route('courses.upload.announcements', $course) }}">Announcements</a>
                                 <a href="{{ route('courses.upload.grades', $course) }}">Grades</a>
+                                <a href="{{ route('courses.upload.certificates', $course) }}">Issue certificate</a>
                             </div>
                         </div>
                         @endif
