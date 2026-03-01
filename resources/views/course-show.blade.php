@@ -87,13 +87,6 @@ body{
     color:#b91c1c;
     text-decoration:none;
 }
-.back-link:hover{text-decoration:underline}
-
-/* ===== HEADER ===== */
-
-.course-header{
-    margin-bottom:1rem;
-}
 
 .course-title{
     font-size:2rem;
@@ -103,25 +96,23 @@ body{
 .course-code{
     color:#6b7280;
     font-size:.9rem;
+    margin-bottom:1rem;
 }
 
-/* ===== COURSE NAVIGATION ===== */
+/* ===== COURSE NAV ===== */
 
 .course-nav{
     display:flex;
     gap:2rem;
-    border-bottom:2px solid #cbd5e1;
-    margin-bottom:1.5rem;
+    border-bottom:2px solid #d1d5db;
+    margin-bottom:2rem;
     padding-bottom:.75rem;
 }
 
 .course-nav a{
     text-decoration:none;
     font-weight:600;
-    font-size:.95rem;
     color:#6b7280;
-    position:relative;
-    padding-bottom:.5rem;
     transition:.2s ease;
 }
 
@@ -129,19 +120,18 @@ body{
     color:#b91c1c;
 }
 
-.course-nav a.active{
-    color:#b91c1c;
+/* ===== GRID LAYOUT ===== */
+
+.top-section{
+    display:grid;
+    grid-template-columns:2fr 1fr;
+    gap:2.5rem;
 }
 
-.course-nav a.active::after{
-    content:"";
-    position:absolute;
-    left:0;
-    bottom:-10px;
-    height:4px;
-    width:100%;
-    background:#b91c1c;
-    border-radius:4px;
+@media(max-width:1000px){
+    .top-section{
+        grid-template-columns:1fr;
+    }
 }
 
 /* ===== BANNER ===== */
@@ -149,9 +139,8 @@ body{
 .course-banner,
 .banner-placeholder{
     width:100%;
-    height:200px;
+    height:220px;
     border-radius:16px;
-    margin-bottom:2rem;
     object-fit:cover;
 }
 
@@ -164,41 +153,26 @@ body{
     font-weight:600;
 }
 
-/* ===== GRID ===== */
-
-.content-grid{
-    display:grid;
-    grid-template-columns:2fr 1fr;
-    gap:2.5rem;
-}
-
-@media(max-width:1000px){
-    .content-grid{grid-template-columns:1fr}
-}
-
 /* ===== CARDS ===== */
 
 .card{
     background:white;
     border-radius:16px;
     padding:1.5rem;
-    margin-bottom:1.75rem;
-    box-shadow:0 6px 20px rgba(0,0,0,.05);
+    margin-bottom:1.5rem;
+    box-shadow:0 6px 18px rgba(0,0,0,.05);
 }
 
 .card h3{
-    font-size:.85rem;
+    font-size:.9rem;
     font-weight:700;
-    margin-bottom:1rem;
-    text-transform:uppercase;
-    letter-spacing:.5px;
-    color:#6b7280;
+    margin-bottom:.75rem;
 }
 
 .preview{
-    font-size:.875rem;
-    color:#374151;
-    margin-bottom:.6rem;
+    font-size:.85rem;
+    color:#4b5563;
+    margin-bottom:.5rem;
 }
 
 .link-go{
@@ -207,7 +181,6 @@ body{
     color:#b91c1c;
     text-decoration:none;
 }
-.link-go:hover{text-decoration:underline}
 
 .course-description{
     font-size:.95rem;
@@ -246,10 +219,8 @@ body{
 
 <a href="{{ route('courses.index') }}" class="back-link">← Back to Courses</a>
 
-<div class="course-header">
-    <div class="course-title">{{ $course->title }}</div>
-    <div class="course-code">{{ $course->code ?? $course->id }}</div>
-</div>
+<div class="course-title">{{ $course->title }}</div>
+<div class="course-code">{{ $course->code ?? $course->id }}</div>
 
 <div class="course-nav">
     <a href="{{ route('courses.lessons',$course) }}">Lessons</a>
@@ -257,25 +228,31 @@ body{
     <a href="{{ route('courses.grades',$course) }}">Grades</a>
 </div>
 
-@if($course->banner_path)
-<img src="{{ asset('storage/'.$course->banner_path) }}" class="course-banner">
-@else
-<div class="banner-placeholder">
-    {{ $course->title }} — Learning Materials
-</div>
-@endif
-
-<div class="content-grid">
+<!-- TOP GRID -->
+<div class="top-section">
 
     <!-- LEFT COLUMN -->
     <div>
 
-        <div class="card">
+        @if($course->banner_path)
+            <img src="{{ asset('storage/'.$course->banner_path) }}" class="course-banner">
+        @else
+            <div class="banner-placeholder">
+                {{ $course->title }} — Learning Materials
+            </div>
+        @endif
+
+        <div class="card" style="margin-top:1.5rem;">
             <h3>About This Course</h3>
             <div class="course-description">
                 {{ $course->description ?? 'No description available yet.' }}
             </div>
         </div>
+
+    </div>
+
+    <!-- RIGHT COLUMN -->
+    <div>
 
         <div class="card">
             <h3>Ongoing Discussions</h3>
@@ -288,11 +265,6 @@ body{
                 Open Discussions →
             </a>
         </div>
-
-    </div>
-
-    <!-- RIGHT COLUMN -->
-    <div>
 
         <div class="card">
             <h3>Last Lesson</h3>
