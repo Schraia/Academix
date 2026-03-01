@@ -9,78 +9,160 @@
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    background: linear-gradient(180deg, #f8fafc 0%, #eef2f7 100%); }
+        background: linear-gradient(180deg, #f8fafc 0%, #eef2f7 100%); }
         .dashboard-container { display: flex; min-height: 100vh; }
-        .sidebar {
-    width: 250px;
-    height: 100vh;
-    position: sticky;
-    top: 0;
-    flex-shrink: 0;
-    background: linear-gradient(180deg, #b91c1c 0%, #7f1d1d 100%);
-    color: white;
-    display: flex;
-    flex-direction: column;
-    box-shadow: 4px 0 25px rgba(0, 0, 0, 0.25);
-    overflow: hidden;
-} 
-.sidebar::before { content: ''; position: absolute; top: 0; right: 0; width: 3px; height: 100%; background: linear-gradient(to bottom, rgba(255,255,255,0.5), transparent); opacity: 0.3; }
-        .sidebar-header { padding: 2rem 1.5rem; border-bottom: 1px solid rgba(255, 255, 255, 0.1); display: flex; justify-content: center; align-items: center; }
-        .sidebar-header h2 { font-size: 1.5rem; font-weight: 700; }
+        .sidebar { width: 260px; height: 100vh;position: sticky; top: 0;flex-shrink: 0;
+        background:
+        linear-gradient(180deg, #962121 0%, #991b1b 40%, #450a0a 100%);
+        color: rgba(255,255,255,0.92);display: flex; flex-direction: column;box-shadow: 8px 0 40px rgba(0,0,0,0.35); overflow: hidden; }
+        .sidebar::after { content: ""; position: absolute; inset: 0;
+        background:
+        radial-gradient(circle at 20% 10%, rgba(255,255,255,0.05), transparent 40%),
+        radial-gradient(circle at 80% 30%, rgba(255,255,255,0.04), transparent 40%);
+        pointer-events: none;
+        }
+        .sidebar::before { content: ''; position: absolute; top: 0; right: 0; width: 3px; height: 100%; background: linear-gradient(to bottom, rgba(255,255,255,0.5), transparent); opacity: 0.3; }
+                .sidebar-header { padding: 2rem 1.5rem; border-bottom: 1px solid rgba(255, 255, 255, 0.1); display: flex; justify-content: center; align-items: center; }
+                .sidebar-header h2 { font-size: 1.5rem; font-weight: 700; }
+                .sidebar-logo {
+            max-width: 140px;
+            filter: drop-shadow(0 6px 12px rgba(0,0,0,0.4));
+        }
         .nav-menu { flex: 1; min-height: 0; overflow-y: auto; padding: 1rem 0; }
-        .nav-item { padding: 1rem 1.5rem; cursor: pointer; transition: all 0.3s ease; display: flex; align-items: center; gap: 0.75rem; position: relative; font-weight: 500; border-left: 4px solid transparent; }
-        .nav-item:hover { background: rgba(255, 255, 255, 0.08); padding-left: 1.75rem; }
+        .nav-item {
+            padding: 0.9rem 1.75rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.9rem;
+            font-weight: 500;
+            font-size: 0.95rem;
+            position: relative;
+            transition: all 0.25s ease;
+        } 
+        .nav-item:hover { background: rgba(255, 255, 255, 0.08); padding-left: 2.10rem; }
         .nav-item:hover svg { transform: scale(1.1); }
-        .nav-item svg { width: 20px; height: 20px; transition: all 0.3s ease; }
-        .nav-item.active { background: rgba(255, 255, 255, 0.15); border-left: 4px solid white; }
+        .nav-item svg { width: 19px;
+            height: 19px;
+            opacity: 0.85;
+            transition: all 0.25s ease;}
+            .nav-item:hover svg {
+            opacity: 1;
+            transform: scale(1.15);
+        }
+                .nav-item.active {
+            background: rgba(255,255,255,0.12);
+        }
+
+        .nav-item.active::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            width: 6px;
+
+            background: linear-gradient(180deg, #ef4444, #ffffff);
+            border-radius: 0 6px px 0;
+        }
         .nav-logout {
-    margin-top: auto;
-    padding: 1rem 1.5rem;
-    border-top: 1px solid rgba(255,255,255,0.08);
-}
+            margin-top: auto;
+            padding: 1rem 1.5rem;
+            border-top: 1px solid rgba(255,255,255,0.08);
+        }
         .logout-btn { width: 100%; padding: 0.75rem; background: rgba(255, 255, 255, 0.1); color: white; border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 10px; cursor: pointer; font-size: 1rem; font-weight: 600; transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; gap: 0.5rem; }
         .logout-btn:hover { background: white; color: #b91c1c; transform: translateY(-2px); }
         .logout-btn svg { width: 20px; height: 20px; }
-        .main-content {flex: 1; padding: 3rem 4rem; overflow-y: auto; background: #f8fafc;}
-        .page-header { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 2.5rem; }
+        .main-content {flex: 1; padding: 3rem 4rem; overflow-y: auto; background:
+        radial-gradient(circle at 10% 10%, rgba(185,28,28,0.18), transparent 50%),
+        radial-gradient(circle at 90% 30%, rgba(220,38,38,0.15), transparent 50%),
+        linear-gradient(180deg, #ffffff 0%, #f3f4f6 100%);}
+        .page-header {
+            background: white;
+            padding: 1.75rem 2rem;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            margin-bottom: 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
         .page-title {
-    font-size: 2.4rem;
+            font-size: 2.4rem;
     font-weight: 700;
     letter-spacing: -0.03em;
     color: #0f172a;
 }
-        .btn-edit-icon { background: none; border: none; cursor: pointer; padding: 0.35rem; color: #6b7280; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; }
-        .btn-edit-icon:hover { background: #e5e7eb; color: #374151; }
-        .btn-edit-icon svg { width: 20px; height: 20px; }
-        .alert-success { background: #dcfce7; color: #166534; padding: 0.75rem 1rem; border-radius: 8px; margin-bottom: 1rem; }
-        .card {
-    background: #ffffff;
-    border-radius: 18px;
-    padding: 1.9rem;
-    margin-bottom: 1.75rem;
 
-    border: 1px solid #f1f5f9;
-    box-shadow:
-        0 1px 2px rgba(0,0,0,0.04),
-        0 10px 25px rgba(0,0,0,0.04);
+        .page-subtitle {
+            color: #6b7280;
+            font-weight: 500;
+            margin-top: 0.8rem;
+            margin-bottom: 1rem;
+        }
+.page-header-left {
+    display: flex;
+    flex-direction: column;
+}
 
+
+        .btn-edit-profile {
+    padding: 0.6rem 1.2rem;
+    border-radius: 999px;
+    border: 1px solid #dc2626;
+    background: white;
+    color: #dc2626;
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
     transition: all 0.25s ease;
+}
+    
+.btn-edit-profile:hover {
+    background: #dc2626;
+    color: white;
+    box-shadow: 0 6px 16px rgba(220,38,38,0.25);
+    transform: translateY(-2px);
+}
+        .alert-success { background: #dcfce7; color: #166534; padding: 0.75rem 1rem; border-radius: 8px; margin-bottom: 1rem; }
+       .card {
+    background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
+    border-radius: 22px;
+    padding: 2rem;
+
+    border: 1px solid #e2e8f0;
+
+    box-shadow:
+        0 8px 20px rgba(15,23,42,0.04),
+        0 25px 50px rgba(15,23,42,0.05);
+
+    transition: all 0.3s ease;
+    margin-bottom: 1.5rem;
+}
+.card:hover {
+    transform: translateY(-3px);
+    box-shadow:
+        0 20px 45px rgba(15,23,42,0.08);
 }
 
        .card h3 {
-    font-size: 1.2rem;
+    font-size: 1.25rem;
     font-weight: 700;
     color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
     margin-bottom: 1rem;
     padding-bottom: 0.75rem;
     border-bottom: 1px solid #f1f5f9;
 }
+
        .profile-grid {
     display: grid;
     grid-template-columns: 280px 1fr;
-    gap: 2rem;
+    gap: 1rem;
     align-items: start;
-    margin-bottom: 2.5rem;   /* 👈 THIS fixes the space */
+    margin-bottom: 2.5rem;  
 }
         @media (max-width: 900px) { .profile-grid { grid-template-columns: 1fr; } }
         .profile-col-left { width: 100%; min-width: 0; }
@@ -99,18 +181,29 @@
 }
 
 .profile-card {
-    height: 440px;
-    height: auto;  
-    background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
-    border-radius: 20px;
-    padding: 2.2rem 1.9rem;
-    border: 1px solid #e2e8f0;
+    min-height: 440px;
+    display: flex;
+    flex-direction: column;
+
+    background: linear-gradient(145deg, #ffffff 0%, #f1f5f9 100%);
+    border-radius: 22px;
+    padding: 2.4rem 2rem;
+
+    border: 1px solid rgba(255,255,255,0.6);
 
     box-shadow:
-        0 4px 12px rgba(0,0,0,0.04),
-        0 20px 40px rgba(0,0,0,0.04);
+        0 10px 25px rgba(15, 23, 42, 0.05),
+        0 30px 60px rgba(15, 23, 42, 0.06);
 
-    transition: all 0.3s ease;
+    backdrop-filter: blur(6px);
+
+    transition: all 0.35s ease;
+}
+.profile-card:hover {
+    transform: translateY(-4px);
+    box-shadow:
+        0 20px 40px rgba(15,23,42,0.08),
+        0 40px 80px rgba(15,23,42,0.08);
 }
        .profile-avatar {
     width: 110px;
@@ -134,6 +227,13 @@
     color: #6b7280;
     border: 4px solid #f1f5f9;
     margin: 0 auto 1rem;
+}
+.profile-avatar,
+.profile-avatar-placeholder {
+    box-shadow:
+        0 0 0 4px #ffffff,
+        0 0 0 6px #fee2e2,
+        0 10px 25px rgba(220,38,38,0.25);
 }
         .profile-name { font-size: 1rem; font-weight: 600; color: #1f2937; text-align: center; margin-bottom: 0.25rem; }
         .profile-email { font-size: 0.8125rem; color: #6b7280; text-align: center; margin-bottom: 0.75rem; word-break: break-all; }
@@ -164,12 +264,18 @@
     line-height: 1.6;
 
     display: -webkit-box;
-    -webkit-line-clamp: 4;       /* number of lines shown */
+    -webkit-line-clamp: 3;       
     -webkit-box-orient: vertical;
 
     overflow: hidden;
     text-overflow: ellipsis;
     word-break: break-word;
+}
+.profile-bio-view,
+.profile-notes-view {
+    margin-top: 0.5rem;
+    padding-top: 0.5 rem;
+    border-top: 1px solid #e2e8f0;
 }
 
         .profile-bio-text.empty, .profile-notes-text.empty { color: #9ca3af; font-style: italic; }
@@ -321,11 +427,19 @@
         </div>
         <div class="main-content">
             <div class="page-header">
-                <h1 class="page-title">My Profile</h1>
-                <button type="button" class="btn-edit-icon" id="profile-edit-toggle" title="Edit profile" aria-label="Edit profile">
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
-                </button>
-            </div>
+    <div class="page-header-left">
+        <h1 class="page-title">My Profile</h1>
+        <p class="page-subtitle">Manage your personal information and activity</p>
+    </div>
+
+    <button type="button" 
+            class="btn-edit-profile" 
+            id="profile-edit-toggle" 
+            title="Edit profile"
+            aria-label="Edit profile">
+        Edit Profile
+    </button>
+</div>
             @if(session('success'))
                 <div class="alert-success">{{ session('success') }}</div>
             @endif
@@ -388,7 +502,7 @@
                 <div class="profile-col-center">
                     <div class="card"  id="grades-section">
                         <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem;">
-                            <h3 style="margin-bottom: 0;">Grades Across Courses</h3>
+                            <h3 style="margin-bottom: 0;">📊 Grades Across Courses</h3>
                             <a href="{{ route('profile.enrollments') }}" class="btn-outline" style="margin-top: 0;">View all by year & semester →</a>
                         </div>
                         <p class="progress-text" style="margin-bottom: 0.75rem;">Current enrollment only.</p>
@@ -415,7 +529,7 @@
                     </div>
                    
                     <div class="card" style="margin-bottom: 0;">
-                        <h3>Discussion Activity</h3>
+                        <h3>💬 Discussion Activity</h3>
                         @if($discussionThreads->isNotEmpty())
                             <ul class="discussion-list">
                                 @foreach($discussionThreads as $thread)
@@ -449,7 +563,7 @@
 
             <div class="card">
                 <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem;">
-                    <h3 style="margin-bottom: 0;">Overall Progress</h3>
+                    <h3 style="margin-bottom: 0;">📈 Overall Progress</h3>
                     <a href="{{ route('profile.progress') }}" class="btn-outline" style="margin-top: 0;">View breakdown by course →</a>
                 </div>
                 <p class="progress-text">{{ $completedLessons }} of {{ $totalLessons }} lessons completed across all your courses</p>
@@ -460,7 +574,7 @@
             </div>
 
             <div class="card" id="diagnostics">
-                <h3>Learning Diagnostics</h3>
+                <h3>🧠Learning Diagnostics</h3>
                 <p class="progress-text">Lesson completions per week</p>
                 <div class="diagnostics-chart">
                     @foreach($completionsByWeek as $week)
@@ -499,17 +613,20 @@
             if (!card || !toggle) return;
 
             toggle.addEventListener('click', function() {
-                var isEdit = card.classList.contains('profile-edit-mode');
-                if (isEdit) {
-                    card.classList.remove('profile-edit-mode');
-                    card.classList.add('profile-view-mode');
-                    if (saveForm) saveForm.style.display = 'none';
-                } else {
-                    card.classList.add('profile-edit-mode');
-                    card.classList.remove('profile-view-mode');
-                    if (saveForm) saveForm.style.display = 'block';
-                }
-            });
+            var isEdit = card.classList.contains('profile-edit-mode');
+
+            if (isEdit) {
+                card.classList.remove('profile-edit-mode');
+                card.classList.add('profile-view-mode');
+                if (saveForm) saveForm.style.display = 'none';
+                toggle.textContent = "Edit Profile";
+            } else {
+                card.classList.add('profile-edit-mode');
+                card.classList.remove('profile-view-mode');
+                if (saveForm) saveForm.style.display = 'block';
+                toggle.textContent = "Cancel Editing";
+            }
+        });
         })();
 
         (function() {

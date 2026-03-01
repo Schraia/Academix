@@ -39,7 +39,7 @@
         .logout-btn { width: 100%; padding: 0.75rem; background: rgba(255, 255, 255, 0.1); color: white; border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 10px; cursor: pointer; font-size: 1rem; font-weight: 600; transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; gap: 0.5rem; }
         .logout-btn:hover { background: white; color: #b91c1c; transform: translateY(-2px); }
         .logout-btn svg { width: 20px; height: 20px; }
-        .main-content { flex: 1; padding: 2rem 3rem; }
+        .main-content { flex: 1; padding: 2rem 3rem;  }
         .page-title { font-size: 1.75rem; font-weight: 700; color: #1f2937; margin-bottom: 0.25rem; }
         .page-subtitle { font-size: 0.9375rem; color: #6b7280; margin-bottom: 1.5rem; }
         .btn-back { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; background: #e5e7eb; color: #374151; text-decoration: none; border-radius: 8px; font-size: 0.875rem; font-weight: 500; margin-bottom: 1rem; }
