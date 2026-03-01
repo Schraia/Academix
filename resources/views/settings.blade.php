@@ -9,7 +9,7 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f3f4f6; }
         .dashboard-container { display: flex; min-height: 100vh; }
-        .sidebar { width: 250px; min-height: 100vh; flex-shrink: 0; background: linear-gradient(180deg, #b91c1c 0%, #7f1d1d 100%); color: white; display: flex; flex-direction: column; box-shadow: 4px 0 25px rgba(0, 0, 0, 0.25); position: relative; overflow: hidden; overflow-x: hidden; }
+        .sidebar {width: 250px;height: 100vh;position: sticky; top: 0;flex-shrink: 0;background: linear-gradient(180deg, #b91c1c 0%, #7f1d1d 100%);color: white;display: flex;flex-direction: column; box-shadow: 4px 0 25px rgba(0, 0, 0, 0.25); overflow: hidden; height: ;}       
         .sidebar::before { content: ''; position: absolute; top: 0; right: 0; width: 3px; height: 100%; background: linear-gradient(to bottom, rgba(255,255,255,0.5), transparent); opacity: 0.3; }
         .sidebar-header { padding: 2rem 1.5rem; border-bottom: 1px solid rgba(255, 255, 255, 0.1); display: flex; justify-content: center; align-items: center; }
         .sidebar-header h2 { font-size: 1.5rem; font-weight: 700; }

@@ -7,10 +7,23 @@
     @vite('resources/css/app.css')
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f3f4f6; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: linear-gradient(180deg, #f8fafc 0%, #eef2f7 100%); }
         .dashboard-container { display: flex; min-height: 100vh; }
-        .sidebar { width: 250px; min-height: 100vh; flex-shrink: 0; background: linear-gradient(180deg, #b91c1c 0%, #7f1d1d 100%); color: white; display: flex; flex-direction: column; box-shadow: 4px 0 25px rgba(0, 0, 0, 0.25); position: relative; overflow: hidden; overflow-x: hidden; }
-        .sidebar::before { content: ''; position: absolute; top: 0; right: 0; width: 3px; height: 100%; background: linear-gradient(to bottom, rgba(255,255,255,0.5), transparent); opacity: 0.3; }
+        .sidebar {
+    width: 250px;
+    height: 100vh;
+    position: sticky;
+    top: 0;
+    flex-shrink: 0;
+    background: linear-gradient(180deg, #b91c1c 0%, #7f1d1d 100%);
+    color: white;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 4px 0 25px rgba(0, 0, 0, 0.25);
+    overflow: hidden;
+} 
+.sidebar::before { content: ''; position: absolute; top: 0; right: 0; width: 3px; height: 100%; background: linear-gradient(to bottom, rgba(255,255,255,0.5), transparent); opacity: 0.3; }
         .sidebar-header { padding: 2rem 1.5rem; border-bottom: 1px solid rgba(255, 255, 255, 0.1); display: flex; justify-content: center; align-items: center; }
         .sidebar-header h2 { font-size: 1.5rem; font-weight: 700; }
         .nav-menu { flex: 1; min-height: 0; overflow-y: auto; padding: 1rem 0; }
@@ -19,31 +32,139 @@
         .nav-item:hover svg { transform: scale(1.1); }
         .nav-item svg { width: 20px; height: 20px; transition: all 0.3s ease; }
         .nav-item.active { background: rgba(255, 255, 255, 0.15); border-left: 4px solid white; }
-        .nav-logout { margin-top: auto; padding: 1rem 1.5rem; border-top: 1px solid rgba(255, 255, 255, 0.08); position: sticky; bottom: 0; background: transparent; }
+        .nav-logout {
+    margin-top: auto;
+    padding: 1rem 1.5rem;
+    border-top: 1px solid rgba(255,255,255,0.08);
+}
         .logout-btn { width: 100%; padding: 0.75rem; background: rgba(255, 255, 255, 0.1); color: white; border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 10px; cursor: pointer; font-size: 1rem; font-weight: 600; transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; gap: 0.5rem; }
         .logout-btn:hover { background: white; color: #b91c1c; transform: translateY(-2px); }
         .logout-btn svg { width: 20px; height: 20px; }
-        .main-content { flex: 1; padding: 2rem 3rem; overflow-y: auto; }
-        .page-header { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1.5rem; }
-        .page-title { font-size: 1.75rem; font-weight: 700; color: #1f2937; }
+        .main-content {flex: 1; padding: 3rem 4rem; overflow-y: auto; background: #f8fafc;}
+        .page-header { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 2.5rem; }
+        .page-title {
+    font-size: 2.4rem;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    color: #0f172a;
+}
         .btn-edit-icon { background: none; border: none; cursor: pointer; padding: 0.35rem; color: #6b7280; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; }
         .btn-edit-icon:hover { background: #e5e7eb; color: #374151; }
         .btn-edit-icon svg { width: 20px; height: 20px; }
         .alert-success { background: #dcfce7; color: #166534; padding: 0.75rem 1rem; border-radius: 8px; margin-bottom: 1rem; }
-        .card { background: white; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.07); padding: 1.5rem; margin-bottom: 1.5rem; }
-        .card h3 { font-size: 1.1rem; font-weight: 600; color: #374151; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid #e5e7eb; }
-        .profile-grid { display: grid; grid-template-columns: 1fr 3fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem; }
+        .card {
+    background: #ffffff;
+    border-radius: 18px;
+    padding: 1.9rem;
+    margin-bottom: 1.75rem;
+
+    border: 1px solid #f1f5f9;
+    box-shadow:
+        0 1px 2px rgba(0,0,0,0.04),
+        0 10px 25px rgba(0,0,0,0.04);
+
+    transition: all 0.25s ease;
+}
+
+       .card h3 {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #0f172a;
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid #f1f5f9;
+}
+       .profile-grid {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    gap: 2rem;
+    align-items: start;
+    margin-bottom: 2.5rem;   /* 👈 THIS fixes the space */
+}
         @media (max-width: 900px) { .profile-grid { grid-template-columns: 1fr; } }
         .profile-col-left { width: 100%; min-width: 0; }
         .profile-col-center { width: 100%; min-width: 0; }
         .profile-col-right { width: 100%; min-width: 0; }
-        .profile-card { background: white; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.07); padding: 1.25rem; height: 100%; display: flex; flex-direction: column; }
-        .profile-avatar { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 2px solid #e5e7eb; margin: 0 auto 0.75rem; display: block; }
-        .profile-avatar-placeholder { width: 80px; height: 80px; border-radius: 50%; background: #e5e7eb; display: flex; align-items: center; justify-content: center; font-size: 1.75rem; color: #9ca3af; border: 2px solid #e5e7eb; margin: 0 auto 0.75rem; }
+        .profile-card {
+    background: #ffffff;
+    border-radius: 18px;
+    box-shadow: 0 10px 35px rgba(0, 0, 0, 0.05);
+    padding: 2rem 1.75rem;
+    border: 1px solid #f1f5f9;
+    transition: all 0.25s ease;
+}
+.profile-col-left {
+    align-self: start;
+}
+
+.profile-card {
+    height: fit-content;
+    background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+    border-radius: 20px;
+    padding: 2.2rem 1.9rem;
+    border: 1px solid #e2e8f0;
+
+    box-shadow:
+        0 4px 12px rgba(0,0,0,0.04),
+        0 20px 40px rgba(0,0,0,0.04);
+
+    transition: all 0.3s ease;
+}
+       .profile-avatar {
+    width: 110px;
+    height: 110px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 4px solid #f1f5f9;
+    margin: 0 auto 1rem;
+    display: block;
+}
+      .profile-avatar-placeholder {
+    width: 110px;
+    height: 110px;
+    border-radius: 50%;
+    background: #e5e7eb;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.25rem;
+    font-weight: 600;
+    color: #6b7280;
+    border: 4px solid #f1f5f9;
+    margin: 0 auto 1rem;
+}
         .profile-name { font-size: 1rem; font-weight: 600; color: #1f2937; text-align: center; margin-bottom: 0.25rem; }
         .profile-email { font-size: 0.8125rem; color: #6b7280; text-align: center; margin-bottom: 0.75rem; word-break: break-all; }
-        .profile-bio-label, .profile-notes-label { font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.025em; margin-bottom: 0.35rem; }
-        .profile-bio-text, .profile-notes-text { font-size: 0.875rem; color: #374151; line-height: 1.5; white-space: pre-wrap; }
+        .profile-bio-label,
+        .profile-notes-label {
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            color: #94a3b8;
+        }
+        .profile-bio-text,
+.profile-notes-text {
+    font-size: 0.9rem;
+    color: #374151;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+}
+.profile-bio-text {
+    font-size: 0.9rem;
+    color: #374151;
+    line-height: 1.6;
+
+    display: -webkit-box;
+    -webkit-line-clamp: 2;       /* number of lines shown */
+    -webkit-box-orient: vertical;
+
+    overflow: hidden;
+    text-overflow: ellipsis;
+    word-break: break-word;
+}
+
         .profile-bio-text.empty, .profile-notes-text.empty { color: #9ca3af; font-style: italic; }
         .profile-avatar-actions { margin-top: 0.5rem; display: none; }
         .profile-edit-mode .profile-avatar-actions { display: block; }
@@ -55,17 +176,40 @@
         .form-group textarea:focus { outline: none; border-color: #dc2626; }
         .private-note-hint { font-size: 0.7rem; color: #6b7280; margin-top: 0.2rem; }
         .btn { padding: 0.5rem 1rem; border-radius: 8px; font-size: 0.875rem; font-weight: 500; cursor: pointer; border: none; }
-        .btn-primary { background: #dc2626; color: white; margin-top: 0.5rem; }
-        .btn-primary:hover { background: #b91c1c; }
+        .btn-primary {
+    background: #b91c1c;
+    color: white;
+    border-radius: 10px;
+    padding: 0.6rem 1.1rem;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+
+.btn-primary:hover {
+    background: #991b1b;
+    transform: translateY(-1px);
+}
         .btn-danger { background: #fef2f2; color: #b91c1c; font-size: 0.8125rem; padding: 0.35rem 0.75rem; }
         .btn-danger:hover { background: #fee2e2; }
         .profile-avatar-actions input[type="file"] { font-size: 0.75rem; margin-bottom: 0.25rem; }
-        .progress-bar-wrap { background: #e5e7eb; border-radius: 9999px; height: 10px; overflow: hidden; margin-top: 0.5rem; }
-        .progress-bar-fill { height: 100%; background: linear-gradient(90deg, #dc2626, #ef4444); border-radius: 9999px; transition: width 0.3s; }
+        .progress-bar-wrap { height: 12px; background: #e5e7eb; border-radius: 9999px; height: 10px; overflow: hidden; margin-top: 0.5rem; }
+        .progress-bar-fill { height: 100%; background: linear-gradient(
+        90deg,
+        #b91c1c 0%,
+        #dc2626 50%,
+        #ef4444 100%
+    );
+    box-shadow: 0 4px 12px rgba(220,38,38,0.3);; border-radius: 9999px; transition: width 0.3s; }
         .progress-text { font-size: 0.9375rem; color: #6b7280; }
         .grades-table { width: 100%; border-collapse: collapse; }
         .grades-table th, .grades-table td { padding: 0.75rem 0; text-align: left; border-bottom: 1px solid #f3f4f6; }
-        .grades-table th { font-weight: 600; color: #6b7280; font-size: 0.875rem; }
+        .grades-table th {
+    font-weight: 600;
+    color: #9ca3af;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
         .grade-value { font-weight: 600; color: #1f2937; }
         .discussion-list { list-style: none; }
         .discussion-list li { padding: 0.6rem 0; border-bottom: 1px solid #f3f4f6; }
@@ -89,8 +233,29 @@
         .chart-label { font-size: 0.7rem; color: #6b7280; margin-top: 0.35rem; text-align: center; }
         .chart-tooltip { position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); margin-bottom: 6px; padding: 0.4rem 0.6rem; background: #1f2937; color: #fff; font-size: 0.75rem; font-weight: 500; white-space: nowrap; border-radius: 6px; pointer-events: none; opacity: 0; visibility: hidden; transition: opacity 0.15s, visibility 0.15s; z-index: 5; }
         .chart-bar-wrap:hover .chart-tooltip { opacity: 1; visibility: visible; }
-        .btn-outline { display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.5rem 1rem; background: transparent; color: #dc2626; border: 1px solid #dc2626; border-radius: 8px; font-size: 0.875rem; font-weight: 500; text-decoration: none; margin-top: 0.75rem; cursor: pointer; }
-        .btn-outline:hover { background: #fef2f2; }
+        .btn-outline {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.6rem 1.2rem;
+
+            border-radius: 999px;
+
+            font-weight: 600;
+            font-size: 0.85rem;
+
+            border: 1px solid #dc2626;
+            color: #dc2626;
+            background: white;
+
+            transition: all 0.25s ease;
+        }
+        .btn-outline:hover {
+            background: #dc2626;
+            color: white;
+            box-shadow: 0 6px 16px rgba(220,38,38,0.25);
+            transform: translateY(-2px);
+        }
         .streak-badge { display: inline-flex; align-items: center; gap: 0.5rem; background: #fef3c7; color: #92400e; padding: 0.5rem 1rem; border-radius: 9999px; font-weight: 600; font-size: 0.9375rem; margin-top: 0.75rem; }
     </style>
 </head>
@@ -202,7 +367,7 @@
                 </div>
 
                 <div class="profile-col-center">
-                    <div class="card" style="margin-bottom: 0;" id="grades-section">
+                    <div class="card"  id="grades-section">
                         <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem;">
                             <h3 style="margin-bottom: 0;">Grades Across Courses</h3>
                             <a href="{{ route('profile.enrollments') }}" class="btn-outline" style="margin-top: 0;">View all by year & semester →</a>
@@ -229,9 +394,7 @@
                             <p class="progress-text">No grades yet. Grades from your current enrolled courses will appear here.</p>
                         @endif
                     </div>
-                </div>
-
-                <div class="profile-col-right">
+                   
                     <div class="card" style="margin-bottom: 0;">
                         <h3>Discussion Activity</h3>
                         @if($discussionThreads->isNotEmpty())
@@ -261,6 +424,9 @@
                     </div>
                 </div>
             </div>
+       
+
+                
 
             <div class="card">
                 <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem;">

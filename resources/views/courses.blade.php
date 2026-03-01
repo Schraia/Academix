@@ -19,17 +19,17 @@
         }
         .sidebar {
             width: 250px;
-            min-height: 100vh;
+            height: 100vh;
+            position: sticky;
+            top: 0;
             flex-shrink: 0;
             background: linear-gradient(180deg, #b91c1c 0%, #7f1d1d 100%);
             color: white;
             display: flex;
             flex-direction: column;
             box-shadow: 4px 0 25px rgba(0, 0, 0, 0.25);
-            position: relative;
             overflow: hidden;
-            overflow-x: hidden;
-        }
+        } 
 
         .sidebar::before {
             content: '';
