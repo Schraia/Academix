@@ -15,6 +15,8 @@ body{
     color:#111827;
 }
 
+/* ===== LAYOUT ===== */
+
 .dashboard-container{
     display:flex;
     min-height:100vh;
@@ -78,7 +80,10 @@ body{
 .main-content{
     flex:1;
     padding:2.5rem 3rem;
+    max-width:1400px;
 }
+
+/* Header */
 
 .back-link{
     display:inline-block;
@@ -96,23 +101,24 @@ body{
 .course-code{
     color:#6b7280;
     font-size:.9rem;
-    margin-bottom:1rem;
+    margin-bottom:1.25rem;
 }
 
 /* ===== COURSE NAV ===== */
 
 .course-nav{
     display:flex;
-    gap:2rem;
-    border-bottom:2px solid #d1d5db;
-    margin-bottom:2rem;
-    padding-bottom:.75rem;
+    gap:2.5rem;
+    border-bottom:2px solid #e5e7eb;
+    margin-bottom:2.5rem;
+    padding-bottom:.85rem;
 }
 
 .course-nav a{
     text-decoration:none;
     font-weight:600;
     color:#6b7280;
+    position:relative;
     transition:.2s ease;
 }
 
@@ -120,18 +126,50 @@ body{
     color:#b91c1c;
 }
 
-/* ===== GRID LAYOUT ===== */
+/* ===== GRID ===== */
 
 .top-section{
     display:grid;
     grid-template-columns:2fr 1fr;
-    gap:2.5rem;
+    gap:3rem;
+    align-items:start;
+    position:relative;
 }
 
-@media(max-width:1000px){
+/* subtle divider */
+.top-section::after{
+    content:"";
+    position:absolute;
+    top:0;
+    bottom:0;
+    left:66%;
+    width:1px;
+    background:#e5e7eb;
+}
+
+@media(max-width:1100px){
     .top-section{
         grid-template-columns:1fr;
     }
+    .top-section::after{
+        display:none;
+    }
+}
+
+/* ===== LEFT COLUMN ===== */
+
+.left-column{
+    display:flex;
+    flex-direction:column;
+    gap:2rem;
+}
+
+/* ===== RIGHT COLUMN ===== */
+
+.right-column{
+    display:flex;
+    flex-direction:column;
+    gap:1.75rem;
 }
 
 /* ===== BANNER ===== */
@@ -139,8 +177,8 @@ body{
 .course-banner,
 .banner-placeholder{
     width:100%;
-    height:220px;
-    border-radius:16px;
+    height:230px;
+    border-radius:18px;
     object-fit:cover;
 }
 
@@ -157,22 +195,24 @@ body{
 
 .card{
     background:white;
-    border-radius:16px;
-    padding:1.5rem;
-    margin-bottom:1.5rem;
-    box-shadow:0 6px 18px rgba(0,0,0,.05);
+    border-radius:18px;
+    padding:1.75rem;
+    box-shadow:0 8px 24px rgba(0,0,0,.05);
 }
 
 .card h3{
-    font-size:.9rem;
+    font-size:.8rem;
     font-weight:700;
-    margin-bottom:.75rem;
+    margin-bottom:1rem;
+    text-transform:uppercase;
+    letter-spacing:.6px;
+    color:#6b7280;
 }
 
 .preview{
-    font-size:.85rem;
-    color:#4b5563;
-    margin-bottom:.5rem;
+    font-size:.875rem;
+    color:#374151;
+    margin-bottom:.6rem;
 }
 
 .link-go{
@@ -182,9 +222,13 @@ body{
     text-decoration:none;
 }
 
+.link-go:hover{
+    text-decoration:underline;
+}
+
 .course-description{
     font-size:.95rem;
-    line-height:1.7;
+    line-height:1.75;
     color:#374151;
 }
 </style>
@@ -228,11 +272,10 @@ body{
     <a href="{{ route('courses.grades',$course) }}">Grades</a>
 </div>
 
-<!-- TOP GRID -->
 <div class="top-section">
 
-    <!-- LEFT COLUMN -->
-    <div>
+    <!-- LEFT -->
+    <div class="left-column">
 
         @if($course->banner_path)
             <img src="{{ asset('storage/'.$course->banner_path) }}" class="course-banner">
@@ -242,7 +285,7 @@ body{
             </div>
         @endif
 
-        <div class="card" style="margin-top:1.5rem;">
+        <div class="card">
             <h3>About This Course</h3>
             <div class="course-description">
                 {{ $course->description ?? 'No description available yet.' }}
@@ -251,8 +294,8 @@ body{
 
     </div>
 
-    <!-- RIGHT COLUMN -->
-    <div>
+    <!-- RIGHT -->
+    <div class="right-column">
 
         <div class="card">
             <h3>Ongoing Discussions</h3>
