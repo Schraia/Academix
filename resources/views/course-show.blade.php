@@ -80,8 +80,6 @@ body{
     padding:2.5rem 3rem;
 }
 
-/* Back link */
-
 .back-link{
     display:inline-block;
     margin-bottom:1.25rem;
@@ -112,10 +110,9 @@ body{
 .course-nav{
     display:flex;
     gap:2rem;
-    border-bottom:2px solid #d1d5db; 
+    border-bottom:2px solid #cbd5e1;
     margin-bottom:1.5rem;
     padding-bottom:.75rem;
-
 }
 
 .course-nav a{
@@ -123,8 +120,8 @@ body{
     font-weight:600;
     font-size:.95rem;
     color:#6b7280;
-    padding-bottom:.5rem;
     position:relative;
+    padding-bottom:.5rem;
     transition:.2s ease;
 }
 
@@ -140,11 +137,11 @@ body{
     content:"";
     position:absolute;
     left:0;
-    bottom:-8px;
-    height:3px;
+    bottom:-10px;
+    height:4px;
     width:100%;
     background:#b91c1c;
-    border-radius:2px;
+    border-radius:4px;
 }
 
 /* ===== BANNER ===== */
@@ -152,9 +149,9 @@ body{
 .course-banner,
 .banner-placeholder{
     width:100%;
-    height:180px;
-    border-radius:14px;
-    margin-bottom:1.5rem;
+    height:200px;
+    border-radius:16px;
+    margin-bottom:2rem;
     object-fit:cover;
 }
 
@@ -172,41 +169,36 @@ body{
 .content-grid{
     display:grid;
     grid-template-columns:2fr 1fr;
-    gap:2rem;
+    gap:2.5rem;
 }
 
-@media(max-width:900px){
+@media(max-width:1000px){
     .content-grid{grid-template-columns:1fr}
-}
-
-/* ===== DESCRIPTION ===== */
-
-.course-description{
-    font-size:.95rem;
-    line-height:1.7;
-    color:#374151;
 }
 
 /* ===== CARDS ===== */
 
-.activity-box{
+.card{
     background:white;
-    border-radius:14px;
-    padding:1.25rem 1.5rem;
-    margin-bottom:1.25rem;
-    box-shadow:0 4px 12px rgba(0,0,0,.04);
+    border-radius:16px;
+    padding:1.5rem;
+    margin-bottom:1.75rem;
+    box-shadow:0 6px 20px rgba(0,0,0,.05);
 }
 
-.activity-box h3{
-    font-size:.9rem;
+.card h3{
+    font-size:.85rem;
     font-weight:700;
-    margin-bottom:.75rem;
+    margin-bottom:1rem;
+    text-transform:uppercase;
+    letter-spacing:.5px;
+    color:#6b7280;
 }
 
 .preview{
-    font-size:.85rem;
-    color:#4b5563;
-    margin-bottom:.5rem;
+    font-size:.875rem;
+    color:#374151;
+    margin-bottom:.6rem;
 }
 
 .link-go{
@@ -216,12 +208,19 @@ body{
     text-decoration:none;
 }
 .link-go:hover{text-decoration:underline}
+
+.course-description{
+    font-size:.95rem;
+    line-height:1.7;
+    color:#374151;
+}
 </style>
 </head>
 
 <body>
 <div class="dashboard-container">
 
+<!-- SIDEBAR -->
 <div class="sidebar">
     <div class="sidebar-header">
         <img src="{{ asset('images/logo.png') }}" width="120">
@@ -242,6 +241,7 @@ body{
     </div>
 </div>
 
+<!-- MAIN -->
 <div class="main-content">
 
 <a href="{{ route('courses.index') }}" class="back-link">← Back to Courses</a>
@@ -251,7 +251,6 @@ body{
     <div class="course-code">{{ $course->code ?? $course->id }}</div>
 </div>
 
-<!-- Clean LMS Navigation -->
 <div class="course-nav">
     <a href="{{ route('courses.lessons',$course) }}">Lessons</a>
     <a href="{{ route('courses.announcements',$course) }}">Announcements</a>
@@ -268,41 +267,52 @@ body{
 
 <div class="content-grid">
 
-<div>
-    <p class="course-description">
-        {{ $course->description ?? 'No description available yet.' }}
-    </p>
-</div>
+    <!-- LEFT COLUMN -->
+    <div>
 
-<div>
-    <div class="activity-box">
-        <h3>Ongoing Discussions</h3>
-        @forelse($ongoingThreads as $thread)
-            <div class="preview">{{ Str::limit($thread->title,60) }}</div>
-        @empty
-            <div class="preview">No discussions yet.</div>
-        @endforelse
-        <a href="{{ route('courses.discussions',$course) }}" class="link-go">Open Discussions →</a>
+        <div class="card">
+            <h3>About This Course</h3>
+            <div class="course-description">
+                {{ $course->description ?? 'No description available yet.' }}
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>Ongoing Discussions</h3>
+            @forelse($ongoingThreads as $thread)
+                <div class="preview">{{ Str::limit($thread->title,60) }}</div>
+            @empty
+                <div class="preview">No discussions yet.</div>
+            @endforelse
+            <a href="{{ route('courses.discussions',$course) }}" class="link-go">
+                Open Discussions →
+            </a>
+        </div>
+
     </div>
 
-    <div class="activity-box">
-        <h3>Last Lesson</h3>
-        @if($lastLesson)
-            <div class="preview">{{ $lastLesson->title }}</div>
-        @else
-            <div class="preview">No lessons uploaded.</div>
-        @endif
-    </div>
+    <!-- RIGHT COLUMN -->
+    <div>
 
-    <div class="activity-box">
-        <h3>Recently Opened</h3>
-        @forelse($recentLessons as $lesson)
-            <div class="preview">{{ $lesson->title }}</div>
-        @empty
-            <div class="preview">No recent files.</div>
-        @endforelse
+        <div class="card">
+            <h3>Last Lesson</h3>
+            @if($lastLesson)
+                <div class="preview">{{ $lastLesson->title }}</div>
+            @else
+                <div class="preview">No lessons uploaded.</div>
+            @endif
+        </div>
+
+        <div class="card">
+            <h3>Recently Opened</h3>
+            @forelse($recentLessons as $lesson)
+                <div class="preview">{{ $lesson->title }}</div>
+            @empty
+                <div class="preview">No recent files.</div>
+            @endforelse
+        </div>
+
     </div>
-</div>
 
 </div>
 
