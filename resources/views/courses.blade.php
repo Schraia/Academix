@@ -388,5 +388,6 @@ cardBtn.addEventListener('click', () => {
     listView.classList.add('d-none');
     cardBtn.classList.add('active');
     listBtn.classList.remove('active');
+    
 });
 </script>
