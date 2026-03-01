@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Certificate;
 use App\Models\Course;
 use App\Models\CourseAnnouncement;
 use App\Models\CourseGrade;
@@ -10,6 +11,7 @@ use App\Models\LessonModule;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class CourseUploadController extends Controller
 {
@@ -28,8 +30,11 @@ class CourseUploadController extends Controller
         ]);
 
         $attachmentPath = null;
+        $attachmentOriginalName = null;
         if ($request->hasFile('attachment')) {
-            $attachmentPath = $request->file('attachment')->store('lessons', 'public');
+            $file = $request->file('attachment');
+            $attachmentPath = $file->store('lessons', 'public');
+            $attachmentOriginalName = $file->getClientOriginalName();
         }
 
         $order = $course->lessonModules()->max('order') + 1;
@@ -39,11 +44,16 @@ class CourseUploadController extends Controller
             'description' => $request->description,
             'content' => $request->content,
             'attachment_path' => $attachmentPath,
+            'attachment_original_name' => $attachmentOriginalName,
             'order' => $order,
             'type' => 'lesson',
             'status' => 'published',
+            'published_at' => now(),
         ]);
 
+        if ($request->input('return_to') === 'lessons') {
+            return redirect()->route('courses.lessons', $course)->with('success', 'Lesson added.');
+        }
         return redirect()->route('courses.show', $course)->with('success', 'Lesson added.');
     }
 
@@ -73,19 +83,30 @@ class CourseUploadController extends Controller
             'image_path' => $imagePath,
         ]);
 
+        if ($request->input('return_to') === 'announcements') {
+            return redirect()->route('courses.announcements', $course)->with('success', 'Announcement added.');
+        }
         return redirect()->route('courses.show', $course)->with('success', 'Announcement added.');
     }
 
-    public function gradesForm(Course $course)
+    public function gradesForm(Request $request, Course $course)
     {
         $enrolled = Enrollment::where('course_id', $course->getKey())
             ->where('status', 'enrolled')
             ->with('user:id,name,email')
             ->get();
 
+        $sections = $enrolled->pluck('section_code')->filter()->unique()->sort()->values();
+        if ($sections->isEmpty()) {
+            $sections = $enrolled->pluck('section_name')->filter()->unique()->sort()->values();
+        }
+
         return view('upload.grade', [
             'course' => $course,
             'enrolledUsers' => $enrolled,
+            'sections' => $sections->values()->all(),
+            'prefillUserId' => $request->query('user_id'),
+            'prefillSection' => $request->query('section'),
         ]);
     }
 
@@ -93,7 +114,9 @@ class CourseUploadController extends Controller
     {
         $request->validate([
             'user_id' => 'required|exists:users,id',
+            'section_code' => 'nullable|string|max:50',
             'name' => 'required|string|max:255',
+            'category' => 'required|in:exam,quiz,activity',
             'score' => 'nullable|numeric',
             'max_score' => 'nullable|numeric',
         ]);
@@ -110,12 +133,71 @@ class CourseUploadController extends Controller
         CourseGrade::create([
             'course_id' => $course->getKey(),
             'user_id' => $request->user_id,
+            'section_code' => $request->section_code ?: null,
             'name' => $request->name,
+            'category' => $request->category,
             'score' => $request->score,
             'max_score' => $request->max_score ?? 100,
             'graded_at' => now(),
         ]);
 
+        if ($request->input('return_to') === 'grades') {
+            return redirect()->route('courses.grades', $course)->with('success', 'Grade recorded.');
+        }
         return redirect()->route('courses.show', $course)->with('success', 'Grade recorded.');
+    }
+
+    public function certificatesForm(Request $request, Course $course)
+    {
+        $enrolled = Enrollment::where('course_id', $course->getKey())
+            ->where('status', 'enrolled')
+            ->with('user:id,name,email')
+            ->get();
+
+        return view('upload.certificate', [
+            'course' => $course,
+            'enrolledUsers' => $enrolled,
+            'prefillUserId' => $request->query('user_id'),
+        ]);
+    }
+
+    public function storeCertificate(Request $request, Course $course)
+    {
+        $request->validate([
+            'user_id' => 'required|exists:users,id',
+            'issued_date' => 'required|date',
+            'expiry_date' => 'nullable|date|after_or_equal:issued_date',
+            'certificate_file' => 'nullable|file|mimes:pdf,png,jpg,jpeg|max:10240',
+        ]);
+
+        $enrollment = Enrollment::where('course_id', $course->getKey())
+            ->where('user_id', $request->user_id)
+            ->where('status', 'enrolled')
+            ->first();
+
+        if (! $enrollment) {
+            return back()->withErrors(['user_id' => 'Selected user is not enrolled in this course.']);
+        }
+
+        $certificateUrl = null;
+        if ($request->hasFile('certificate_file')) {
+            $file = $request->file('certificate_file');
+            $certificateUrl = $file->store('certificates', 'public');
+        }
+
+        do {
+            $certificateNumber = 'CERT-' . strtoupper(Str::random(10));
+        } while (Certificate::where('certificate_number', $certificateNumber)->exists());
+
+        Certificate::create([
+            'user_id' => $request->user_id,
+            'course_id' => $course->getKey(),
+            'certificate_number' => $certificateNumber,
+            'issued_date' => $request->issued_date,
+            'expiry_date' => $request->expiry_date,
+            'certificate_url' => $certificateUrl,
+        ]);
+
+        return redirect()->route('courses.show', $course)->with('success', 'Certificate issued.');
     }
 }

@@ -15,6 +15,7 @@
     <div class="form-card">
         <form action="{{ route('courses.upload.lessons.store', $course) }}" method="POST" enctype="multipart/form-data">
             @csrf
+            @if(request('return_to'))<input type="hidden" name="return_to" value="{{ request('return_to') }}">@endif
             <div class="form-group">
                 <label for="title">Title *</label>
                 <input type="text" id="title" name="title" value="{{ old('title') }}" required>

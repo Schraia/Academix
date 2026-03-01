@@ -2,6 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Course;
+use App\Models\CourseAnnouncement;
+use App\Models\LessonModule;
+use App\Models\UserCourseSectionView;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 
 class DashboardController extends Controller
@@ -10,46 +15,155 @@ class DashboardController extends Controller
     {
         $user = Auth::user();
 
-        // Only students without current-year enrollments are sent to enroll page
+        // Only students without current-year enrollments are sent to enroll page; instructor/admin skip
         if (! $user->isInstructor() && ! $user->isAdmin() && ! $user->hasCurrentYearEnrollments()) {
             return redirect()->route('enroll');
         }
 
         $schoolYear = now()->year;
-        $dayOfWeek = (int) date('w'); // 0=Sun, 1=Mon, ..., 6=Sat
+        $nowUtc8 = Carbon::now('+08:00');
+        $dayOfWeek = (int) $nowUtc8->format('w');
 
         $enrollments = $user->enrollments()
             ->whereYear('enrolled_at', $schoolYear)
             ->where('status', 'enrolled')
-            ->get(['course_id', 'course_name', 'time_slot', 'days']);
+            ->with('course')
+            ->get();
+
+        // Dashboard cards: students use enrollments; instructor uses assigned courses; admin uses all courses
+        $dashboardCards = collect();
+        if ($user->isInstructor()) {
+            $assignedCourses = $user->courses()->orderBy('title')->get();
+            $dashboardCards = $assignedCourses->map(fn ($c) => (object) [
+                'course' => $c,
+                'course_id' => $c->id,
+                'enrollment' => null,
+            ]);
+        } elseif ($user->isAdmin()) {
+            $allCourses = Course::orderBy('title')->get();
+            $dashboardCards = $allCourses->map(fn ($c) => (object) [
+                'course' => $c,
+                'course_id' => $c->id,
+                'enrollment' => null,
+            ]);
+        } else {
+            $dashboardCards = $enrollments->map(fn ($e) => (object) [
+                'course' => $e->course,
+                'course_id' => $e->course_id,
+                'enrollment' => $e,
+            ]);
+        }
+
+        $courseIds = $dashboardCards->pluck('course_id')->filter()->unique()->values();
+
+        // Per-card notification counts (announcements, lessons, grades, discussions)
+        $views = [];
+        if ($courseIds->isNotEmpty()) {
+            $viewModels = UserCourseSectionView::where('user_id', $user->id)
+                ->whereIn('course_id', $courseIds->toArray())
+                ->get()
+                ->keyBy('course_id');
+            foreach ($courseIds as $cid) {
+                $views[$cid] = $viewModels->get($cid);
+            }
+        }
+
+        $cardBadges = [];
+        foreach ($dashboardCards as $item) {
+            $cid = $item->course_id;
+            $c = $item->course;
+            $view = $views[$cid] ?? null;
+
+            $annQ = $c->courseAnnouncements();
+            if (! $user->isInstructor() && ! $user->isAdmin()) {
+                $annQ->where('is_visible', true);
+            }
+            $annCount = $view && $view->announcements_seen_at
+                ? (clone $annQ)->where('created_at', '>', $view->announcements_seen_at)->count()
+                : (clone $annQ)->count();
+
+            $lessonQ = $c->lessonModules()->where('status', 'published');
+            $lessonCount = $view && $view->lessons_seen_at
+                ? (clone $lessonQ)->where('updated_at', '>', $view->lessons_seen_at)->count()
+                : (clone $lessonQ)->count();
+
+            $gradeQ = $c->courseGrades()->where('user_id', $user->id)->whereNotNull('graded_at');
+            if (! $user->isInstructor() && ! $user->isAdmin()) {
+                $gradeQ->where('is_visible', true);
+            }
+            $gradeCount = $view && $view->grades_seen_at
+                ? (clone $gradeQ)->where('graded_at', '>', $view->grades_seen_at)->count()
+                : (clone $gradeQ)->count();
+
+            $discCount = $view && $view->discussions_seen_at
+                ? $c->discussionThreads()->where('created_at', '>', $view->discussions_seen_at)->count()
+                : $c->discussionThreads()->count();
+
+            $cardBadges[$cid] = (object) [
+                'announcements' => $annCount,
+                'lessons' => $lessonCount,
+                'grades' => $gradeCount,
+                'discussions' => $discCount,
+            ];
+        }
 
         $todaysSchedules = $enrollments->filter(function ($e) use ($dayOfWeek) {
             return $this->enrollmentMatchesDayOfWeek($e->days ?? '', $dayOfWeek);
         })->map(function ($e) {
             $timeSlot = $e->time_slot ?? '';
-            $courseName = $e->course_name ?? '';
+            $courseName = $e->course_name ?? ($e->course?->title ?? '');
             $displayTitle = strlen($courseName) > 35 ? substr($courseName, 0, 32) . '...' : $courseName;
+            $courseCode = $e->course?->code ?? '';
             return [
                 'course_id' => $e->course_id,
                 'time_slot' => $timeSlot,
                 'course_name' => $courseName,
                 'display_title' => $displayTitle,
+                'course_code' => $courseCode,
             ];
         })->values();
 
         $todaysSchedules = $this->sortSchedulesByTime($todaysSchedules);
 
-        $dateFormatted = date('l - m/d/Y'); // e.g. "Tuesday - 02/24/2026"
+        $dateFormatted = $nowUtc8->format('l - m/d/Y');
+
+        $announcements = collect();
+        if ($courseIds->isNotEmpty()) {
+            $announcements = CourseAnnouncement::whereIn('course_id', $courseIds)
+                ->when(! $user->isInstructor() && ! $user->isAdmin(), fn ($q) => $q->where('is_visible', true))
+                ->with('course')
+                ->orderByDesc('created_at')
+                ->limit(15)
+                ->get();
+        }
+
+        $recentlyOpened = collect();
+        if ($courseIds->isNotEmpty()) {
+            $recentlyOpened = LessonModule::whereIn('course_id', $courseIds)
+                ->whereNotNull('attachment_path')
+                ->where('status', 'published')
+                ->with('course')
+                ->orderByDesc('updated_at')
+                ->limit(10)
+                ->get();
+        }
+
+        $profileRoleLabel = $user->isAdmin() ? 'Admin' : ($user->isInstructor() ? 'Instructor' : ($enrollments->first()?->section_name ?? 'Student'));
 
         return view('dashboard', [
             'todaysSchedules' => $todaysSchedules,
             'dateFormatted' => $dateFormatted,
+            'enrollments' => $enrollments,
+            'dashboardCards' => $dashboardCards,
+            'cardBadges' => $cardBadges,
+            'profileRoleLabel' => $profileRoleLabel,
+            'announcements' => $announcements,
+            'recentlyOpened' => $recentlyOpened,
         ]);
     }
 
     /**
      * Check if enrollment days string includes the given day of week.
-     * days: MW, TTH, F, S, etc. (0=Sun, 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat)
      */
     protected function enrollmentMatchesDayOfWeek(?string $days, int $dayOfWeek): bool
     {
@@ -78,9 +192,6 @@ class DashboardController extends Controller
         return false;
     }
 
-    /**
-     * Sort schedule items by start time (time_slot like "8:00 AM - 9:30 AM").
-     */
     protected function sortSchedulesByTime($schedules)
     {
         return $schedules->sortBy(function ($item) {
@@ -107,4 +218,3 @@ class DashboardController extends Controller
         return 0;
     }
 }
-

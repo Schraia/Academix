@@ -49,9 +49,24 @@ class Course extends Model
         return $this->hasMany(CourseGrade::class, 'course_id');
     }
 
+    public function courseGradeWeights()
+    {
+        return $this->hasMany(CourseGradeWeight::class, 'course_id');
+    }
+
+    public function courseAnnouncements()
+    {
+        return $this->hasMany(CourseAnnouncement::class, 'course_id');
+    }
+
     public function users()
     {
         return $this->belongsToMany(User::class, 'course_instructor');
+    }
+
+    public function certificates()
+    {
+        return $this->hasMany(Certificate::class);
     }
 }
 

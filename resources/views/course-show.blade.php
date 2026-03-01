@@ -9,29 +9,19 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f3f4f6; }
         .dashboard-container { display: flex; min-height: 100vh; }
-        .sidebar {
-            width: 250px; min-height: 100vh; flex-shrink: 0;
-            background: linear-gradient(180deg, #ef4444 0%, #dc2626 100%);
-            color: white; display: flex; flex-direction: column;
-            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
-        }
-        .sidebar-header { padding: 2rem 1.5rem; border-bottom: 1px solid rgba(255, 255, 255, 0.1); }
+        .sidebar { width: 250px; min-height: 100vh; flex-shrink: 0; background: linear-gradient(180deg, #b91c1c 0%, #7f1d1d 100%); color: white; display: flex; flex-direction: column; box-shadow: 4px 0 25px rgba(0, 0, 0, 0.25); position: relative; overflow: hidden; overflow-x: hidden; }
+        .sidebar::before { content: ''; position: absolute; top: 0; right: 0; width: 3px; height: 100%; background: linear-gradient(to bottom, rgba(255,255,255,0.5), transparent); opacity: 0.3; }
+        .sidebar-header { padding: 2rem 1.5rem; border-bottom: 1px solid rgba(255, 255, 255, 0.1); display: flex; justify-content: center; align-items: center; }
         .sidebar-header h2 { font-size: 1.5rem; font-weight: 700; }
         .nav-menu { flex: 1; min-height: 0; overflow-y: auto; padding: 1rem 0; }
-        .nav-item {
-            padding: 1rem 1.5rem; display: flex; align-items: center; gap: 0.75rem;
-            color: inherit; text-decoration: none; transition: background-color 0.3s; cursor: pointer;
-        }
-        .nav-item:hover { background-color: rgba(255, 255, 255, 0.1); }
-        .nav-item.active { background-color: rgba(255, 255, 255, 0.2); }
-        .nav-item svg { width: 20px; height: 20px; flex-shrink: 0; }
-        .nav-logout { margin-top: auto; padding: 1rem 1.5rem; border-top: 1px solid rgba(255, 255, 255, 0.1); background: linear-gradient(180deg, #ef4444 0%, #dc2626 100%); }
-        .logout-btn {
-            width: 100%; padding: 1rem 1.5rem; background: transparent;
-            color: white; border: none; cursor: pointer; font-size: 1rem;
-            display: flex; align-items: center; gap: 0.75rem; text-align: left;
-        }
-        .logout-btn:hover { background-color: rgba(255, 255, 255, 0.1); }
+        .nav-item { padding: 1rem 1.5rem; cursor: pointer; transition: all 0.3s ease; display: flex; align-items: center; gap: 0.75rem; position: relative; font-weight: 500; border-left: 4px solid transparent; }
+        .nav-item:hover { background: rgba(255, 255, 255, 0.08); padding-left: 1.75rem; }
+        .nav-item:hover svg { transform: scale(1.1); }
+        .nav-item svg { width: 20px; height: 20px; transition: all 0.3s ease; }
+        .nav-item.active { background: rgba(255, 255, 255, 0.15); border-left: 4px solid white; }
+        .nav-logout { margin-top: auto; padding: 1rem 1.5rem; border-top: 1px solid rgba(255, 255, 255, 0.08); position: sticky; bottom: 0; background: transparent; }
+        .logout-btn { width: 100%; padding: 0.75rem; background: rgba(255, 255, 255, 0.1); color: white; border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 10px; cursor: pointer; font-size: 1rem; font-weight: 600; transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; gap: 0.5rem; }
+        .logout-btn:hover { background: white; color: #b91c1c; transform: translateY(-2px); }
         .logout-btn svg { width: 20px; height: 20px; }
         .main-content { flex: 1; padding: 2rem 3rem; display: flex; flex-direction: column; min-width: 0; }
         .main-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; margin-bottom: 1.5rem; }
@@ -102,7 +92,7 @@
     <div class="dashboard-container">
         <div class="sidebar">
             <div class="sidebar-header">
-                <h2>Academix</h2>
+                <img src="{{ asset('images/logo.png') }}" alt="Academix Logo" class="sidebar-logo">
             </div>
             <nav class="nav-menu">
                 <a href="{{ route('dashboard') }}" class="nav-item">
@@ -113,9 +103,9 @@
                     <svg fill="currentColor" viewBox="0 0 20 20"><path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"/><path fill-rule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clip-rule="evenodd"/></svg>
                     <span>Courses</span>
                 </a>
-                <a href="#" class="nav-item"><svg fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-6-3a2 2 0 11-4 0 2 2 0 014 0zm-2 4a5 5 0 00-4.546 2.916A5.986 5.986 0 0010 16a5.986 5.986 0 004.546-2.084A5 5 0 0010 11z" clip-rule="evenodd"/></svg><span>Profile</span></a>
+                <a href="{{ route('profile.show') }}" class="nav-item"><svg fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-6-3a2 2 0 11-4 0 2 2 0 014 0zm-2 4a5 5 0 00-4.546 2.916A5.986 5.986 0 0010 16a5.986 5.986 0 004.546-2.084A5 5 0 0010 11z" clip-rule="evenodd"/></svg><span>Profile</span></a>
                 <a href="{{ route('enroll') }}" class="nav-item"><svg fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"/></svg><span>Enroll Online</span></a>
-                <a href="#" class="nav-item"><svg fill="currentColor" viewBox="0 0 20 20"><path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z"/></svg><span>Certificates</span></a>
+                <a href="{{ route('certificates.index') }}" class="nav-item"><svg fill="currentColor" viewBox="0 0 20 20"><path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z"/></svg><span>Certificates</span></a>
             </nav>
             <div class="nav-logout">
                 <form method="POST" action="{{ route('logout') }}">@csrf
@@ -135,7 +125,7 @@
                     <div class="info">
                         <div class="name">{{ Auth::user()->name }}</div>
                         <div class="status">{{ $enrollment->section_name ?? 'Student' }}</div>
-                        <a href="#" class="btn-profile">Profile</a>
+                        <a href="{{ route('profile.show') }}" class="btn-profile">Profile</a>
                     </div>
                 </div>
                 <div class="hamburger" aria-label="Menu">
@@ -157,6 +147,7 @@
                                 <a href="{{ route('courses.upload.lessons', $course) }}">Lessons</a>
                                 <a href="{{ route('courses.upload.announcements', $course) }}">Announcements</a>
                                 <a href="{{ route('courses.upload.grades', $course) }}">Grades</a>
+                                <a href="{{ route('courses.upload.certificates', $course) }}">Issue certificate</a>
                             </div>
                         </div>
                         @endif
@@ -191,7 +182,7 @@
                         <a href="{{ route('courses.discussions', $course) }}" class="link-go">Go to Discussions → @if($discussionCount > 0)<span class="badge">{{ $discussionCount }} New Notifications</span>@endif</a>
                     </div>
                     <div class="activity-box">
-                        <h3>Last lesson is uploaded</h3>
+                        <h3>Last lesson uploaded:</h3>
                         @if($lastLesson)
                             <div class="preview" style="font-weight: 700;">{{ $lastLesson->title }}</div>
                             <div class="preview" style="padding-left: 1.25rem; font-weight: normal;">{{ Str::limit($lastLesson->description, 100) ?: '—' }}</div>
@@ -199,6 +190,7 @@
                                 @php $ext = pathinfo($lastLesson->attachment_path, PATHINFO_EXTENSION); $filename = $lastLesson->title . ($ext ? '.' . $ext : ''); @endphp
                                 <div class="preview" style="padding-left: 1.25rem; font-weight: normal; margin-top: 0.25rem;"><a href="{{ route('courses.lessons.preview', [$course, $lastLesson]) }}" style="color: #dc2626; text-decoration: none;">{{ $filename }}</a></div>
                             @endif
+                            <div class="preview" style="padding-left: 1.25rem; font-size: 0.8125rem; color: #6b7280; margin-top: 0.25rem;">{{ ($lastLesson->published_at ?? $lastLesson->updated_at)->format('M j, Y g:i A') }}</div>
                         @else
                             <div class="preview">No lessons yet.</div>
                         @endif

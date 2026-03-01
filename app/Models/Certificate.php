@@ -5,25 +5,22 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class CourseGrade extends Model
+class Certificate extends Model
 {
     use HasFactory;
 
     protected $fillable = [
         'user_id',
         'course_id',
-        'section_code',
-        'name',
-        'category',
-        'score',
-        'max_score',
-        'graded_at',
-        'is_visible',
+        'certificate_number',
+        'issued_date',
+        'expiry_date',
+        'certificate_url',
     ];
 
     protected $casts = [
-        'is_visible' => 'boolean',
-        'graded_at' => 'datetime',
+        'issued_date' => 'date',
+        'expiry_date' => 'date',
     ];
 
     public function user()

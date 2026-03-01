@@ -8,6 +8,8 @@ use App\Http\Controllers\EnrollController;
 use App\Http\Controllers\CourseController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\CourseUploadController;
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\CertificatesController;
 
 Route::get('/', function () {
     return redirect('/login');
@@ -39,6 +41,16 @@ Route::middleware('auth')->group(function () {
     Route::post('/courses/{course}/discussions/{thread}/messages', [CourseController::class, 'storeMessage'])->name('courses.discussions.messages.store');
     Route::get('/courses/{course}/announcements', [CourseController::class, 'announcements'])->name('courses.announcements');
     Route::get('/courses/{course}/lessons/{lesson}/preview', [CourseController::class, 'lessonPreview'])->name('courses.lessons.preview');
+    Route::post('/courses/{course}/lessons/{lesson}/progress', [CourseController::class, 'toggleLessonProgress'])->name('courses.lessons.progress.toggle');
+    Route::get('/profile', [ProfileController::class, 'show'])->name('profile.show');
+    Route::get('/profile/progress', [ProfileController::class, 'progressBreakdown'])->name('profile.progress');
+    Route::get('/profile/enrollments', [ProfileController::class, 'enrollmentsIndex'])->name('profile.enrollments');
+    Route::post('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::post('/profile/picture/remove', [ProfileController::class, 'removePicture'])->name('profile.picture.remove');
+    Route::post('/profile/discussions/{thread}/unfollow', [ProfileController::class, 'unfollowDiscussion'])->name('profile.discussions.unfollow');
+    Route::get('/certificates', [CertificatesController::class, 'index'])->name('certificates.index');
+    Route::get('/certificates/course/{course}', [CertificatesController::class, 'show'])->name('certificates.show');
+    Route::get('/certificates/{certificate}/download', [CertificatesController::class, 'download'])->name('certificates.download');
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
     Route::middleware('admin')->group(function () {
@@ -56,6 +68,8 @@ Route::middleware('auth')->group(function () {
         Route::post('/courses/{course}/upload/announcements', [CourseUploadController::class, 'storeAnnouncement'])->name('courses.upload.announcements.store');
         Route::get('/courses/{course}/upload/grades', [CourseUploadController::class, 'gradesForm'])->name('courses.upload.grades');
         Route::post('/courses/{course}/upload/grades', [CourseUploadController::class, 'storeGrade'])->name('courses.upload.grades.store');
+        Route::get('/courses/{course}/upload/certificates', [CourseUploadController::class, 'certificatesForm'])->name('courses.upload.certificates');
+        Route::post('/courses/{course}/upload/certificates', [CourseUploadController::class, 'storeCertificate'])->name('courses.upload.certificates.store');
         Route::get('/courses/{course}/lessons/{lesson}/edit', [CourseController::class, 'editLesson'])->name('courses.lessons.edit');
         Route::post('/courses/{course}/lessons/{lesson}', [CourseController::class, 'updateLesson'])->name('courses.lessons.update');
         Route::post('/courses/{course}/lessons/{lesson}/toggle', [CourseController::class, 'toggleLesson'])->name('courses.lessons.toggle');
@@ -64,6 +78,12 @@ Route::middleware('auth')->group(function () {
         Route::post('/courses/{course}/announcements/{announcement}', [CourseController::class, 'updateAnnouncement'])->name('courses.announcements.update');
         Route::post('/courses/{course}/announcements/{announcement}/toggle', [CourseController::class, 'toggleAnnouncement'])->name('courses.announcements.toggle');
         Route::delete('/courses/{course}/announcements/{announcement}', [CourseController::class, 'destroyAnnouncement'])->name('courses.announcements.destroy');
+        Route::get('/courses/{course}/grade-weights', [CourseController::class, 'gradeWeights'])->name('courses.grade-weights');
+        Route::post('/courses/{course}/grade-weights', [CourseController::class, 'updateGradeWeights'])->name('courses.grade-weights.update');
+        Route::get('/courses/{course}/grade-section', [CourseController::class, 'gradeSectionForm'])->name('courses.grade-section');
+        Route::post('/courses/{course}/grade-section', [CourseController::class, 'storeGradeSection'])->name('courses.grade-section.store');
+        Route::get('/courses/{course}/rollcall', [CourseController::class, 'rollCall'])->name('courses.rollcall');
+        Route::post('/courses/{course}/rollcall', [CourseController::class, 'storeRollCall'])->name('courses.rollcall.store');
         Route::get('/courses/{course}/grades/{grade}/edit', [CourseController::class, 'editGrade'])->name('courses.grades.edit');
         Route::post('/courses/{course}/grades/{grade}', [CourseController::class, 'updateGrade'])->name('courses.grades.update');
         Route::post('/courses/{course}/grades/{grade}/toggle', [CourseController::class, 'toggleGrade'])->name('courses.grades.toggle');

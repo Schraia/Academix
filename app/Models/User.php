@@ -23,6 +23,9 @@ class User extends Authenticatable
         'password',
         'google_id',
         'role',
+        'profile_picture',
+        'bio',
+        'private_notes',
     ];
 
     /**
@@ -86,5 +89,18 @@ class User extends Authenticatable
     public function courses()
     {
         return $this->belongsToMany(Course::class, 'course_instructor');
+    }
+
+    public function certificates()
+    {
+        return $this->hasMany(Certificate::class);
+    }
+
+    public function collegeCourses()
+    {
+        $courseIds = $this->courses()->pluck('courses.id');
+        return CollegeCourse::whereHas('curriculum', function ($q) use ($courseIds) {
+            $q->whereIn('course_id', $courseIds);
+        });
     }
 }
