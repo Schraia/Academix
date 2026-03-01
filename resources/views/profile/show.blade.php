@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -98,7 +99,8 @@
 }
 
 .profile-card {
-    height: fit-content;
+    height: 440px;
+    height: auto;  
     background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
     border-radius: 20px;
     padding: 2.2rem 1.9rem;
@@ -147,9 +149,14 @@
     font-size: 0.9rem;
     color: #374151;
     line-height: 1.6;
-    white-space: pre-wrap;
+
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+
+    overflow: hidden;
+    text-overflow: ellipsis;
     word-break: break-word;
-    overflow-wrap: anywhere;
 }
 .profile-bio-text {
     font-size: 0.9rem;
@@ -157,7 +164,7 @@
     line-height: 1.6;
 
     display: -webkit-box;
-    -webkit-line-clamp: 2;       /* number of lines shown */
+    -webkit-line-clamp: 4;       /* number of lines shown */
     -webkit-box-orient: vertical;
 
     overflow: hidden;
@@ -211,8 +218,20 @@
     letter-spacing: 0.05em;
 }
         .grade-value { font-weight: 600; color: #1f2937; }
-        .discussion-list { list-style: none; }
-        .discussion-list li { padding: 0.6rem 0; border-bottom: 1px solid #f3f4f6; }
+        .discussion-list {
+    max-height: 110px;      
+    overflow-y: auto;
+    padding-right: 4px;
+}
+.discussion-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.discussion-list::-webkit-scrollbar-thumb {
+    background: #e2e8f0;
+    border-radius: 6px;
+}
+        .discussion-list li { padding: 0.3rem 0; border-bottom: 1px solid #f3f4f6; }
         .discussion-list li:last-child { border-bottom: none; }
         .discussion-title-row { display: flex; align-items: center; gap: 0.35rem; flex-wrap: wrap; }
         .discussion-list a { color: #dc2626; text-decoration: none; font-weight: 500; font-size: 0.9rem; }
