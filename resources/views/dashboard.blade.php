@@ -36,9 +36,9 @@
   }
 
   html, body{
-    height:100%;
-    overflow:hidden;
-  }
+  height:100%;
+  overflow:auto;
+}
 
   body{
     font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,Ubuntu,Cantarell,sans-serif;
@@ -47,144 +47,87 @@
   }
 
   .dashboard-container{
-    display:flex;
-    height:100vh;        
-    overflow:hidden;     
-  }
+  display:flex;
+  min-height:100vh;
+}
 
 
-  .sidebar{
-    width:280px;
-    height:100vh;
-    flex-shrink:0;
-    background: linear-gradient(180deg, #cf1f1f 0%, #7f1d1d 100%);
-    color:#fff;
-    display:flex;
-    flex-direction:column;
-    box-shadow: 6px 0 30px rgba(0,0,0,0.18);
-    position:relative;
-    overflow:hidden;
-  }
-  .sidebar::before{
-    content:'';
-    position:absolute;
-    inset:0;
-    background:
-      radial-gradient(circle at 20% 20%, rgba(255,255,255,0.14), transparent 45%),
-      radial-gradient(circle at 80% 60%, rgba(255,255,255,0.10), transparent 50%);
-    pointer-events:none;
-  }
+  .sidebar { width: 260px; height: 100vh;position: sticky; top: 0;flex-shrink: 0;
+        background:
+        linear-gradient(180deg, #962121 0%, #991b1b 40%, #450a0a 100%);
+        color: rgba(255,255,255,0.92);display: flex; flex-direction: column;box-shadow: 8px 0 40px rgba(0,0,0,0.35); overflow: hidden; }
+        .sidebar::after { content: ""; position: absolute; inset: 0;
+        background:
+        radial-gradient(circle at 20% 10%, rgba(255,255,255,0.05), transparent 40%),
+        radial-gradient(circle at 80% 30%, rgba(255,255,255,0.04), transparent 40%);
+        pointer-events: none;
+        }
+        .sidebar::before { content: ''; position: absolute; top: 0; right: 0; width: 3px; height: 100%; background: linear-gradient(to bottom, rgba(255,255,255,0.5), transparent); opacity: 0.3; }
+                .sidebar-header { padding: 2rem 1.5rem; border-bottom: 1px solid rgba(255, 255, 255, 0.1); display: flex; justify-content: center; align-items: center; }
+                .sidebar-header h2 { font-size: 1.5rem; font-weight: 700; }
+                .sidebar-logo {
+            max-width: 140px;
+            filter: drop-shadow(0 6px 12px rgba(0,0,0,0.4));
+        }
+        .nav-menu { flex: 1; min-height: 0; overflow-y: auto; padding: 1rem 0; }
+        .nav-item {
+            padding: 0.9rem 1.75rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.9rem;
+            font-weight: 500;
+            font-size: 0.95rem;
+            position: relative;
+            transition: all 0.25s ease;
+        } 
+        .nav-item:hover { background: rgba(255, 255, 255, 0.08); padding-left: 2.10rem; }
+        .nav-item:hover svg { transform: scale(1.1); }
+        .nav-item svg { width: 19px;
+            height: 19px;
+            opacity: 0.85;
+            transition: all 0.25s ease;}
+            .nav-item:hover svg {
+            opacity: 1;
+            transform: scale(1.15);
+        }
+                .nav-item.active {
+            background: rgba(255,255,255,0.12);
+        }
 
-  .sidebar-header{
-    padding: 1.35rem 1.25rem;
-    border-bottom: 1px solid rgba(255,255,255,0.12);
-    display:flex;
-    align-items:center;
-    gap:.9rem;
-    position:relative;
-    z-index:1;
-  }
-  .sidebar-logo{
-    width:62px;height:62px;
-    object-fit:contain;
-    border-radius:999px;
-    background: rgba(255,255,255,0.10);
-    padding:8px;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.18);
-  }
-  .brand-text{
-    font-size:1.45rem;
-    font-weight:900;
-    letter-spacing:-0.02em;
-    line-height:1;
-  }
+        .nav-item.active::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            width: 6px;
 
-  .nav-menu{
-    flex:1;
-    min-height:0;
-    overflow:auto; 
-    padding: 1rem 0.75rem;
-    position:relative;
-    z-index:1;
-  }
-  .nav-menu::-webkit-scrollbar{width:8px;}
-  .nav-menu::-webkit-scrollbar-thumb{background:rgba(255,255,255,.22);border-radius:10px;}
-
-  .nav-item{
-    padding: 0.95rem 1rem;
-    cursor:pointer;
-    transition: all .22s ease;
-    display:flex;
-    align-items:center;
-    gap:0.85rem;
-    font-weight:700;
-    border-radius:14px;
-    margin: .35rem 0;
-    position:relative;
-    color:inherit;
-  }
-  .nav-item svg{width:20px;height:20px;opacity:.95;}
-
-  .nav-item:hover{
-    background: rgba(255,255,255,0.10);
-    transform: translateX(2px);
-  }
-
-  .nav-item.active{
-    background: rgba(255,255,255,0.16);
-    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.15);
-  }
-  .nav-item.active::before{
-    content:"";
-    position:absolute;
-    left:-10px;
-    top:50%;
-    transform:translateY(-50%);
-    width:6px;
-    height:34px;
-    border-radius:999px;
-    background:#fff;
-    opacity:.95;
-  }
-
-  .nav-logout{
-    padding: 1rem 1rem 1.25rem;
-    border-top: 1px solid rgba(255,255,255,0.10);
-    position:relative;
-    z-index:1;
-  }
-  .logout-btn{
-    width:100%;
-    padding: 0.95rem;
-    background: rgba(255,255,255,0.10);
-    color:white;
-    border: 1px solid rgba(255,255,255,0.18);
-    border-radius:16px;
-    cursor:pointer;
-    font-size:1rem;
-    font-weight:900;
-    transition: all .22s ease;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    gap:.6rem;
-  }
-  .logout-btn svg{width:20px;height:20px;}
-  .logout-btn:hover{
-    background:white;
-    color:#b91c1c;
-    transform: translateY(-2px);
-    box-shadow: 0 10px 22px rgba(0,0,0,0.15);
-  }
+            background: linear-gradient(180deg, #ef4444, #ffffff);
+            border-radius: 0 6px px 0;
+        }
+        .nav-logout {
+            margin-top: auto;
+            padding: 1rem 1.5rem;
+            border-top: 1px solid rgba(255,255,255,0.08);
+        }
+        .logout-btn { width: 100%; padding: 0.75rem; background: rgba(255, 255, 255, 0.1); color: white; border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 10px; cursor: pointer; font-size: 1rem; font-weight: 600; transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; gap: 0.5rem; }
+        .logout-btn:hover { background: white; color: #b91c1c; transform: translateY(-2px); }
+        .logout-btn svg { width: 20px; height: 20px; }
 
 
   .main-content{
+    max-width: 1800px;
+    margin: 0 auto;
     flex:1;
     min-width:0;
-    height:100vh;
-    overflow:hidden; /* important: no page scroll */
+    
+  overflow:visible;
     padding: clamp(1rem, 1.6vw, 1.8rem) clamp(1.1rem, 2vw, 2.2rem);
-    background: linear-gradient(180deg, #f6f7fb 0%, #f3f4f6 100%);
+    background:
+        radial-gradient(circle at 10% 10%, rgba(185,28,28,0.18), transparent 50%),
+        radial-gradient(circle at 90% 30%, rgba(220,38,38,0.15), transparent 50%),
+        linear-gradient(180deg, #ffffff 0%, #f3f4f6 100%);
     display:flex;
     flex-direction:column;
     gap: var(--gap);
@@ -250,7 +193,7 @@
   }
 
 
-  .top-profile{ width:100%; }
+  .top-profile{ width:100%; height:140px }
 
   .profile-container{
     display:flex;
@@ -302,19 +245,29 @@
     color:#6b7280;
     margin-bottom:.55rem;
   }
+ 
   .todays-schedule-list{
+    max-height: 112px; /* approx 3 items */
+    overflow-y: auto;
     list-style:none;
     border:1px solid #e5e7eb;
     border-radius:14px;
     background:#fff;
-    overflow:hidden;
   }
+  
   .todays-schedule-list li{
-    padding:.62rem .85rem;
+    padding:.42rem .65rem;
     border-bottom:1px solid #f3f4f6;
     font-size:.9rem;
     color:#374151;
   }
+  .todays-schedule-list::-webkit-scrollbar {
+  width: 6px;
+}
+.todays-schedule-list::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 6px;
+}
   .todays-schedule-list li:last-child{border-bottom:none;}
   .todays-schedule-list a{color:#dc2626;text-decoration:underline;}
   .todays-schedule-chevron{
@@ -357,7 +310,7 @@
 
   .course-overview-card{
     flex:1;           
-    min-height:0;     
+    height: clamp(420px, 55vh, 500px);
     display:flex;
     flex-direction:column;
     overflow:hidden;
@@ -544,7 +497,7 @@
     <div class="sidebar">
         <div class="sidebar-header">
             <img src="{{ asset('images/logo.png') }}" alt="Academix Logo" class="sidebar-logo">
-            <div class="brand-text">Academix</div>
+      
         </div>
 
         <nav class="nav-menu">
@@ -626,25 +579,10 @@
 
                 
 
-                <div class="todays-schedule-section dash-card">
-                    <h2 class="todays-schedule-header">Today's Schedule</h2>
-                    <p class="todays-schedule-date">{{ $dateFormatted }}</p>
-
-                    <ul class="todays-schedule-list">
-                        @forelse($todaysSchedules as $schedule)
-                            <li>{{ $schedule['time_slot'] }} - <a href="{{ route('courses.show', $schedule['course_id']) }}">{{ $schedule['course_code'] ? $schedule['course_code'] . ' - ' : '' }}{{ $schedule['display_title'] }}</a></li>
-                        @empty
-                            <li style="color:#9ca3af;">No classes scheduled for today.</li>
-                        @endforelse
-                    </ul>
-
-                    @if(count($todaysSchedules) > 0)
-                        <span class="todays-schedule-chevron" aria-hidden="true">▼</span>
-                    @endif
-                </div>
+               
 
                 <!-- COURSE OVERVIEW BIG CARD (like picture) -->
-                <div class="dash-card course-overview-card">
+                <div class="dash-card course-overview-card" style="min-height: 505px;">
                     <div class="head">
                         <div class="label"><span class="dot"></span> Course Overview</div>
                         <a class="view-all" href="{{ route('courses.index') }}">View All <span style="font-size:1.1rem;">›</span></a>
@@ -735,6 +673,20 @@
                         @endif
                     </div>
                 </div>
+                 <div class="todays-schedule-section dash-card" style="min-height: 170px;">
+                    <h2 class="todays-schedule-header">Today's Schedule</h2>
+                    <p class="todays-schedule-date">{{ $dateFormatted }}</p>
+
+                    <ul class="todays-schedule-list">
+                        @forelse($todaysSchedules as $schedule)
+                            <li>{{ $schedule['time_slot'] }} - <a href="{{ route('courses.show', $schedule['course_id']) }}">{{ $schedule['course_code'] ? $schedule['course_code'] . ' - ' : '' }}{{ $schedule['display_title'] }}</a></li>
+                        @empty
+                            <li style="color:#9ca3af;">No classes scheduled for today.</li>
+                        @endforelse
+                    </ul>
+
+                   
+                </div>
 
             </div><!-- left-col -->
 
@@ -757,9 +709,9 @@
         <a href="{{ route('profile.show') }}" class="btn-profile">Profile</a>
     </div>
                 <div class="dash-card">
-                    <div class="right-mini-card">
+                    <div class="right-mini-card" style="min-height: 90px;">
                         <div class="mini-icon">
-                            <!-- bar chart icon -->
+                            
                             <svg viewBox="0 0 24 24" fill="currentColor"><path d="M5 9h3v10H5V9zm5-4h3v14h-3V5zm5 7h3v7h-3v-7z"/></svg>
                         </div>
                         <div style="min-width:0;">
@@ -772,22 +724,11 @@
                     </div>
                 </div>
 
-                <div class="dash-card">
-                    <div class="right-mini-card">
-                        <div class="mini-icon" style="background:#ffe9ec;">
-                            <!-- megaphone icon -->
-                            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 11v2l10 3v-8L3 11zm12-3v8l5 2V6l-5 2zM7 16v3h2v-2.4L7 16z"/></svg>
-                        </div>
-                        <div style="min-width:0;">
-                            <h3 style="margin-bottom:.2rem;">Announcements</h3>
-                            <p style="margin-bottom:0;">No recent announcements.</p>
-                        </div>
-                    </div>
-                </div>
+                
 
                 <div class="dash-card">
                     <h3 class="section-title">Announcements</h3>
-                    <div class="announcements-wrap">
+                    <div class="announcements-wrap" style="height: 130px;">
                         <ul class="announcements-list">
                             @forelse($announcements as $a)
                             <li class="announcement-item">
@@ -807,7 +748,7 @@
                     </div>
                 </div>
 
-                <div class="dash-card">
+                <div class="dash-card" style="height: 150px;">
                     <h3 class="section-title">Recently Opened</h3>
                     <ul class="recently-list">
                         @forelse($recentlyOpened as $lesson)
