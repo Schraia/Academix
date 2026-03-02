@@ -116,6 +116,29 @@
         .btn-primary:hover { background: #b91c1c; }
         .btn-secondary { background: #e5e7eb; color: #374151; }
         .btn-secondary:hover { background: #d1d5db; }
+        .btn-assign {
+            padding: 0.4rem 0.85rem;
+            background: #dc2626;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 10px rgba(220, 38, 38, 0.2);
+        }
+
+        .btn-assign:hover {
+            background: #b91c1c;
+            transform: translateY(-1px);
+            box-shadow: 0 6px 14px rgba(220, 38, 38, 0.3);
+        }
+
+        .btn-assign:active {
+            transform: translateY(0);
+            box-shadow: 0 3px 8px rgba(220, 38, 38, 0.2);
+        }
     </style>
 </head>
 <body>
@@ -184,7 +207,11 @@
                                 </td>
                                 <td>
                                     @if($u->role === 'instructor')
-                                        <button onclick="openModal({{ $u->id }}, '{{ $u->name }}', {{ $u->courses->toJson() }})" type="button" class="role-form button">Assign Courses</button>
+                                        <button onclick="openModal({{ $u->id }}, '{{ $u->name }}', {{ $u->courses->toJson() }})"
+                                                type="button"
+                                                class="btn-assign">
+                                            Assign Courses
+                                        </button>
                                     @else
                                         N/A
                                     @endif
