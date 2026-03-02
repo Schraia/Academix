@@ -115,6 +115,44 @@ body{
     margin-bottom:1.25rem;
 }
 
+.course-actions{
+    margin-bottom:1.75rem;
+    display:flex;
+    flex-wrap:wrap;
+    gap:.5rem;
+}
+
+.course-actions a{
+    display:inline-flex;
+    align-items:center;
+    padding:.45rem .9rem;
+    border-radius:999px;
+    font-size:.8rem;
+    font-weight:600;
+    text-decoration:none;
+    border:1px solid transparent;
+}
+
+.course-actions .btn-primary{
+    background:#dc2626;
+    color:#fff;
+    border-color:#dc2626;
+}
+
+.course-actions .btn-primary:hover{
+    background:#b91c1c;
+}
+
+.course-actions .btn-secondary{
+    background:#fff;
+    color:#374151;
+    border-color:#e5e7eb;
+}
+
+.course-actions .btn-secondary:hover{
+    background:#f3f4f6;
+}
+
 /* ===== COURSE NAV ===== */
 
 .course-nav{
@@ -299,10 +337,12 @@ body{
                     <svg fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-6-3a2 2 0 11-4 0 2 2 0 014 0zm-2 4a5 5 0 00-4.546 2.916A5.986 5.986 0 0010 16a5.986 5.986 0 004.546-2.084A5 5 0 0010 11z" clip-rule="evenodd"/></svg>
                     <span>Profile</span>
                 </a>
-                <a href="{{ route('enroll') }}" class="nav-item">
-                    <svg fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"/></svg>
-                    <span>Enroll Online</span>
-                </a>
+                @if(!Auth::user()->isAdmin() && !Auth::user()->isInstructor())
+                    <a href="{{ route('enroll') }}" class="nav-item">
+                        <svg fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"/></svg>
+                        <span>Enroll Online</span>
+                    </a>
+                @endif
                 <a href="{{ route('certificates.index') }}" class="nav-item">
                     <svg fill="currentColor" viewBox="0 0 20 20"><path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z"/></svg>
                     <span>Certificates</span>
@@ -325,6 +365,15 @@ body{
 
 <div class="course-title">{{ $course->title }}</div>
 <div class="course-code">{{ $course->code ?? $course->id }}</div>
+
+@if(Auth::user()->isInstructor())
+    <div class="course-actions">
+        <a href="{{ route('courses.edit', $course) }}" class="btn-secondary">Edit Course</a>
+        <a href="{{ route('courses.upload.lessons', $course) }}?return_to=lessons" class="btn-primary">Upload Lesson</a>
+        <a href="{{ route('courses.upload.announcements', $course) }}?return_to=announcements" class="btn-secondary">Upload Announcement</a>
+        <a href="{{ route('courses.upload.grades', $course) }}?return_to=grades" class="btn-secondary">Upload Grade</a>
+    </div>
+@endif
 
 <div class="course-nav">
     <a href="{{ route('courses.lessons',$course) }}">Lessons</a>
