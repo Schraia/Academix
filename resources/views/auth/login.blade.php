@@ -28,54 +28,49 @@
       color: var(--text);
     }
 
-    /* ====== 3D STAGE (whole page flip) ====== */
+    /* ===== SLIDE STAGE ===== */
     .stage{
       height: 100svh;
-      perspective: 1400px;
-      perspective-origin: 50% 50%;
       overflow: hidden;
+      position: relative;
       background: #000;
     }
 
-    /* This element flips as ONE piece */
-    .page{
+    /* Track is 200% wide, slides left/right */
+    .track{
+      height: 100svh;
+      width: 200vw;
+      display: flex;
+      transform: translateX(0);
+      transition: transform 650ms cubic-bezier(.2,.8,.2,1);
+      will-change: transform;
+    }
+    .track.show-signup{
+      transform: translateX(-100vw);
+    }
+
+    /* Each "screen" is a full viewport page */
+    .screen{
+      width: 100vw;
       height: 100svh;
       display: flex;
       overflow: hidden;
       position: relative;
+    }
 
-      transform-style: preserve-3d;
-      backface-visibility: hidden;
-      will-change: transform;
-
-      /* dark to red look */
+    /* ===== Backgrounds (same as your theme) ===== */
+    .screen.login{
       background:
         radial-gradient(1200px 900px at 20% 50%, rgba(255,59,59,.45) 0%, rgba(255,59,59,0) 60%),
         radial-gradient(900px 700px at 85% 50%, rgba(0,0,0,.95) 0%, rgba(0,0,0,.55) 55%, rgba(0,0,0,.15) 100%),
         linear-gradient(90deg, #1a0b0b 0%, #0b0b0d 55%, #0b0b0d 100%);
     }
-
-    /* swap panels in signup mode (your existing behavior) */
-    .page.signup-mode{
-      flex-direction: row-reverse;
+    .screen.signup{
+      /* swapped look */
       background:
         radial-gradient(1200px 900px at 80% 50%, rgba(255,59,59,.45) 0%, rgba(255,59,59,0) 60%),
         radial-gradient(900px 700px at 15% 50%, rgba(0,0,0,.95) 0%, rgba(0,0,0,.55) 55%, rgba(0,0,0,.15) 100%),
         linear-gradient(90deg, #0b0b0d 0%, #0b0b0d 45%, #1a0b0b 100%);
-    }
-
-    /* Whole-page flip animation */
-    .page.is-flipping{
-      pointer-events: none;
-      animation: flipWhole .72s cubic-bezier(.2,.7,.2,1);
-    }
-
-    /* add a tiny blur at mid flip for realism */
-    @keyframes flipWhole{
-      0%   { transform: rotateY(0deg) scale(1); filter: blur(0px); }
-      45%  { transform: rotateY(90deg) scale(.995); filter: blur(1px); }
-      55%  { transform: rotateY(90deg) scale(.995); filter: blur(1px); }
-      100% { transform: rotateY(0deg) scale(1); filter: blur(0px); }
     }
 
     /* ===== PANELS ===== */
@@ -91,7 +86,7 @@
       overflow: hidden;
     }
 
-    /* ===== LEFT (red) ===== */
+    /* LEFT (red) */
     .left-panel{ color: #fff; }
 
     .left-panel::before{
@@ -126,18 +121,18 @@
     .logo{
       position: absolute;
       top: clamp(16px, 3vw, 40px);
-      left: clamp(16px, 5vw, 80px);
-      right: auto;
       width: clamp(84px, 9vw, 130px);
-      transition: all .35s ease;
       z-index: 5;
     }
-    .logo img{ width: 100%; display:block; filter: drop-shadow(0 8px 18px rgba(0,0,0,.25)); }
-
-    .page.signup-mode .logo{
-      left: auto;
-      right: clamp(16px, 5vw, 80px);
+    .logo img{
+      width: 100%;
+      display:block;
+      filter: drop-shadow(0 8px 18px rgba(0,0,0,.25));
     }
+
+    /* Logo placement per screen */
+    .screen.login .logo{ left: clamp(16px, 5vw, 80px); }
+    .screen.signup .logo{ right: clamp(16px, 5vw, 80px); }
 
     .left-text{
       position: relative;
@@ -153,11 +148,10 @@
       text-shadow: 0 16px 35px rgba(0,0,0,.25);
     }
 
-    /* ===== RIGHT (dark form) ===== */
+    /* RIGHT (dark form) */
     .right-panel{
       background: #0C0908;
     }
-
     .right-panel::after{
       content:"";
       position:absolute;
@@ -200,6 +194,7 @@
       color: rgba(255,255,255,.70);
     }
 
+    /* ✅ Make icons visible: remove grayscale + brighten */
     .form-group .icon{
       position:absolute;
       left: 0;
@@ -207,15 +202,16 @@
       transform: translateY(-50%);
       width: 22px;
       height: 22px;
-      opacity: .55;
+      opacity: .95;
+      filter: drop-shadow(0 0 8px rgba(0,0,0,.25));
     }
     .form-group .icon img{
       width:100%;
       height:100%;
       object-fit:contain;
       display:block;
-      filter: grayscale(1) brightness(1.3);
-      opacity: .85;
+      filter: invert(1) brightness(1.2); /* ✅ turns black icons to white */
+      opacity: 1;
     }
 
     .form-group input{
@@ -233,6 +229,7 @@
       border-bottom: 2px solid var(--focus);
     }
 
+    /* password toggle */
     .password-group{ position: relative; }
     .toggle-password{
       position:absolute;
@@ -289,20 +286,26 @@
     }
     .forgot-link:hover{ color: rgba(255,255,255,.92); }
 
+    /* ✅ Lower transparency of gradient buttons */
     .btn-primary{
       width: 100%;
       padding: 16px;
       border: none;
       border-radius: 12px;
-      background: linear-gradient(90deg, rgba(255,59,59,1) 0%, rgba(199,29,29,1) 45%, rgba(255,95,95,1) 100%);
+      background: linear-gradient(
+        90deg,
+        rgba(255,59,59,.78) 0%,
+        rgba(199,29,29,.78) 45%,
+        rgba(255,95,95,.78) 100%
+      );
       color: #fff;
       font-weight: 700;
       font-size: 1.1rem;
       cursor:pointer;
-      box-shadow: 0 18px 40px rgba(255,59,59,.12);
-      transition: transform .12s ease, filter .12s ease;
+      box-shadow: 0 18px 40px rgba(255,59,59,.10);
+      transition: transform .12s ease, filter .12s ease, background .2s ease;
     }
-    .btn-primary:hover{ filter: brightness(1.03); }
+    .btn-primary:hover{ filter: brightness(1.06); }
     .btn-primary:active{ transform: translateY(1px); }
 
     .divider{
@@ -356,18 +359,23 @@
       color: #ffb4b4;
     }
 
+    /* Mobile: keep only form */
     @media (max-width: 1000px){
       .left-panel{ display:none; }
-      .page, .page.signup-mode{
-        background: #000;
-        flex-direction: row;
+      .screen{
+        background: #000 !important;
       }
       .right-panel{
         width:100%;
         background: #000;
       }
-      .page.is-flipping{
-        animation: none; /* avoid weird flip when only form exists */
+      .track{
+        width: 100vw;        /* no slide on mobile */
+        transform: none !important;
+        transition: none;
+      }
+      .screen.signup{
+        display: none;       /* keep one screen only on mobile */
       }
     }
   </style>
@@ -375,201 +383,170 @@
 
 <body>
   <div class="stage">
-    <div class="page" id="page">
-      <!-- LEFT PANEL -->
-      <div class="left-panel">
-        <div class="logo">
-          <img src="{{ asset('images/logo.png') }}" alt="Logo">
+    <div class="track" id="track">
+
+      <!-- ========== LOGIN SCREEN (left -> right) ========== -->
+      <div class="screen login">
+        <div class="left-panel">
+          <div class="logo">
+            <img src="{{ asset('images/logo.png') }}" alt="Logo">
+          </div>
+          <div class="left-text">
+            <h1>Learn,<br>Grow &<br>Succeed.</h1>
+          </div>
         </div>
 
-        <div class="left-text">
-          <h1>Learn,<br>Grow &<br>Succeed.</h1>
-        </div>
-      </div>
+        <div class="right-panel">
+          <div class="auth-container">
+            <h1 class="auth-title">Log in</h1>
 
-      <!-- RIGHT PANEL -->
-      <div class="right-panel">
-        <div class="auth-container">
+            <form method="POST" action="{{ route('login') }}" id="loginForm">
+              @csrf
 
-          <h1 class="auth-title" id="title">Log in</h1>
-
-          <form id="authForm" method="POST" action="{{ route('login') }}">
-            @csrf
-
-            <!-- NAME (SIGNUP ONLY) -->
-            <div id="nameField" class="form-group" style="display:none;">
-              <span class="icon"><img src="{{ asset('images/user.png') }}"></span>
-              <label for="name">Name</label>
-              <input type="text" id="name" name="name" value="{{ old('name') }}" placeholder="Name">
-              @error('name') <div class="error-message">{{ $message }}</div> @enderror
-            </div>
-
-            <!-- EMAIL -->
-            <div class="form-group">
-              <span class="icon"><img src="{{ asset('images/user.png') }}"></span>
-              <label for="email">Email</label>
-              <input type="email" id="email" name="email" value="{{ old('email') }}" required autofocus placeholder="Email">
-              @error('email') <div class="error-message">{{ $message }}</div> @enderror
-            </div>
-
-            <!-- PASSWORD -->
-            <div class="form-group password-group">
-              <span class="icon"><img src="{{ asset('images/lock.png') }}"></span>
-              <label for="password">Password</label>
-              <input type="password" id="password" name="password" required placeholder="Password">
-              <span class="toggle-password" id="togglePasswordBtn" onclick="togglePassword()">👁</span>
-              @error('password') <div class="error-message">{{ $message }}</div> @enderror
-            </div>
-
-            <!-- CONFIRM PASSWORD (SIGNUP ONLY) -->
-            <div id="passwordConfirmationField" class="form-group password-group" style="display:none;">
-              <span class="icon"><img src="{{ asset('images/lock.png') }}"></span>
-              <label for="password_confirmation">Confirm Password</label>
-              <input type="password" id="password_confirmation" name="password_confirmation" placeholder="Confirm Password">
-              <span class="toggle-password" id="toggleConfirmBtn" onclick="toggleConfirm()">👁</span>
-            </div>
-
-            <!-- remember + forgot -->
-            <div class="meta-row">
-              <div id="rememberField" class="remember-wrapper">
-                <label class="remember-label">
-                  <input type="checkbox" id="remember" name="remember">
-                  <span>Remember me</span>
-                </label>
+              <div class="form-group">
+                <span class="icon"><img src="{{ asset('images/user.png') }}"></span>
+                <label for="login_email">Email</label>
+                <input type="email" id="login_email" name="email" value="{{ old('email') }}" required autofocus placeholder="Email">
+                @error('email') <div class="error-message">{{ $message }}</div> @enderror
               </div>
 
-              <a href="#" class="forgot-link" id="forgotLink">Forgot Password?</a>
+              <div class="form-group password-group">
+                <span class="icon"><img src="{{ asset('images/lock.png') }}"></span>
+                <label for="login_password">Password</label>
+                <input type="password" id="login_password" name="password" required placeholder="Password">
+                <span class="toggle-password" onclick="togglePass('login_password', this)">👁</span>
+                @error('password') <div class="error-message">{{ $message }}</div> @enderror
+              </div>
+
+              <div class="meta-row">
+                <div class="remember-wrapper">
+                  <label class="remember-label">
+                    <input type="checkbox" name="remember">
+                    <span>Remember me</span>
+                  </label>
+                </div>
+                <a href="#" class="forgot-link">Forgot Password?</a>
+              </div>
+
+              <button type="submit" class="btn-primary" id="loginBtn">Log in</button>
+            </form>
+
+            <div class="divider">or</div>
+
+            <a href="{{ route('google.redirect') }}" class="google-btn">
+              <img src="{{ asset('images/google.png') }}">
+              Log in with Google
+            </a>
+
+            <div class="switch-mode">
+              <span>Don't have an account?</span>
+              <button type="button" onclick="goSignup()">Sign Up</button>
             </div>
-
-            <button type="submit" class="btn-primary" id="submitBtn">Log in</button>
-          </form>
-
-          @if (session('error'))
-            <div class="error-message" style="text-align:center;">
-              {{ session('error') }}
-            </div>
-          @endif
-
-          <div class="divider">or</div>
-
-          <a href="{{ route('google.redirect') }}" class="google-btn">
-            <img src="{{ asset('images/google.png') }}">
-            Log in with Google
-          </a>
-
-          <div class="switch-mode">
-            <span id="switchText">Don't have an account?</span>
-            <button type="button" id="switchBtn" onclick="switchMode()">Sign Up</button>
           </div>
-
         </div>
       </div>
+
+      <!-- ========== SIGNUP SCREEN (slides in from right) ========== -->
+      <div class="screen signup">
+        <!-- Left side is form for signup -->
+        <div class="right-panel">
+          <div class="auth-container">
+            <h1 class="auth-title">Sign Up</h1>
+
+            <form method="POST" action="{{ route('register') }}" id="signupForm">
+              @csrf
+
+              <div class="form-group">
+                <span class="icon"><img src="{{ asset('images/user.png') }}"></span>
+                <label for="signup_name">Name</label>
+                <input type="text" id="signup_name" name="name" value="{{ old('name') }}" required placeholder="Name">
+                @error('name') <div class="error-message">{{ $message }}</div> @enderror
+              </div>
+
+              <div class="form-group">
+                <span class="icon"><img src="{{ asset('images/user.png') }}"></span>
+                <label for="signup_email">Email</label>
+                <input type="email" id="signup_email" name="email" value="{{ old('email') }}" required placeholder="Email">
+                @error('email') <div class="error-message">{{ $message }}</div> @enderror
+              </div>
+
+              <div class="form-group password-group">
+                <span class="icon"><img src="{{ asset('images/lock.png') }}"></span>
+                <label for="signup_password">Password</label>
+                <input type="password" id="signup_password" name="password" required placeholder="Password">
+                <span class="toggle-password" onclick="togglePass('signup_password', this)">👁</span>
+              </div>
+
+              <div class="form-group password-group">
+                <span class="icon"><img src="{{ asset('images/lock.png') }}"></span>
+                <label for="signup_confirm">Confirm Password</label>
+                <input type="password" id="signup_confirm" name="password_confirmation" required placeholder="Confirm Password">
+                <span class="toggle-password" onclick="togglePass('signup_confirm', this)">👁</span>
+              </div>
+
+              <button type="submit" class="btn-primary" id="signupBtn">Sign Up</button>
+            </form>
+
+            <div class="divider">or</div>
+
+            <a href="{{ route('google.redirect') }}" class="google-btn">
+              <img src="{{ asset('images/google.png') }}">
+              Continue with Google
+            </a>
+
+            <div class="switch-mode">
+              <span>Already have an account?</span>
+              <button type="button" onclick="goLogin()">Log in</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right side is Learn/Grow/Succeed -->
+        <div class="left-panel">
+          <div class="logo">
+            <img src="{{ asset('images/logo.png') }}" alt="Logo">
+          </div>
+          <div class="left-text">
+            <h1>Learn,<br>Grow &<br>Succeed.</h1>
+          </div>
+        </div>
+      </div>
+
     </div>
   </div>
 
   <script>
-    let isSignUp = false;
+    const track = document.getElementById('track');
 
-    function togglePassword() {
-      const input = document.getElementById('password');
-      const btn = document.getElementById('togglePasswordBtn');
+    function goSignup(){
+      track.classList.add('show-signup');
+    }
+    function goLogin(){
+      track.classList.remove('show-signup');
+    }
+
+    function togglePass(id, el){
+      const input = document.getElementById(id);
       const hidden = input.type === 'password';
       input.type = hidden ? 'text' : 'password';
-      btn.textContent = hidden ? '🙈' : '👁';
+      el.textContent = hidden ? '🙈' : '👁';
     }
 
-    function toggleConfirm() {
-      const input = document.getElementById('password_confirmation');
-      const btn = document.getElementById('toggleConfirmBtn');
-      const hidden = input.type === 'password';
-      input.type = hidden ? 'text' : 'password';
-      btn.textContent = hidden ? '🙈' : '👁';
-    }
+    // Loading state for both forms
+    document.getElementById('loginForm').addEventListener('submit', function(e){
+      const btn = document.getElementById('loginBtn');
+      btn.disabled = true;
+      btn.textContent = 'Logging in...';
+      btn.style.opacity = '0.75';
+      btn.style.cursor = 'not-allowed';
+    });
 
-    function switchMode() {
-      const page = document.getElementById('page');
-      if (page.classList.contains('is-flipping')) return;
-
-      page.classList.add('is-flipping');
-
-      // swap content at the midpoint of the flip
-      setTimeout(() => {
-        isSignUp = !isSignUp;
-
-        const form = document.getElementById('authForm');
-        const title = document.getElementById('title');
-        const submitBtn = document.getElementById('submitBtn');
-        const switchBtn = document.getElementById('switchBtn');
-        const switchText = document.getElementById('switchText');
-        const nameField = document.getElementById('nameField');
-        const passwordConfirmationField = document.getElementById('passwordConfirmationField');
-        const rememberField = document.getElementById('rememberField');
-        const forgotLink = document.getElementById('forgotLink');
-
-        const nameInput = document.getElementById('name');
-        const passwordInput = document.getElementById('password');
-        const passwordConfirmationInput = document.getElementById('password_confirmation');
-
-        if (isSignUp) {
-          page.classList.add('signup-mode');
-
-          title.textContent = 'Sign Up';
-          submitBtn.textContent = 'Sign Up';
-          switchBtn.textContent = 'Log in';
-          switchText.textContent = 'Already have an account?';
-
-          form.action = '{{ route("register") }}';
-
-          nameField.style.display = 'flex';
-          passwordConfirmationField.style.display = 'flex';
-          rememberField.style.display = 'flex';
-          forgotLink.style.visibility = 'hidden';
-
-          nameInput.required = true;
-          passwordInput.required = true;
-          passwordConfirmationInput.required = true;
-        } else {
-          page.classList.remove('signup-mode');
-
-          title.textContent = 'Log in';
-          submitBtn.textContent = 'Log in';
-          switchBtn.textContent = 'Sign Up';
-          switchText.textContent = "Don't have an account?";
-
-          form.action = '{{ route("login") }}';
-
-          nameField.style.display = 'none';
-          passwordConfirmationField.style.display = 'none';
-          rememberField.style.display = 'flex';
-          forgotLink.style.visibility = 'visible';
-
-          nameInput.required = false;
-          passwordInput.required = true;
-          passwordConfirmationInput.required = false;
-        }
-      }, 360); // midpoint (~half of .72s)
-
-      // cleanup
-      setTimeout(() => {
-        page.classList.remove('is-flipping');
-      }, 720);
-    }
-
-    document.getElementById('authForm').addEventListener('submit', function(e) {
-      const email = document.getElementById('email').value.trim();
-      const password = document.getElementById('password').value;
-
-      if (!email || !password) {
-        e.preventDefault();
-        alert('Please fill in all required fields.');
-        return;
-      }
-
-      const submitBtn = document.getElementById('submitBtn');
-      submitBtn.disabled = true;
-      submitBtn.textContent = isSignUp ? 'Signing Up...' : 'Logging in...';
-      submitBtn.style.opacity = '0.75';
-      submitBtn.style.cursor = 'not-allowed';
+    document.getElementById('signupForm').addEventListener('submit', function(e){
+      const btn = document.getElementById('signupBtn');
+      btn.disabled = true;
+      btn.textContent = 'Signing Up...';
+      btn.style.opacity = '0.75';
+      btn.style.cursor = 'not-allowed';
     });
   </script>
 </body>
