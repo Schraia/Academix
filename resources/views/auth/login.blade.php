@@ -28,12 +28,25 @@
       color: var(--text);
     }
 
-    /* ===== MAIN WRAPPER (controls swapping) ===== */
+    /* ====== 3D STAGE (whole page flip) ====== */
+    .stage{
+      height: 100svh;
+      perspective: 1400px;
+      perspective-origin: 50% 50%;
+      overflow: hidden;
+      background: #000;
+    }
+
+    /* This element flips as ONE piece */
     .page{
       height: 100svh;
       display: flex;
       overflow: hidden;
       position: relative;
+
+      transform-style: preserve-3d;
+      backface-visibility: hidden;
+      will-change: transform;
 
       /* dark to red look */
       background:
@@ -42,13 +55,27 @@
         linear-gradient(90deg, #1a0b0b 0%, #0b0b0d 55%, #0b0b0d 100%);
     }
 
-    /* swap panels in signup mode */
+    /* swap panels in signup mode (your existing behavior) */
     .page.signup-mode{
       flex-direction: row-reverse;
       background:
         radial-gradient(1200px 900px at 80% 50%, rgba(255,59,59,.45) 0%, rgba(255,59,59,0) 60%),
         radial-gradient(900px 700px at 15% 50%, rgba(0,0,0,.95) 0%, rgba(0,0,0,.55) 55%, rgba(0,0,0,.15) 100%),
         linear-gradient(90deg, #0b0b0d 0%, #0b0b0d 45%, #1a0b0b 100%);
+    }
+
+    /* Whole-page flip animation */
+    .page.is-flipping{
+      pointer-events: none;
+      animation: flipWhole .72s cubic-bezier(.2,.7,.2,1);
+    }
+
+    /* add a tiny blur at mid flip for realism */
+    @keyframes flipWhole{
+      0%   { transform: rotateY(0deg) scale(1); filter: blur(0px); }
+      45%  { transform: rotateY(90deg) scale(.995); filter: blur(1px); }
+      55%  { transform: rotateY(90deg) scale(.995); filter: blur(1px); }
+      100% { transform: rotateY(0deg) scale(1); filter: blur(0px); }
     }
 
     /* ===== PANELS ===== */
@@ -65,11 +92,8 @@
     }
 
     /* ===== LEFT (red) ===== */
-    .left-panel{
-      color: #fff;
-    }
+    .left-panel{ color: #fff; }
 
-    /* subtle line pattern */
     .left-panel::before{
       content:"";
       position:absolute;
@@ -87,7 +111,6 @@
       pointer-events:none;
     }
 
-    /* big wave shape (like your sample) */
     .left-panel::after{
       content:"";
       position:absolute;
@@ -132,10 +155,9 @@
 
     /* ===== RIGHT (dark form) ===== */
     .right-panel{
-  background: #0C0908;
-}
+      background: #0C0908;
+    }
 
-    /* another wave on the form side for depth */
     .right-panel::after{
       content:"";
       position:absolute;
@@ -160,11 +182,11 @@
     }
 
     .auth-title{
-  text-align:center;
-  font-size: clamp(1.9rem, 2.3vw, 2.4rem);
-  color: #FFFFFF;
-  font-weight: 700;
-}
+      text-align:center;
+      font-size: clamp(1.9rem, 2.3vw, 2.4rem);
+      color: #FFFFFF;
+      font-weight: 700;
+    }
 
     .form-group{
       position: relative;
@@ -211,7 +233,6 @@
       border-bottom: 2px solid var(--focus);
     }
 
-    /* password toggle */
     .password-group{ position: relative; }
     .toggle-password{
       position:absolute;
@@ -230,13 +251,14 @@
       background: rgba(255,255,255,.06);
     }
 
-    /* remember + forgot row like sample */
     .meta-row{
       display:flex;
       align-items:center;
       justify-content: space-between;
       gap: 14px;
-      margin-top: 2px;
+      padding: 12px 0;
+      margin-top: 6px;
+      margin-bottom: 10px;
     }
 
     .remember-wrapper{
@@ -267,7 +289,6 @@
     }
     .forgot-link:hover{ color: rgba(255,255,255,.92); }
 
-    /* button like sample */
     .btn-primary{
       width: 100%;
       padding: 16px;
@@ -291,7 +312,6 @@
       letter-spacing: .04em;
     }
 
-    /* google button (outlined, dark) */
     .google-btn{
       width:100%;
       padding: 14px 16px;
@@ -330,14 +350,12 @@
     }
     .switch-mode button:hover{ color:#fff; }
 
-    /* errors (if you have Laravel validation output) */
     .error-message{
       margin-top: 6px;
       font-size: .9rem;
       color: #ffb4b4;
     }
 
-    /* Mobile: keep only form (like before) */
     @media (max-width: 1000px){
       .left-panel{ display:none; }
       .page, .page.signup-mode{
@@ -348,99 +366,103 @@
         width:100%;
         background: #000;
       }
+      .page.is-flipping{
+        animation: none; /* avoid weird flip when only form exists */
+      }
     }
   </style>
 </head>
 
 <body>
-  <div class="page" id="page">
-    <!-- LEFT PANEL -->
-    <div class="left-panel">
-      <div class="logo">
-        <img src="{{ asset('images/logo.png') }}" alt="Logo">
-      </div>
-
-      <div class="left-text">
-        <h1>Learn,<br>Grow &<br>Succeed.</h1>
-      </div>
-    </div>
-
-    <!-- RIGHT PANEL -->
-    <div class="right-panel">
-      <div class="auth-container">
-
-        <h1 class="auth-title" id="title">Log in</h1>
-
-        <form id="authForm" method="POST" action="{{ route('login') }}">
-          @csrf
-
-          <!-- NAME (SIGNUP ONLY) -->
-          <div id="nameField" class="form-group" style="display:none;">
-            <span class="icon"><img src="{{ asset('images/user.png') }}"></span>
-            <label for="name">Name</label>
-            <input type="text" id="name" name="name" value="{{ old('name') }}" placeholder="Name">
-            @error('name') <div class="error-message">{{ $message }}</div> @enderror
-          </div>
-
-          <!-- EMAIL -->
-          <div class="form-group">
-            <span class="icon"><img src="{{ asset('images/user.png') }}"></span>
-            <label for="email">Email</label>
-            <input type="email" id="email" name="email" value="{{ old('email') }}" required autofocus placeholder="Email">
-            @error('email') <div class="error-message">{{ $message }}</div> @enderror
-          </div>
-
-          <!-- PASSWORD -->
-          <div class="form-group password-group">
-            <span class="icon"><img src="{{ asset('images/lock.png') }}"></span>
-            <label for="password">Password</label>
-            <input type="password" id="password" name="password" required placeholder="Password">
-            <span class="toggle-password" id="togglePasswordBtn" onclick="togglePassword()">👁</span>
-            @error('password') <div class="error-message">{{ $message }}</div> @enderror
-          </div>
-
-          <!-- CONFIRM PASSWORD (SIGNUP ONLY) -->
-          <div id="passwordConfirmationField" class="form-group password-group" style="display:none;">
-            <span class="icon"><img src="{{ asset('images/lock.png') }}"></span>
-            <label for="password_confirmation">Confirm Password</label>
-            <input type="password" id="password_confirmation" name="password_confirmation" placeholder="Confirm Password">
-            <span class="toggle-password" id="toggleConfirmBtn" onclick="toggleConfirm()">👁</span>
-          </div>
-
-          <!-- remember + forgot -->
-          <div class="meta-row">
-            <div id="rememberField" class="remember-wrapper">
-              <label class="remember-label">
-                <input type="checkbox" id="remember" name="remember">
-                <span>Remember me</span>
-              </label>
-            </div>
-
-            <!-- optional: link this to your route if you have it -->
-            <a href="#" class="forgot-link" id="forgotLink">Forgot Password?</a>
-          </div>
-
-          <button type="submit" class="btn-primary" id="submitBtn">Log in</button>
-        </form>
-
-        @if (session('error'))
-          <div class="error-message" style="text-align:center;">
-            {{ session('error') }}
-          </div>
-        @endif
-
-        <div class="divider">or</div>
-
-        <a href="{{ route('google.redirect') }}" class="google-btn">
-          <img src="{{ asset('images/google.png') }}">
-          Log in with Google
-        </a>
-
-        <div class="switch-mode">
-          <span id="switchText">Don't have an account?</span>
-          <button type="button" id="switchBtn" onclick="switchMode()">Sign Up</button>
+  <div class="stage">
+    <div class="page" id="page">
+      <!-- LEFT PANEL -->
+      <div class="left-panel">
+        <div class="logo">
+          <img src="{{ asset('images/logo.png') }}" alt="Logo">
         </div>
 
+        <div class="left-text">
+          <h1>Learn,<br>Grow &<br>Succeed.</h1>
+        </div>
+      </div>
+
+      <!-- RIGHT PANEL -->
+      <div class="right-panel">
+        <div class="auth-container">
+
+          <h1 class="auth-title" id="title">Log in</h1>
+
+          <form id="authForm" method="POST" action="{{ route('login') }}">
+            @csrf
+
+            <!-- NAME (SIGNUP ONLY) -->
+            <div id="nameField" class="form-group" style="display:none;">
+              <span class="icon"><img src="{{ asset('images/user.png') }}"></span>
+              <label for="name">Name</label>
+              <input type="text" id="name" name="name" value="{{ old('name') }}" placeholder="Name">
+              @error('name') <div class="error-message">{{ $message }}</div> @enderror
+            </div>
+
+            <!-- EMAIL -->
+            <div class="form-group">
+              <span class="icon"><img src="{{ asset('images/user.png') }}"></span>
+              <label for="email">Email</label>
+              <input type="email" id="email" name="email" value="{{ old('email') }}" required autofocus placeholder="Email">
+              @error('email') <div class="error-message">{{ $message }}</div> @enderror
+            </div>
+
+            <!-- PASSWORD -->
+            <div class="form-group password-group">
+              <span class="icon"><img src="{{ asset('images/lock.png') }}"></span>
+              <label for="password">Password</label>
+              <input type="password" id="password" name="password" required placeholder="Password">
+              <span class="toggle-password" id="togglePasswordBtn" onclick="togglePassword()">👁</span>
+              @error('password') <div class="error-message">{{ $message }}</div> @enderror
+            </div>
+
+            <!-- CONFIRM PASSWORD (SIGNUP ONLY) -->
+            <div id="passwordConfirmationField" class="form-group password-group" style="display:none;">
+              <span class="icon"><img src="{{ asset('images/lock.png') }}"></span>
+              <label for="password_confirmation">Confirm Password</label>
+              <input type="password" id="password_confirmation" name="password_confirmation" placeholder="Confirm Password">
+              <span class="toggle-password" id="toggleConfirmBtn" onclick="toggleConfirm()">👁</span>
+            </div>
+
+            <!-- remember + forgot -->
+            <div class="meta-row">
+              <div id="rememberField" class="remember-wrapper">
+                <label class="remember-label">
+                  <input type="checkbox" id="remember" name="remember">
+                  <span>Remember me</span>
+                </label>
+              </div>
+
+              <a href="#" class="forgot-link" id="forgotLink">Forgot Password?</a>
+            </div>
+
+            <button type="submit" class="btn-primary" id="submitBtn">Log in</button>
+          </form>
+
+          @if (session('error'))
+            <div class="error-message" style="text-align:center;">
+              {{ session('error') }}
+            </div>
+          @endif
+
+          <div class="divider">or</div>
+
+          <a href="{{ route('google.redirect') }}" class="google-btn">
+            <img src="{{ asset('images/google.png') }}">
+            Log in with Google
+          </a>
+
+          <div class="switch-mode">
+            <span id="switchText">Don't have an account?</span>
+            <button type="button" id="switchBtn" onclick="switchMode()">Sign Up</button>
+          </div>
+
+        </div>
       </div>
     </div>
   </div>
@@ -465,60 +487,72 @@
     }
 
     function switchMode() {
-      isSignUp = !isSignUp;
-
       const page = document.getElementById('page');
-      const form = document.getElementById('authForm');
-      const title = document.getElementById('title');
-      const submitBtn = document.getElementById('submitBtn');
-      const switchBtn = document.getElementById('switchBtn');
-      const switchText = document.getElementById('switchText');
-      const nameField = document.getElementById('nameField');
-      const passwordConfirmationField = document.getElementById('passwordConfirmationField');
-      const rememberField = document.getElementById('rememberField');
-      const forgotLink = document.getElementById('forgotLink');
+      if (page.classList.contains('is-flipping')) return;
 
-      const nameInput = document.getElementById('name');
-      const passwordInput = document.getElementById('password');
-      const passwordConfirmationInput = document.getElementById('password_confirmation');
+      page.classList.add('is-flipping');
 
-      if (isSignUp) {
-        page.classList.add('signup-mode');
+      // swap content at the midpoint of the flip
+      setTimeout(() => {
+        isSignUp = !isSignUp;
 
-        title.textContent = 'Sign Up';
-        submitBtn.textContent = 'Sign Up';
-        switchBtn.textContent = 'Log in';
-        switchText.textContent = 'Already have an account?';
+        const form = document.getElementById('authForm');
+        const title = document.getElementById('title');
+        const submitBtn = document.getElementById('submitBtn');
+        const switchBtn = document.getElementById('switchBtn');
+        const switchText = document.getElementById('switchText');
+        const nameField = document.getElementById('nameField');
+        const passwordConfirmationField = document.getElementById('passwordConfirmationField');
+        const rememberField = document.getElementById('rememberField');
+        const forgotLink = document.getElementById('forgotLink');
 
-        form.action = '{{ route("register") }}';
+        const nameInput = document.getElementById('name');
+        const passwordInput = document.getElementById('password');
+        const passwordConfirmationInput = document.getElementById('password_confirmation');
 
-        nameField.style.display = 'flex';
-        passwordConfirmationField.style.display = 'flex';
-        rememberField.style.display = 'flex';
-        forgotLink.style.visibility = 'hidden'; // keep spacing but hide
+        if (isSignUp) {
+          page.classList.add('signup-mode');
 
-        nameInput.required = true;
-        passwordInput.required = true;
-        passwordConfirmationInput.required = true;
-      } else {
-        page.classList.remove('signup-mode');
+          title.textContent = 'Sign Up';
+          submitBtn.textContent = 'Sign Up';
+          switchBtn.textContent = 'Log in';
+          switchText.textContent = 'Already have an account?';
 
-        title.textContent = 'Log in';
-        submitBtn.textContent = 'Log in';
-        switchBtn.textContent = 'Sign Up';
-        switchText.textContent = "Don't have an account?";
+          form.action = '{{ route("register") }}';
 
-        form.action = '{{ route("login") }}';
+          nameField.style.display = 'flex';
+          passwordConfirmationField.style.display = 'flex';
+          rememberField.style.display = 'flex';
+          forgotLink.style.visibility = 'hidden';
 
-        nameField.style.display = 'none';
-        passwordConfirmationField.style.display = 'none';
-        rememberField.style.display = 'flex';
-        forgotLink.style.visibility = 'visible';
+          nameInput.required = true;
+          passwordInput.required = true;
+          passwordConfirmationInput.required = true;
+        } else {
+          page.classList.remove('signup-mode');
 
-        nameInput.required = false;
-        passwordInput.required = true;
-        passwordConfirmationInput.required = false;
-      }
+          title.textContent = 'Log in';
+          submitBtn.textContent = 'Log in';
+          switchBtn.textContent = 'Sign Up';
+          switchText.textContent = "Don't have an account?";
+
+          form.action = '{{ route("login") }}';
+
+          nameField.style.display = 'none';
+          passwordConfirmationField.style.display = 'none';
+          rememberField.style.display = 'flex';
+          forgotLink.style.visibility = 'visible';
+
+          nameInput.required = false;
+          passwordInput.required = true;
+          passwordConfirmationInput.required = false;
+        }
+      }, 360); // midpoint (~half of .72s)
+
+      // cleanup
+      setTimeout(() => {
+        page.classList.remove('is-flipping');
+      }, 720);
     }
 
     document.getElementById('authForm').addEventListener('submit', function(e) {
