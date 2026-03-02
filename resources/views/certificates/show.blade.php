@@ -9,19 +9,37 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f3f4f6; }
         .dashboard-container { display: flex; min-height: 100vh; }
-        .sidebar { width: 250px; min-height: 100vh; flex-shrink: 0; background: linear-gradient(180deg, #ef4444 0%, #dc2626 100%); color: white; display: flex; flex-direction: column; box-shadow: 2px 0 10px rgba(0,0,0,0.1); }
+         .sidebar {
+    width: 250px;
+    height: 100vh;
+    position: sticky;
+    top: 0;
+    flex-shrink: 0;
+    background: linear-gradient(180deg, #b91c1c 0%, #7f1d1d 100%);
+    color: white;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 4px 0 25px rgba(0, 0, 0, 0.25);
+    overflow: hidden;
+} 
+.sidebar::before { content: ''; position: absolute; top: 0; right: 0; width: 3px; height: 100%; background: linear-gradient(to bottom, rgba(255,255,255,0.5), transparent); opacity: 0.3; }
         .sidebar-header { padding: 2rem 1.5rem; border-bottom: 1px solid rgba(255, 255, 255, 0.1); display: flex; justify-content: center; align-items: center; }
         .sidebar-header h2 { font-size: 1.5rem; font-weight: 700; }
-        .nav-menu { flex: 1; padding: 1rem 0; }
-        .nav-item { padding: 1rem 1.5rem; display: flex; align-items: center; gap: 0.75rem; color: inherit; text-decoration: none; transition: background-color 0.3s; cursor: pointer; }
-        .nav-item:hover { background-color: rgba(255,255,255,0.1); }
-        .nav-item.active { background-color: rgba(255,255,255,0.2); }
-        .nav-item svg { width: 20px; height: 20px; flex-shrink: 0; }
-        .nav-logout { margin-top: auto; padding: 1rem 1.5rem; border-top: 1px solid rgba(255,255,255,0.1); }
-        .logout-btn { width: 100%; padding: 0.75rem; background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; cursor: pointer; font-size: 1rem; display: flex; align-items: center; justify-content: center; gap: 0.5rem; }
-        .logout-btn:hover { background: rgba(255,255,255,0.2); }
+        .nav-menu { flex: 1; min-height: 0; overflow-y: auto; padding: 1rem 0; }
+        .nav-item { padding: 1rem 1.5rem; cursor: pointer; transition: all 0.3s ease; display: flex; align-items: center; gap: 0.75rem; position: relative; font-weight: 500; border-left: 4px solid transparent; }
+        .nav-item:hover { background: rgba(255, 255, 255, 0.08); padding-left: 1.75rem; }
+        .nav-item:hover svg { transform: scale(1.1); }
+        .nav-item svg { width: 20px; height: 20px; transition: all 0.3s ease; }
+        .nav-item.active { background: rgba(255, 255, 255, 0.15); border-left: 4px solid white; }
+        .nav-logout {
+    margin-top: auto;
+    padding: 1rem 1.5rem;
+    border-top: 1px solid rgba(255,255,255,0.08);
+}
+        .logout-btn { width: 100%; padding: 0.75rem; background: rgba(255, 255, 255, 0.1); color: white; border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 10px; cursor: pointer; font-size: 1rem; font-weight: 600; transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; gap: 0.5rem; }
+        .logout-btn:hover { background: white; color: #b91c1c; transform: translateY(-2px); }
         .logout-btn svg { width: 20px; height: 20px; }
-        .main-content { flex: 1; padding: 2rem 3rem; }
+        .main-content { flex: 1; padding: 2rem 3rem;  }
         .page-title { font-size: 1.75rem; font-weight: 700; color: #1f2937; margin-bottom: 0.25rem; }
         .page-subtitle { font-size: 0.9375rem; color: #6b7280; margin-bottom: 1.5rem; }
         .btn-back { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; background: #e5e7eb; color: #374151; text-decoration: none; border-radius: 8px; font-size: 0.875rem; font-weight: 500; margin-bottom: 1rem; }
