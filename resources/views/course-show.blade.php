@@ -115,6 +115,44 @@ body{
     margin-bottom:1.25rem;
 }
 
+.course-actions{
+    margin-bottom:1.75rem;
+    display:flex;
+    flex-wrap:wrap;
+    gap:.5rem;
+}
+
+.course-actions a{
+    display:inline-flex;
+    align-items:center;
+    padding:.45rem .9rem;
+    border-radius:999px;
+    font-size:.8rem;
+    font-weight:600;
+    text-decoration:none;
+    border:1px solid transparent;
+}
+
+.course-actions .btn-primary{
+    background:#dc2626;
+    color:#fff;
+    border-color:#dc2626;
+}
+
+.course-actions .btn-primary:hover{
+    background:#b91c1c;
+}
+
+.course-actions .btn-secondary{
+    background:#fff;
+    color:#374151;
+    border-color:#e5e7eb;
+}
+
+.course-actions .btn-secondary:hover{
+    background:#f3f4f6;
+}
+
 /* ===== COURSE NAV ===== */
 
 .course-nav{
@@ -237,6 +275,41 @@ body{
     text-decoration:underline;
 }
 
+.discussion-reply {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    padding-left: 1.25rem;
+    font-weight: normal;
+    font-size: 0.875rem;
+    color: #4b5563;
+    line-height: 1.5;
+}
+
+.activity-box .badge {
+    font-size: 0.75rem;
+    color: #dc2626;
+    margin-left: 0.25rem;
+}
+
+.file-list {
+    list-style: none;
+}
+
+.file-list li {
+    font-size: 0.875rem;
+    color: #4b5563;
+    padding: 0.35rem 0;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.file-list li:last-child {
+    border-bottom: none;
+}
+
 .course-description{
     font-size:.95rem;
     line-height:1.75;
@@ -264,10 +337,12 @@ body{
                     <svg fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-6-3a2 2 0 11-4 0 2 2 0 014 0zm-2 4a5 5 0 00-4.546 2.916A5.986 5.986 0 0010 16a5.986 5.986 0 004.546-2.084A5 5 0 0010 11z" clip-rule="evenodd"/></svg>
                     <span>Profile</span>
                 </a>
-                <a href="{{ route('enroll') }}" class="nav-item">
-                    <svg fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"/></svg>
-                    <span>Enroll Online</span>
-                </a>
+                @if(!Auth::user()->isAdmin() && !Auth::user()->isInstructor())
+                    <a href="{{ route('enroll') }}" class="nav-item">
+                        <svg fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"/></svg>
+                        <span>Enroll Online</span>
+                    </a>
+                @endif
                 <a href="{{ route('certificates.index') }}" class="nav-item">
                     <svg fill="currentColor" viewBox="0 0 20 20"><path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z"/></svg>
                     <span>Certificates</span>
@@ -290,6 +365,15 @@ body{
 
 <div class="course-title">{{ $course->title }}</div>
 <div class="course-code">{{ $course->code ?? $course->id }}</div>
+
+@if(Auth::user()->isInstructor())
+    <div class="course-actions">
+        <a href="{{ route('courses.edit', $course) }}" class="btn-secondary">Edit Course</a>
+        <a href="{{ route('courses.upload.lessons', $course) }}?return_to=lessons" class="btn-primary">Upload Lesson</a>
+        <a href="{{ route('courses.upload.announcements', $course) }}?return_to=announcements" class="btn-secondary">Upload Announcement</a>
+        <a href="{{ route('courses.upload.grades', $course) }}?return_to=grades" class="btn-secondary">Upload Grade</a>
+    </div>
+@endif
 
 <div class="course-nav">
     <a href="{{ route('courses.lessons',$course) }}">Lessons</a>
@@ -323,33 +407,53 @@ body{
     <div class="right-column">
 
         <div class="card">
-            <h3>Ongoing Discussions</h3>
+            <h3>Ongoing Discussion:</h3>
             @forelse($ongoingThreads as $thread)
-                <div class="preview">{{ Str::limit($thread->title,60) }}</div>
+                <div class="preview" style="font-weight: 700;">{{ Str::limit($thread->title, 60) }}</div>
+                @php $latestMessage = $thread->messages->sortByDesc('created_at')->first(); @endphp
+                @if($latestMessage)
+                    <div class="discussion-reply" title="{{ $latestMessage->user->name ?? 'User' }}: {{ $latestMessage->content }}">{{ $latestMessage->user->name ?? 'User' }}: {{ $latestMessage->content }}</div>
+                @elseif($thread->content)
+                    @php $author = $thread->user->name ?? 'User'; @endphp
+                    <div class="discussion-reply" title="{{ $author }}: {{ $thread->content }}">{{ $author }}: {{ $thread->content }}</div>
+                @endif
             @empty
                 <div class="preview">No discussions yet.</div>
             @endforelse
-            <a href="{{ route('courses.discussions',$course) }}" class="link-go">
-                Open Discussions →
-            </a>
+            <a href="{{ route('courses.discussions', $course) }}" class="link-go">Go to Discussions → @if($discussionCount > 0)<span class="badge">{{ $discussionCount }} New Notifications</span>@endif</a>
         </div>
 
         <div class="card">
-            <h3>Last Lesson</h3>
+            <h3>Last lesson uploaded:</h3>
             @if($lastLesson)
-                <div class="preview">{{ $lastLesson->title }}</div>
+                <div class="preview" style="font-weight: 700;">{{ $lastLesson->title }}</div>
+                <div class="preview" style="padding-left: 1.25rem; font-weight: normal;">{{ Str::limit($lastLesson->description, 100) ?: '—' }}</div>
+                @if($lastLesson->attachment_path)
+                    @php $ext = pathinfo($lastLesson->attachment_path, PATHINFO_EXTENSION); $filename = $lastLesson->attachment_original_name ?? ($lastLesson->title . ($ext ? '.' . $ext : '')); @endphp
+                    <div class="preview" style="padding-left: 1.25rem; font-weight: normal; margin-top: 0.25rem;"><a href="{{ route('courses.lessons.preview', [$course, $lastLesson]) }}" style="color: #dc2626; text-decoration: none;">{{ $filename }}</a></div>
+                @endif
+                <div class="preview" style="padding-left: 1.25rem; font-size: 0.8125rem; color: #6b7280; margin-top: 0.25rem;">{{ ($lastLesson->published_at ?? $lastLesson->updated_at)->format('M j, Y g:i A') }}</div>
             @else
-                <div class="preview">No lessons uploaded.</div>
+                <div class="preview">No lessons yet.</div>
             @endif
         </div>
 
         <div class="card">
-            <h3>Recently Opened</h3>
-            @forelse($recentLessons as $lesson)
-                <div class="preview">{{ $lesson->title }}</div>
-            @empty
-                <div class="preview">No recent files.</div>
-            @endforelse
+            <h3>Recently opened files:</h3>
+            <ul class="file-list" style="padding-left: 1.25rem;">
+                @forelse($recentLessons as $lesson)
+                    <li style="padding-left: 0;">
+                        @if($lesson->attachment_path)
+                            @php $ext = pathinfo($lesson->attachment_path, PATHINFO_EXTENSION); @endphp
+                            <a href="{{ route('courses.lessons.preview', [$course, $lesson]) }}" style="color: #dc2626; text-decoration: none;">{{ $course->code ?? 'Course' }} {{ $lesson->title }}{{ $ext ? '.' . $ext : '' }}</a>
+                        @else
+                            {{ $course->code ?? 'Course' }} {{ $lesson->title }}
+                        @endif
+                    </li>
+                @empty
+                    <li style="padding-left: 0;">No recent files.</li>
+                @endforelse
+            </ul>
         </div>
 
     </div>

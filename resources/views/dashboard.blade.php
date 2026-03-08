@@ -468,6 +468,13 @@
   .announcements-wrap::-webkit-scrollbar{width:6px;}
   .announcements-wrap::-webkit-scrollbar-thumb{background:#d1d5db;border-radius:3px;}
 
+  .recently-wrap{
+    max-height: 180px;
+    overflow-y:auto;
+  }
+  .recently-wrap::-webkit-scrollbar{width:6px;}
+  .recently-wrap::-webkit-scrollbar-thumb{background:#d1d5db;border-radius:3px;}
+
   .announcements-list,.recently-list{list-style:none;}
   .announcements-list li,.recently-list li{
     padding:.5rem 0;
@@ -478,7 +485,7 @@
   .announcements-list a,.recently-list a{color:#dc2626;text-decoration:underline;}
   .recently-list .course-label{font-size:.78rem;color:#6b7280;margin-top:.15rem;}
 
-  ========================= */
+  /* ========================= */
   .dash-card svg{max-width:100%;max-height:100%;}
 
   @media (max-width: 1100px){
@@ -523,12 +530,14 @@
                 <span>Profile</span>
             </a>
 
+            @if(!Auth::user()->isAdmin() && !Auth::user()->isInstructor())
             <a href="{{ route('enroll') }}" class="nav-item" style="text-decoration:none;color:inherit;">
                 <svg fill="currentColor" viewBox="0 0 20 20">
                     <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"/>
                 </svg>
                 <span>Enroll Online</span>
             </a>
+            @endif
 
             <a href="{{ route('certificates.index') }}" class="nav-item" style="text-decoration:none;color:inherit;">
                 <svg fill="currentColor" viewBox="0 0 20 20">
@@ -733,12 +742,12 @@
                             @forelse($announcements as $a)
                             <li class="announcement-item">
                                 <div style="font-size:.78rem;color:#9ca3af;margin-bottom:.15rem;">{{ $a->created_at->format('M j') }}</div>
-                                <div style="font-size:.84rem;color:#6b7280;margin-bottom:.2rem;">
-                                    {{ $a->course ? $a->course->title . ($a->course->code ? ' (' . $a->course->code . ')' : '') : '—' }}
-                                </div>
                                 <a href="{{ route('courses.announcements', $a->course_id) }}" style="font-weight:950;color:#111827;text-decoration:none;">
                                     {{ Str::limit($a->title, 50) }}
                                 </a>
+                                <div style="font-size:.84rem;color:#6b7280;margin-top:.02rem;">
+                                    {{ $a->course ? ($a->course->code ? $a->course->code . ' - ' : '') . $a->course->title : '—' }}
+                                </div>
                                 <div style="font-size:.78rem;color:#9ca3af;margin-top:.15rem;">{{ $a->created_at->format('g:i A - M j, Y') }}</div>
                             </li>
                             @empty
@@ -748,22 +757,24 @@
                     </div>
                 </div>
 
-                <div class="dash-card" style="height: 150px;">
+                <div class="dash-card">
                     <h3 class="section-title">Recently Opened</h3>
-                    <ul class="recently-list">
-                        @forelse($recentlyOpened as $lesson)
-                        <li>
-                            <a href="{{ route('courses.lessons.preview', [$lesson->course_id, $lesson]) }}">
-                                {{ Str::limit($lesson->attachment_original_name ?? $lesson->title, 35) }}
-                            </a>
-                            @if($lesson->course)
-                                <div class="course-label">From: {{ $lesson->course->title }}{{ $lesson->course->code ? ' (' . $lesson->course->code . ')' : '' }}</div>
-                            @endif
-                        </li>
-                        @empty
-                        <li style="color:#9ca3af;">No recent files.</li>
-                        @endforelse
-                    </ul>
+                    <div class="recently-wrap">
+                        <ul class="recently-list">
+                            @forelse($recentlyOpened as $lesson)
+                            <li>
+                                <a href="{{ route('courses.lessons.preview', [$lesson->course_id, $lesson]) }}">
+                                    {{ Str::limit($lesson->attachment_original_name ?? $lesson->title, 35) }}
+                                </a>
+                                @if($lesson->course)
+                                    <div class="course-label">From: {{ $lesson->course->title }}{{ $lesson->course->code ? ' (' . $lesson->course->code . ')' : '' }}</div>
+                                @endif
+                            </li>
+                            @empty
+                            <li style="color:#9ca3af;">No recent files.</li>
+                            @endforelse
+                        </ul>
+                    </div>
                 </div>
 
             </div><!-- right-col -->
