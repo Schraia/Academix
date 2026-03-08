@@ -10,6 +10,7 @@ use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\CourseUploadController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\CertificatesController;
+use App\Http\Controllers\InboxController;
 
 Route::get('/', function () {
     return redirect('/login');
@@ -51,6 +52,20 @@ Route::middleware('auth')->group(function () {
     Route::get('/certificates', [CertificatesController::class, 'index'])->name('certificates.index');
     Route::get('/certificates/course/{course}', [CertificatesController::class, 'show'])->name('certificates.show');
     Route::get('/certificates/{certificate}/download', [CertificatesController::class, 'download'])->name('certificates.download');
+
+    // Inbox / Messaging
+    Route::prefix('inbox')->name('inbox.')->group(function () {
+        Route::get('/',                                        [InboxController::class, 'index'])              ->name('index');
+        Route::post('/',                                       [InboxController::class, 'store'])              ->name('store');
+        Route::get('/course-users',                            [InboxController::class, 'courseUsers'])        ->name('courseUsers');
+        Route::get('/{message}',                               [InboxController::class, 'show'])               ->name('show');
+        Route::delete('/{message}',                            [InboxController::class, 'destroy'])            ->name('destroy');
+        Route::patch('/{message}/restore',                     [InboxController::class, 'restore'])            ->name('restore');
+        Route::patch('/{message}/star',                        [InboxController::class, 'star'])               ->name('star');
+        Route::patch('/{message}/archive',                     [InboxController::class, 'archive'])            ->name('archive');
+        Route::get('/attachments/{attachment}/download',       [InboxController::class, 'downloadAttachment']) ->name('attachment.download');
+    });
+
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
     Route::middleware('admin')->group(function () {
