@@ -346,7 +346,7 @@ textarea.form-control{resize:vertical;min-height:100px;}
                 <div class="folder-tabs">
                     <button class="folder-tab {{ $folder === 'inbox'    ? 'active' : '' }}" data-folder="inbox">Inbox</button>
                     <button class="folder-tab {{ $folder === 'sent'     ? 'active' : '' }}" data-folder="sent">Sent</button>
-                    <button class="folder-tab {{ $folder === 'starred'  ? 'active' : '' }}" data-folder="starred">&#9733; Starred</button>
+                    <button class="folder-tab {{ $folder === 'starred'  ? 'active' : '' }}" data-folder="starred">Starred</button>
                     <button class="folder-tab {{ $folder === 'archived' ? 'active' : '' }}" data-folder="archived">Archived</button>
                     <button class="folder-tab {{ $folder === 'trash'    ? 'active' : '' }}" data-folder="trash">Trash</button>
                 </div>
