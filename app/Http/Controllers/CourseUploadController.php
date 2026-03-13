@@ -12,6 +12,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Spatie\Browsershot\Browsershot;
+use Throwable;
 
 class CourseUploadController extends Controller
 {
@@ -124,6 +126,7 @@ class CourseUploadController extends Controller
         $enrollment = Enrollment::where('course_id', $course->getKey())
             ->where('user_id', $request->user_id)
             ->where('status', 'enrolled')
+            ->with('user:id,name')
             ->first();
 
         if (! $enrollment) {
@@ -154,20 +157,77 @@ class CourseUploadController extends Controller
             ->with('user:id,name,email')
             ->get();
 
+        $templateOptions = [
+            1 => ['name' => 'Classic', 'description' => 'Formal layout with traditional styling.'],
+            2 => ['name' => 'Modern', 'description' => 'Clean and minimal with bold accents.'],
+            3 => ['name' => 'Academic', 'description' => 'Institution-style with structured hierarchy.'],
+            4 => ['name' => 'Elegant', 'description' => 'Decorative look with soft gradients.'],
+        ];
+
         return view('upload.certificate', [
             'course' => $course,
             'enrolledUsers' => $enrolled,
             'prefillUserId' => $request->query('user_id'),
+            'templateOptions' => $templateOptions,
+            'instructor' => $request->user(),
         ]);
+    }
+
+    public function certificatePreview(Request $request, Course $course)
+    {
+        $data = $request->validate([
+            'user_id' => 'nullable|exists:users,id',
+            'template_id' => 'nullable|integer|in:1,2,3,4',
+            'signer_name' => 'nullable|string|max:255',
+            'subtitle' => 'nullable|string|max:255',
+            'issued_date' => 'nullable|date',
+            'expiry_date' => 'nullable|date',
+        ]);
+
+        $awardeeName = 'Student Name';
+        if (! empty($data['user_id'])) {
+            $enrollment = Enrollment::where('course_id', $course->getKey())
+                ->where('user_id', $data['user_id'])
+                ->where('status', 'enrolled')
+                ->with('user:id,name')
+                ->first();
+
+            if ($enrollment && $enrollment->user) {
+                $awardeeName = $enrollment->user->name;
+            }
+        }
+
+        $templateId = (int) ($data['template_id'] ?? 1);
+        $templateView = $this->resolveCertificateTemplateView($templateId);
+        $signatureUrl = $this->buildSignatureDataUri($request->user()->signature_path);
+
+        $renderData = [
+            'templateView' => $templateView,
+            'previewMode' => true,
+            'studentName' => $awardeeName,
+            'courseName' => $course->title,
+            'signerName' => $data['signer_name'] ?? $request->user()->name,
+            'subtitle' => $data['subtitle'] ?? 'In recognition of successfully completing the course.',
+            'issuedDate' => ! empty($data['issued_date']) ? $data['issued_date'] : now()->toDateString(),
+            'expiryDate' => $data['expiry_date'] ?? null,
+            'certificateNumber' => 'CERT-PREVIEW',
+            'signatureUrl' => $signatureUrl,
+        ];
+
+        return view('certificates.render', $renderData);
     }
 
     public function storeCertificate(Request $request, Course $course)
     {
         $request->validate([
             'user_id' => 'required|exists:users,id',
+            'template_id' => 'required|integer|in:1,2,3,4',
+            'signer_name' => 'required|string|max:255',
+            'subtitle' => 'nullable|string|max:255',
             'issued_date' => 'required|date',
             'expiry_date' => 'nullable|date|after_or_equal:issued_date',
-            'certificate_file' => 'nullable|file|mimes:pdf,png,jpg,jpeg|max:10240',
+            'digital_signature' => 'nullable|image|mimes:png,jpg,jpeg|max:2048',
+            'use_saved_signature' => 'nullable|boolean',
         ]);
 
         $enrollment = Enrollment::where('course_id', $course->getKey())
@@ -179,25 +239,118 @@ class CourseUploadController extends Controller
             return back()->withErrors(['user_id' => 'Selected user is not enrolled in this course.']);
         }
 
-        $certificateUrl = null;
-        if ($request->hasFile('certificate_file')) {
-            $file = $request->file('certificate_file');
-            $certificateUrl = $file->store('certificates', 'public');
+        $instructor = $request->user();
+        $signaturePath = $instructor->signature_path;
+
+        if ($request->hasFile('digital_signature')) {
+            $signaturePath = $request->file('digital_signature')->store('signatures', 'public');
+            $instructor->forceFill(['signature_path' => $signaturePath])->save();
+        } elseif (! $request->boolean('use_saved_signature') && empty($signaturePath)) {
+            return back()->withErrors([
+                'digital_signature' => 'Upload a digital signature or use a previously saved signature.',
+            ])->withInput();
         }
 
         do {
             $certificateNumber = 'CERT-' . strtoupper(Str::random(10));
         } while (Certificate::where('certificate_number', $certificateNumber)->exists());
 
-        Certificate::create([
+        $certificate = Certificate::create([
             'user_id' => $request->user_id,
             'course_id' => $course->getKey(),
             'certificate_number' => $certificateNumber,
+            'template_id' => (int) $request->template_id,
+            'signer_name' => $request->signer_name,
+            'subtitle' => $request->subtitle,
             'issued_date' => $request->issued_date,
             'expiry_date' => $request->expiry_date,
-            'certificate_url' => $certificateUrl,
+            'certificate_url' => null,
         ]);
 
+        try {
+            $imagePath = $this->generateCertificatePng($certificate, $course, $enrollment->user->name, $signaturePath);
+            $certificate->forceFill(['certificate_url' => $imagePath])->save();
+        } catch (Throwable $e) {
+            $certificate->delete();
+
+            return back()->withErrors([
+                'template_id' => 'Unable to render certificate image right now. Please try again.',
+            ])->withInput();
+        }
+
         return redirect()->route('courses.show', $course)->with('success', 'Certificate issued.');
+    }
+
+    private function resolveCertificateTemplateView(int $templateId): string
+    {
+        $views = [
+            1 => 'certificates.templates.classic',
+            2 => 'certificates.templates.modern',
+            3 => 'certificates.templates.academic',
+            4 => 'certificates.templates.elegant',
+        ];
+
+        return $views[$templateId] ?? $views[1];
+    }
+
+    private function buildSignatureDataUri(?string $path): ?string
+    {
+        if (empty($path) || ! Storage::disk('public')->exists($path)) {
+            return null;
+        }
+
+        $extension = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+        $mime = match ($extension) {
+            'jpg', 'jpeg' => 'image/jpeg',
+            'gif' => 'image/gif',
+            default => 'image/png',
+        };
+
+        $content = Storage::disk('public')->get($path);
+        return 'data:' . $mime . ';base64,' . base64_encode($content);
+    }
+
+    private function generateCertificatePng(Certificate $certificate, Course $course, string $studentName, ?string $signaturePath): string
+    {
+        $templateView = $this->resolveCertificateTemplateView((int) $certificate->template_id);
+        $html = view('certificates.render', [
+            'templateView' => $templateView,
+            'previewMode' => false,
+            'studentName' => $studentName,
+            'courseName' => $course->title,
+            'signerName' => $certificate->signer_name ?: 'Instructor',
+            'subtitle' => $certificate->subtitle ?: 'In recognition of successfully completing the course.',
+            'issuedDate' => optional($certificate->issued_date)->toDateString() ?: now()->toDateString(),
+            'expiryDate' => optional($certificate->expiry_date)->toDateString(),
+            'certificateNumber' => $certificate->certificate_number,
+            'signatureUrl' => $this->buildSignatureDataUri($signaturePath),
+        ])->render();
+
+        $relativePath = 'certificates/generated/' . $certificate->certificate_number . '.png';
+        $tempPath = storage_path('app/temp/cert-' . $certificate->certificate_number . '-' . Str::random(6) . '.png');
+        $tempDir = dirname($tempPath);
+
+        if (! is_dir($tempDir)) {
+            mkdir($tempDir, 0777, true);
+        }
+
+        Browsershot::html($html)
+            ->setNodeBinary('c:/laragon/bin/nodejs/node-v22/node.exe')
+            ->setNpmBinary('c:/laragon/bin/nodejs/node-v22/npm.cmd')
+            ->setNodeModulePath(base_path('node_modules'))
+            ->windowSize(1123, 794)
+            ->setScreenshotType('png')
+            ->timeout(120)
+            ->save($tempPath);
+
+        $content = file_get_contents($tempPath);
+        if ($content === false) {
+            throw new \RuntimeException('Failed to read generated certificate image.');
+        }
+
+        Storage::disk('public')->put($relativePath, $content);
+        @unlink($tempPath);
+
+        return $relativePath;
     }
 }
