@@ -24,6 +24,7 @@ class User extends Authenticatable
         'google_id',
         'role',
         'profile_picture',
+        'signature_path',
         'bio',
         'private_notes',
     ];

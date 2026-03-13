@@ -84,6 +84,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/courses/{course}/upload/grades', [CourseUploadController::class, 'gradesForm'])->name('courses.upload.grades');
         Route::post('/courses/{course}/upload/grades', [CourseUploadController::class, 'storeGrade'])->name('courses.upload.grades.store');
         Route::get('/courses/{course}/upload/certificates', [CourseUploadController::class, 'certificatesForm'])->name('courses.upload.certificates');
+        Route::get('/courses/{course}/upload/certificates/preview', [CourseUploadController::class, 'certificatePreview'])->name('courses.upload.certificates.preview');
         Route::post('/courses/{course}/upload/certificates', [CourseUploadController::class, 'storeCertificate'])->name('courses.upload.certificates.store');
         Route::get('/courses/{course}/lessons/{lesson}/edit', [CourseController::class, 'editLesson'])->name('courses.lessons.edit');
         Route::post('/courses/{course}/lessons/{lesson}', [CourseController::class, 'updateLesson'])->name('courses.lessons.update');

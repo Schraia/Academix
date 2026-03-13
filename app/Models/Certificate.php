@@ -13,12 +13,16 @@ class Certificate extends Model
         'user_id',
         'course_id',
         'certificate_number',
+        'template_id',
+        'signer_name',
+        'subtitle',
         'issued_date',
         'expiry_date',
         'certificate_url',
     ];
 
     protected $casts = [
+        'template_id' => 'integer',
         'issued_date' => 'date',
         'expiry_date' => 'date',
     ];
