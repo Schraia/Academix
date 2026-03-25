@@ -6,97 +6,94 @@
     <title>Certificates - Academix</title>
     @vite('resources/css/app.css')
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f3f4f6; }
-        .dashboard-container { display: flex; min-height: 100vh; }
-        .sidebar { width: 260px; height: 100vh;position: sticky; top: 0;flex-shrink: 0;
-        background:
-        linear-gradient(180deg, #962121 0%, #991b1b 40%, #450a0a 100%);
-        color: rgba(255,255,255,0.92);display: flex; flex-direction: column;box-shadow: 8px 0 40px rgba(0,0,0,0.35); overflow: hidden; }
-        .sidebar::after { content: ""; position: absolute; inset: 0;
-        background:
-        radial-gradient(circle at 20% 10%, rgba(255,255,255,0.05), transparent 40%),
-        radial-gradient(circle at 80% 30%, rgba(255,255,255,0.04), transparent 40%);
-        pointer-events: none;
-        }
-        .sidebar::before { content: ''; position: absolute; top: 0; right: 0; width: 3px; height: 100%; background: linear-gradient(to bottom, rgba(255,255,255,0.5), transparent); opacity: 0.3; }
-                .sidebar-header { padding: 2rem 1.5rem; border-bottom: 1px solid rgba(255, 255, 255, 0.1); display: flex; justify-content: center; align-items: center; }
-                .sidebar-header h2 { font-size: 1.5rem; font-weight: 700; }
-                .sidebar-logo {
-            max-width: 140px;
-            filter: drop-shadow(0 6px 12px rgba(0,0,0,0.4));
-        }
-        .nav-menu { flex: 1; min-height: 0; overflow-y: auto; padding: 1rem 0; }
-        .nav-item {
-            padding: 0.9rem 1.75rem;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 0.9rem;
-            font-weight: 500;
-            font-size: 0.95rem;
-            position: relative;
-            transition: all 0.25s ease;
-        } 
-        .nav-item:hover { background: rgba(255, 255, 255, 0.08); padding-left: 2.10rem; }
-        .nav-item:hover svg { transform: scale(1.1); }
-        .nav-item svg { width: 19px;
-            height: 19px;
-            opacity: 0.85;
-            transition: all 0.25s ease;}
-            .nav-item:hover svg {
-            opacity: 1;
-            transform: scale(1.15);
-        }
-                .nav-item.active {
-            background: rgba(255,255,255,0.12);
+        /* ── Base ───────────────────────────────────── */
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background:#f3f4f6; }
+
+        /* ── Layout ─────────────────────────────────── */
+        .dashboard-container { display:flex; min-height:100vh; }
+        .main-content { flex:1; padding:2rem 3rem; background:
+            radial-gradient(circle at 10% 10%, rgba(185,28,28,0.18), transparent 50%),
+            radial-gradient(circle at 90% 30%, rgba(220,38,38,0.15), transparent 50%),
+            linear-gradient(180deg, #ffffff 0%, #f3f4f6 100%);
         }
 
-        .nav-item.active::before {
-            content: "";
-            position: absolute;
-            left: 0;
-            top: 0;
-            height: 100%;
-            width: 6px;
+        /* ── Sidebar ───────────────────────────────── */
+        .sidebar { width:260px; height:100vh; position:sticky; top:0; flex-shrink:0; color:rgba(255,255,255,0.92);
+            display:flex; flex-direction:column; overflow:hidden;
+            background:linear-gradient(180deg, #962121 0%, #991b1b 40%, #450a0a 100%);
+            box-shadow:8px 0 40px rgba(0,0,0,0.35);
+        }
+        .sidebar::after { content:""; position:absolute; inset:0; pointer-events:none; background:
+            radial-gradient(circle at 20% 10%, rgba(255,255,255,0.05), transparent 40%),
+            radial-gradient(circle at 80% 30%, rgba(255,255,255,0.04), transparent 40%);
+        }
+        .sidebar::before { content:""; position:absolute; top:0; right:0; width:3px; height:100%; opacity:.3;
+            background:linear-gradient(to bottom, rgba(255,255,255,0.5), transparent);
+        }
+        .sidebar-header { padding:2rem 1.5rem; border-bottom:1px solid rgba(255,255,255,0.1); display:flex; justify-content:center; align-items:center; }
+        .sidebar-logo { max-width:140px; filter:drop-shadow(0 6px 12px rgba(0,0,0,0.4)); }
 
-            background: linear-gradient(180deg, #ef4444, #ffffff);
-            border-radius: 0 6px px 0;
+        /* ── Navigation ────────────────────────────── */
+        .nav-menu { flex:1; min-height:0; overflow-y:auto; padding:1rem 0; }
+        .nav-item { padding:0.9rem 1.75rem; display:flex; align-items:center; gap:0.9rem; cursor:pointer;
+            font-weight:500; font-size:0.95rem; position:relative; transition:all 0.25s ease;
         }
-        .nav-logout {
-            margin-top: auto;
-            padding: 1rem 1.5rem;
-            border-top: 1px solid rgba(255,255,255,0.08);
+        .nav-item svg { width:19px; height:19px; opacity:.85; transition:all 0.25s ease; }
+        .nav-item:hover { background:rgba(255,255,255,0.08); padding-left:2.1rem; }
+        .nav-item:hover svg { opacity:1; transform:scale(1.15); }
+        .nav-item.active { background:rgba(255,255,255,0.12); }
+        .nav-item.active::before { content:""; position:absolute; left:0; top:0; height:100%; width:6px;
+            background:linear-gradient(180deg, #ef4444, #ffffff);
+            border-radius:0 6px 6px 0;
         }
-        .logout-btn { width: 100%; padding: 0.75rem; background: rgba(255, 255, 255, 0.1); color: white; border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 10px; cursor: pointer; font-size: 1rem; font-weight: 600; transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; gap: 0.5rem; }
-        .logout-btn:hover { background: white; color: #b91c1c; transform: translateY(-2px); }
-        .logout-btn svg { width: 20px; height: 20px; }
-        .main-content { flex: 1; padding: 2rem 3rem; background:
-        radial-gradient(circle at 10% 10%, rgba(185,28,28,0.18), transparent 50%),
-        radial-gradient(circle at 90% 30%, rgba(220,38,38,0.15), transparent 50%),
-        linear-gradient(180deg, #ffffff 0%, #f3f4f6 100%);}
-        .page-title { font-size: 1.75rem; font-weight: 700; color: #1f2937; margin-bottom: 0.25rem; }
-        .page-subtitle { font-size: 0.9375rem; color: #6b7280; margin-bottom: 1.5rem; }
-        .card { background: white; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.07); padding: 1.5rem; margin-bottom: 1rem; }
-        .courses-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; }
-        .course-card { display: block; background: white; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.07); padding: 1.25rem 1.5rem; text-decoration: none; color: inherit; transition: box-shadow 0.2s, transform 0.2s; border: 1px solid #e5e7eb; }
-        .course-card:hover { box-shadow: 0 8px 16px rgba(0,0,0,0.1); transform: translateY(-2px); border-color: #dc2626; }
-        .course-card h3 { font-size: 1.1rem; font-weight: 600; color: #1f2937; margin-bottom: 0.5rem; }
-        .course-card .cert-count { font-size: 0.875rem; color: #6b7280; display: flex; align-items: center; gap: 0.35rem; }
-        .course-card .cert-count svg { width: 16px; height: 16px; color: #dc2626; }
-        .empty-state { color: #6b7280; font-size: 0.9375rem; padding: 1.5rem 0; }
-        .btn-issue-cert { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; background: #dc2626; color: white; border: none; border-radius: 8px; font-weight: 600; font-size: 0.875rem; cursor: pointer; margin-bottom: 1rem; }
-        .btn-issue-cert:hover { background: #b91c1c; color: white; }
-        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 100; }
-        .modal-overlay[hidden] { display: none; }
-        .modal-box { background: white; border-radius: 12px; padding: 1.5rem; min-width: 320px; max-width: 90vw; max-height: 80vh; overflow-y: auto; }
-        .modal-box h3 { font-size: 1.125rem; margin-bottom: 1rem; color: #1f2937; }
-        .modal-course-list { list-style: none; }
-        .modal-course-list li { margin-bottom: 0.5rem; }
-        .modal-course-list a { display: block; padding: 0.6rem 0.75rem; border-radius: 8px; color: #1f2937; text-decoration: none; border: 1px solid #e5e7eb; }
-        .modal-course-list a:hover { background: #fef2f2; border-color: #dc2626; color: #dc2626; }
-        .modal-close { margin-top: 1rem; padding: 0.5rem 1rem; background: #e5e7eb; border: none; border-radius: 8px; cursor: pointer; font-size: 0.875rem; }
-        .modal-close:hover { background: #d1d5db; }
+        .nav-logout { margin-top:auto; padding:1rem 1.5rem; border-top:1px solid rgba(255,255,255,0.08); }
+        .logout-btn { width:100%; padding:0.75rem; background:rgba(255,255,255,0.1); color:#fff;
+            border:1px solid rgba(255,255,255,0.2); border-radius:10px; cursor:pointer; font-size:1rem; font-weight:600;
+            display:flex; align-items:center; justify-content:center; gap:0.5rem; transition:all 0.3s ease;
+        }
+        .logout-btn:hover { background:#fff; color:#b91c1c; transform:translateY(-2px); }
+        .logout-btn svg { width:20px; height:20px; }
+
+        /* ── Typography ───────────────────────────── */
+        .page-title { font-size:1.75rem; font-weight:700; color:#1f2937; margin-bottom:0.25rem; }
+        .page-subtitle { font-size:0.9375rem; color:#6b7280; margin-bottom:1.5rem; }
+
+        /* ── Cards + Lists ────────────────────────── */
+        .card { background:#fff; border-radius:12px; box-shadow:0 4px 6px rgba(0,0,0,0.07); padding:1.5rem; margin-bottom:1rem; }
+        .empty-state { color:#6b7280; font-size:0.9375rem; padding:1.5rem 0; }
+
+        .courses-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:1rem; }
+        .course-card { display:block; background:#fff; border-radius:12px; padding:1.25rem 1.5rem; text-decoration:none; color:inherit;
+            border:1px solid #e5e7eb; box-shadow:0 4px 6px rgba(0,0,0,0.07); transition:box-shadow 0.2s, transform 0.2s, border-color 0.2s;
+        }
+        .course-card:hover { box-shadow:0 8px 16px rgba(0,0,0,0.1); transform:translateY(-2px); border-color:#dc2626; }
+        .course-card h3 { font-size:1.1rem; font-weight:600; color:#1f2937; margin-bottom:0.5rem; }
+        .course-card .cert-count { font-size:0.875rem; color:#6b7280; display:flex; align-items:center; gap:0.35rem; }
+        .course-card .cert-count svg { width:16px; height:16px; color:#dc2626; }
+
+        /* ── Actions + Modals ─────────────────────── */
+        .btn-issue-cert { display:inline-flex; align-items:center; gap:0.5rem; padding:0.5rem 1rem; margin-bottom:1rem;
+            background:#dc2626; color:#fff; border:none; border-radius:8px; font-weight:600; font-size:0.875rem; cursor:pointer;
+        }
+        .btn-issue-cert:hover { background:#b91c1c; color:#fff; }
+
+        .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; z-index:100; }
+        .modal-overlay[hidden] { display:none; }
+        .modal-box { background:#fff; border-radius:12px; padding:1.5rem; min-width:320px; max-width:90vw; max-height:80vh; overflow-y:auto; }
+        .modal-box h3 { font-size:1.125rem; margin-bottom:1rem; color:#1f2937; }
+        .modal-course-list { list-style:none; }
+        .modal-course-list li { margin-bottom:0.5rem; }
+        .modal-course-list a { display:block; padding:0.6rem 0.75rem; border-radius:8px; color:#1f2937; text-decoration:none; border:1px solid #e5e7eb; }
+        .modal-course-list a:hover { background:#fef2f2; border-color:#dc2626; color:#dc2626; }
+        .modal-close { margin-top:1rem; padding:0.5rem 1rem; background:#e5e7eb; border:none; border-radius:8px; cursor:pointer; font-size:0.875rem; }
+        .modal-close:hover { background:#d1d5db; }
+
+        /* ── History Table ────────────────────────── */
+        .history-table { width:100%; border-collapse:collapse; font-size:0.875rem; }
+        .history-table th { text-align:left; color:#6b7280; font-weight:600; padding:0.5rem 0.25rem; border-bottom:1px solid #e5e7eb; }
+        .history-table td { padding:0.6rem 0.25rem; border-bottom:1px solid #f3f4f6; color:#111827; }
+        .history-table .muted { color:#6b7280; font-size:0.8125rem; }
     </style>
 </head>
 <body>
@@ -122,6 +119,10 @@
                     <span>Enroll Online</span>
                 </a>
                 @endif
+                <a href="{{ route('inbox.index') }}" class="nav-item" style="text-decoration:none;color:inherit;">
+                    <svg fill="currentColor" viewBox="0 0 20 20"> <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"/> <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z"/></svg>
+                    <span>Inbox</span>
+                </a>
                 <div class="nav-item active">
                     <svg fill="currentColor" viewBox="0 0 20 20"><path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z"/></svg>
                     <span>Certificates</span>
@@ -146,11 +147,54 @@
             <h1 class="page-title">Certificates</h1>
             <p class="page-subtitle">Courses for which an instructor has issued you a certificate. Click a course to view and download.</p>
 
+            @if(session('success'))
+            <div class="card" style="border-left:4px solid #16a34a;">
+                <p style="color:#166534; font-size:0.9375rem;">{{ session('success') }}</p>
+            </div>
+            @endif
+
             @if(Auth::user()->isInstructor() && $instructorCourses->isNotEmpty())
             <button type="button" class="btn-issue-cert" id="openCertModalBtn">Upload / Issue certificate</button>
             @endif
 
-            @if($courses->isEmpty())
+            @if(Auth::user()->isInstructor())
+            <div class="card">
+                <h3 style="font-size:1rem; font-weight:700; color:#111827; margin-bottom:.35rem;">Issued History</h3>
+                <p style="font-size:.75rem; color:#9ca3af; margin-bottom:0.75rem;">Certificates issued for your courses.</p>
+                @if($issuedCertificates->isEmpty())
+                    <p class="empty-state" style="padding:0;">No certificates issued yet.</p>
+                @else
+                    <table class="history-table">
+                        <thead>
+                            <tr>
+                                <th>Student</th>
+                                <th>Course</th>
+                                <th>Issued</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($issuedCertificates as $issued)
+                                <tr>
+                                    <td>
+                                        <div>{{ $issued->user?->name ?? 'Unknown' }}</div>
+                                        @if($issued->user?->email)
+                                            <div class="muted">{{ $issued->user->email }}</div>
+                                        @endif
+                                    </td>
+                                    <td>{{ $issued->course?->title ?? 'Unknown' }}</td>
+                                    <td>
+                                        <div>{{ optional($issued->issued_date)->format('F j, Y') }}</div>
+                                        <div class="muted">#{{ $issued->certificate_number }}</div>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                @endif
+            </div>
+            @endif
+
+            @if($courses->isEmpty() && !Auth::user()->isInstructor())
             <div class="card">
                 <p class="empty-state">No certificates have been issued to you yet. Certificates will appear here once an instructor issues one for a course you’re enrolled in.</p>
             </div>

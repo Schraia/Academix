@@ -49,6 +49,16 @@
 
     /* ── Subtitle textarea ──────────────────────────── */
     textarea.field-ctrl { resize:vertical; min-height:72px; line-height:1.5; }
+
+    /* ── Simple modal ──────────────────────────────── */
+    .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,.5); display:flex; align-items:center; justify-content:center; z-index:200; }
+    .modal-overlay[hidden] { display:none; }
+    .modal-box { background:#fff; border-radius:12px; padding:1.25rem 1.5rem; width:min(420px, 90vw); box-shadow:0 20px 40px rgba(0,0,0,.2); }
+    .modal-title { font-size:1rem; font-weight:700; color:#111827; margin:0 0 .4rem; }
+    .modal-body { font-size:.9rem; color:#4b5563; margin-bottom:1rem; }
+    .modal-actions { display:flex; justify-content:flex-end; gap:.5rem; }
+    .btn-secondary { padding:.45rem .9rem; background:#e5e7eb; border:none; border-radius:8px; font-size:.875rem; cursor:pointer; }
+    .btn-secondary:hover { background:#d1d5db; }
 </style>
 
 <div class="cert-builder-grid">
@@ -191,9 +201,29 @@
             </div>
 
         </div>
+
     </div>
 
 </div>
+
+@if(session('certificate_sent'))
+    @php $sent = session('certificate_sent'); @endphp
+    <div class="modal-overlay" id="issuedCertModal" hidden>
+        <div class="modal-box">
+            <h3 class="modal-title">Certificate sent</h3>
+            <p class="modal-body">
+                Certificate for <strong>{{ $sent['student'] ?? 'student' }}</strong>
+                @if(!empty($sent['email']))
+                    ({{ $sent['email'] }})
+                @endif
+                has been issued for <strong>{{ $sent['course'] ?? 'this course' }}</strong>.
+            </p>
+            <div class="modal-actions">
+                <button type="button" class="btn-secondary" id="closeIssuedCertModal">Close</button>
+            </div>
+        </div>
+    </div>
+@endif
 
 <script>
 (function () {
@@ -248,6 +278,18 @@
     window.addEventListener('resize', resizePreview);
     resizePreview();   /* set initial scale */
     updatePreview();   /* load initial preview */
+
+    var issuedModal = document.getElementById('issuedCertModal');
+    var closeIssuedBtn = document.getElementById('closeIssuedCertModal');
+    if (issuedModal) {
+        issuedModal.hidden = false;
+        if (closeIssuedBtn) {
+            closeIssuedBtn.addEventListener('click', function () { issuedModal.hidden = true; });
+        }
+        issuedModal.addEventListener('click', function (e) {
+            if (e.target === issuedModal) issuedModal.hidden = true;
+        });
+    }
 })();
 </script>
 @endsection

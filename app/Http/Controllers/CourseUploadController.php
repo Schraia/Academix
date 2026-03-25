@@ -157,6 +157,11 @@ class CourseUploadController extends Controller
             ->with('user:id,name,email')
             ->get();
 
+        $issuedCertificates = Certificate::where('course_id', $course->getKey())
+            ->with('user:id,name,email')
+            ->orderByDesc('issued_date')
+            ->get();
+
         $templateOptions = [
             1 => ['name' => 'Classic', 'description' => 'Formal layout with traditional styling.'],
             2 => ['name' => 'Modern', 'description' => 'Clean and minimal with bold accents.'],
@@ -167,6 +172,7 @@ class CourseUploadController extends Controller
         return view('upload.certificate', [
             'course' => $course,
             'enrolledUsers' => $enrolled,
+            'issuedCertificates' => $issuedCertificates,
             'prefillUserId' => $request->query('user_id'),
             'templateOptions' => $templateOptions,
             'instructor' => $request->user(),
@@ -278,7 +284,11 @@ class CourseUploadController extends Controller
             ])->withInput();
         }
 
-        return redirect()->route('courses.show', $course)->with('success', 'Certificate issued.');
+        return redirect()->route('courses.upload.certificates', $course)->with('certificate_sent', [
+            'student' => $enrollment->user->name,
+            'email' => $enrollment->user->email,
+            'course' => $course->title,
+        ]);
     }
 
     private function resolveCertificateTemplateView(int $templateId): string

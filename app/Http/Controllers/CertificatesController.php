@@ -27,15 +27,24 @@ class CertificatesController extends Controller
             ->get();
 
         $instructorCourses = collect();
+        $issuedCertificates = collect();
         /** @var \App\Models\User|null $user */
         $user = Auth::user();
         if ($user && $user->isInstructor()) {
             $instructorCourses = $user->courses()->orderBy('title')->get();
+            $instructorCourseIds = $instructorCourses->pluck('id');
+            if ($instructorCourseIds->isNotEmpty()) {
+                $issuedCertificates = Certificate::whereIn('course_id', $instructorCourseIds)
+                    ->with(['user:id,name,email', 'course:id,title'])
+                    ->orderByDesc('issued_date')
+                    ->get();
+            }
         }
 
         return view('certificates.index', [
             'courses' => $courses,
             'instructorCourses' => $instructorCourses,
+            'issuedCertificates' => $issuedCertificates,
         ]);
     }
 
@@ -95,6 +104,41 @@ class CertificatesController extends Controller
         $fullPath = Storage::disk('public')->path($path);
 
         return response()->download($fullPath, $filename);
+    }
+
+    /**
+     * Delete a certificate owned by the current user.
+     */
+    public function destroy(Certificate $certificate)
+    {
+        if ($certificate->user_id !== Auth::id()) {
+            abort(403);
+        }
+
+        request()->validate([
+            'confirm_text' => 'required|string|in:DELETE',
+        ]);
+
+        $course = $certificate->course;
+        $path = $certificate->certificate_url;
+
+        $certificate->delete();
+
+        if (! empty($path) && Storage::disk('public')->exists($path)) {
+            Storage::disk('public')->delete($path);
+        }
+
+        $hasRemaining = Certificate::where('course_id', $course->getKey())
+            ->where('user_id', Auth::id())
+            ->exists();
+
+        $message = 'Certificate deleted.';
+
+        if ($hasRemaining) {
+            return redirect()->route('certificates.show', $course)->with('success', $message);
+        }
+
+        return redirect()->route('certificates.index')->with('success', $message);
     }
 
     private function resolveCertificateTemplateView(int $templateId): string
