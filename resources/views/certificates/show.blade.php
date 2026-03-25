@@ -50,9 +50,23 @@
         .cert-item:last-child { border-bottom: none; }
         .cert-info .number { font-size: 0.875rem; color: #6b7280; font-family: monospace; margin-bottom: 0.25rem; }
         .cert-info .date { font-size: 0.875rem; color: #6b7280; }
+        .cert-actions { display: inline-flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
         .btn-download { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; background: #dc2626; color: white; text-decoration: none; border-radius: 8px; font-size: 0.875rem; font-weight: 500; }
         .btn-download:hover { background: #b91c1c; color: white; }
         .btn-download svg { width: 18px; height: 18px; }
+        .btn-delete { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.5rem 0.9rem; background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; border-radius: 8px; font-size: 0.875rem; font-weight: 600; cursor: pointer; }
+        .btn-delete:hover { background: #fecaca; }
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 100; }
+        .modal-overlay[hidden] { display: none; }
+        .modal-box { background: white; border-radius: 12px; padding: 1.25rem 1.5rem; width: min(420px, 90vw); box-shadow: 0 20px 40px rgba(0,0,0,0.2); }
+        .modal-title { font-size: 1rem; font-weight: 700; color: #111827; margin: 0 0 .4rem; }
+        .modal-body { font-size: .9rem; color: #4b5563; margin-bottom: 1rem; }
+        .modal-input { width: 100%; padding: .5rem .7rem; border: 1px solid #d1d5db; border-radius: 8px; font-size: .9rem; }
+        .modal-actions { display: flex; justify-content: flex-end; gap: .5rem; margin-top: .9rem; }
+        .btn-secondary { padding: .45rem .9rem; background: #e5e7eb; border: none; border-radius: 8px; font-size: .875rem; cursor: pointer; }
+        .btn-secondary:hover { background: #d1d5db; }
+        .btn-danger { padding: .45rem .9rem; background: #dc2626; color: #fff; border: none; border-radius: 8px; font-size: .875rem; cursor: pointer; }
+        .btn-danger:disabled { opacity: .6; cursor: not-allowed; }
     </style>
 </head>
 <body>
@@ -103,6 +117,12 @@
             <h1 class="page-title">{{ $course->title }}</h1>
             <p class="page-subtitle">Certificates issued to you for this course. Click to download.</p>
 
+            @if(session('success'))
+            <div class="card" style="border-left:4px solid #16a34a;">
+                <p style="color:#166534; font-size:0.9375rem;">{{ session('success') }}</p>
+            </div>
+            @endif
+
             <div class="card">
                 <ul class="cert-list">
                     @foreach($certificates as $cert)
@@ -111,19 +131,84 @@
                             <div class="number">#{{ $cert->certificate_number }}</div>
                             <div class="date">Issued {{ $cert->issued_date->format('F j, Y') }}</div>
                         </div>
-                        @if($cert->template_id || $cert->certificate_url)
-                        <a href="{{ route('certificates.download', $cert) }}" class="btn-download">
-                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-                            Download
-                        </a>
-                        @else
-                        <span style="font-size: 0.875rem; color: #9ca3af;">No file attached</span>
-                        @endif
+                        <div class="cert-actions">
+                            @if($cert->template_id || $cert->certificate_url)
+                            <a href="{{ route('certificates.download', $cert) }}" class="btn-download">
+                                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                                Download
+                            </a>
+                            @else
+                            <span style="font-size: 0.875rem; color: #9ca3af;">No file attached</span>
+                            @endif
+                            @if(Auth::user()->isStudent())
+                            <button type="button"
+                                    class="btn-delete"
+                                    data-delete-action="{{ route('certificates.destroy', $cert) }}"
+                                    data-cert-number="{{ $cert->certificate_number }}">
+                                Delete
+                            </button>
+                            @endif
+                        </div>
                     </li>
                     @endforeach
                 </ul>
             </div>
         </div>
     </div>
+
+    @if(Auth::user()->isStudent())
+    <div class="modal-overlay" id="deleteCertModal" hidden>
+        <div class="modal-box">
+            <h3 class="modal-title">Delete certificate</h3>
+            <p class="modal-body">Type <strong>DELETE</strong> to confirm removal of certificate <span id="deleteCertNumber">#</span>.</p>
+            <form method="POST" id="deleteCertForm">
+                @csrf
+                @method('DELETE')
+                <input type="text" name="confirm_text" id="deleteConfirmInput" class="modal-input" placeholder="Type DELETE" autocomplete="off">
+                <div class="modal-actions">
+                    <button type="button" class="btn-secondary" id="cancelDeleteCert">Cancel</button>
+                    <button type="submit" class="btn-danger" id="confirmDeleteCert" disabled>Delete</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <script>
+    (function () {
+        var modal = document.getElementById('deleteCertModal');
+        var form = document.getElementById('deleteCertForm');
+        var input = document.getElementById('deleteConfirmInput');
+        var confirmBtn = document.getElementById('confirmDeleteCert');
+        var cancelBtn = document.getElementById('cancelDeleteCert');
+        var numberEl = document.getElementById('deleteCertNumber');
+
+        function closeModal() {
+            if (!modal) return;
+            modal.hidden = true;
+            if (input) input.value = '';
+            if (confirmBtn) confirmBtn.disabled = true;
+        }
+
+        document.querySelectorAll('.btn-delete').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var action = btn.getAttribute('data-delete-action');
+                var certNumber = btn.getAttribute('data-cert-number');
+                if (form) form.setAttribute('action', action);
+                if (numberEl) numberEl.textContent = '#' + certNumber;
+                if (modal) modal.hidden = false;
+                if (input) input.focus();
+            });
+        });
+
+        if (input) {
+            input.addEventListener('input', function () {
+                confirmBtn.disabled = input.value !== 'DELETE';
+            });
+        }
+
+        if (cancelBtn) cancelBtn.addEventListener('click', closeModal);
+        if (modal) modal.addEventListener('click', function (e) { if (e.target === modal) closeModal(); });
+    })();
+    </script>
+    @endif
 </body>
 </html>

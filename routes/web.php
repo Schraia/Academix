@@ -52,6 +52,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/certificates', [CertificatesController::class, 'index'])->name('certificates.index');
     Route::get('/certificates/course/{course}', [CertificatesController::class, 'show'])->name('certificates.show');
     Route::get('/certificates/{certificate}/download', [CertificatesController::class, 'download'])->name('certificates.download');
+    Route::delete('/certificates/{certificate}', [CertificatesController::class, 'destroy'])->name('certificates.destroy');
 
     // Inbox / Messaging
     Route::prefix('inbox')->name('inbox.')->group(function () {
