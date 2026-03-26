@@ -252,31 +252,48 @@
 
                 <div class="section-box">
                     <div class="section-title">Payment</div>
+                    @if(!empty($isPending))
+                        <div class="method-hint" style="color:#991b1b;font-weight:600;">
+                            Pending enrollment submitted{{ !empty($pendingEnrollment?->submitted_at) ? ' on ' . $pendingEnrollment->submitted_at->format('M j, Y g:i A') : '' }}.
+                            You can cancel it below if you need to change your selection.
+                        </div>
+                    @endif
                     <div class="field" style="margin-top:0;">
                         <label>Method:</label>
                         <div class="method-row">
-                            <button type="button" class="btn btn-outline" id="methodOnlineBtn">Online Payment</button>
+                            <button type="button" class="btn btn-outline" id="methodOnlineBtn" {{ !empty($isPending) ? 'disabled' : '' }}>Online Payment</button>
                         </div>
                         <div class="method-hint">Select a payment method to continue.</div>
                     </div>
-                    <form method="POST" action="{{ route('enroll.complete') }}" enctype="multipart/form-data" id="submitEnrollmentForm">
-                        @csrf
-                        <input type="hidden" name="payment_type" id="payment_type" value="">
+                    <div style="display:flex; gap:.75rem; align-items:flex-start; flex-wrap:wrap;">
+                        <form method="POST" action="{{ route('enroll.complete') }}" enctype="multipart/form-data" id="submitEnrollmentForm" style="margin:0;">
+                            @csrf
+                            <input type="hidden" name="payment_type" id="payment_type" value="">
 
-                        <div class="upload-wrap" id="uploadWrap">
-                            <div class="field">
-                                <label>Upload payment evidence (JPG/JPEG/PNG)</label>
-                                <input class="file-input" id="payment_evidence" name="payment_evidence" type="file" accept=".jpg,.jpeg,.png">
-                                <div>
-                                    <label for="payment_evidence" class="btn btn-secondary file-btn" style="color: white;">Choose File</label>
-                                    <span class="file-name" id="fileName">No file chosen</span>
+                            <div class="upload-wrap" id="uploadWrap">
+                                <div class="field">
+                                    <label>Upload payment evidence (JPG/JPEG/PNG)</label>
+                                    <input class="file-input" id="payment_evidence" name="payment_evidence" type="file" accept=".jpg,.jpeg,.png" {{ !empty($isPending) ? 'disabled' : '' }}>
+                                    <div>
+                                        <label for="payment_evidence" class="btn btn-secondary file-btn" style="color: white; {{ !empty($isPending) ? 'pointer-events:none;opacity:.6;' : '' }}">Choose File</label>
+                                        <span class="file-name" id="fileName">No file chosen</span>
+                                    </div>
+                                    @error('payment_evidence') <div class="error-text">{{ $message }}</div> @enderror
                                 </div>
-                                @error('payment_evidence') <div class="error-text">{{ $message }}</div> @enderror
                             </div>
-                        </div>
 
-                        <button type="submit" class="btn btn-primary" id="submitBtn" disabled style="margin-top: 1rem;">Submit Enrollment</button>
-                    </form>
+                            <button type="submit" class="btn btn-primary" id="submitBtn" disabled style="margin-top: 1rem;">
+                                {{ !empty($isPending) ? 'Pending Enrollment' : 'Submit Enrollment' }}
+                            </button>
+                        </form>
+
+                        @if(!empty($isPending))
+                            <form method="POST" action="{{ route('enroll.pending.cancel') }}" onsubmit="return confirm('Cancel your pending enrollment?');" style="margin-top: 1rem;">
+                                @csrf
+                                <button type="submit" class="btn btn-outline">Cancel</button>
+                            </form>
+                        @endif
+                    </div>
                 </div>
             </div>
         </div>
@@ -284,6 +301,9 @@
 
     <script>
         (function () {
+            const isPending = @json(!empty($isPending));
+            if (isPending) return;
+
             const evidence = document.getElementById('payment_evidence');
             const submitBtn = document.getElementById('submitBtn');
             const paymentType = document.getElementById('payment_type');

@@ -531,6 +531,18 @@ class CourseController extends Controller
         if (! $lesson->attachment_path) {
             return redirect()->route('courses.lessons', $course)->with('info', 'No file to preview.');
         }
+
+        // Persist "Recently Opened" per user by touching lesson_progress
+        $progress = LessonProgress::firstOrCreate(
+            ['user_id' => $user->id, 'lesson_module_id' => $lesson->id],
+            ['status' => 'not_started', 'progress_percentage' => 0]
+        );
+        if (! $progress->started_at) {
+            $progress->started_at = now();
+        }
+        // Touch updated_at so dashboard ordering reflects last open
+        $progress->save();
+
         $path = $lesson->attachment_path;
         $ext = strtolower(pathinfo($path, PATHINFO_EXTENSION));
         $url = asset('storage/' . $path);

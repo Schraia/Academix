@@ -35,6 +35,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/enroll/save', [EnrollController::class, 'save'])->name('enroll.save');
     Route::get('/enroll/summary', [EnrollController::class, 'summary'])->name('enroll.summary');
     Route::post('/enroll/complete', [EnrollController::class, 'complete'])->name('enroll.complete');
+    Route::post('/enroll/pending/cancel', [EnrollController::class, 'cancelPending'])->name('enroll.pending.cancel');
     Route::get('/courses', [CourseController::class, 'index'])->name('courses.index');
     Route::get('/courses/{course}', [CourseController::class, 'show'])->name('courses.show');
     Route::get('/courses/{course}/lessons', [CourseController::class, 'lessons'])->name('courses.lessons');

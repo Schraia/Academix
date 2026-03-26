@@ -45,6 +45,10 @@ class UserRegistrationController extends Controller
             $data + ['user_id' => $user->id]
         );
 
+        // Keep users.name in sync with personal info
+        $user->name = trim($data['first_name'] . ' ' . $data['last_name']);
+        $user->save();
+
         $redirectTo = $request->input('redirect_to');
         if (is_string($redirectTo) && $redirectTo !== '') {
             return redirect($redirectTo)->with('success', 'Personal information saved.');
