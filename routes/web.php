@@ -11,6 +11,7 @@ use App\Http\Controllers\CourseUploadController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\CertificatesController;
 use App\Http\Controllers\InboxController;
+use App\Http\Controllers\UserRegistrationController;
 
 Route::get('/', function () {
     return redirect('/login');
@@ -28,6 +29,8 @@ Route::middleware('guest')->group(function () {
 
 Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/registration', [UserRegistrationController::class, 'form'])->name('registration.form');
+    Route::post('/registration', [UserRegistrationController::class, 'save'])->name('registration.save');
     Route::get('/enroll', [EnrollController::class, 'index'])->name('enroll');
     Route::post('/enroll/save', [EnrollController::class, 'save'])->name('enroll.save');
     Route::get('/enroll/summary', [EnrollController::class, 'summary'])->name('enroll.summary');
@@ -71,8 +74,11 @@ Route::middleware('auth')->group(function () {
 
     Route::middleware('admin')->group(function () {
         Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
-        Route::post('/settings/update-role', [SettingsController::class, 'updateRole'])->name('settings.updateRole');
         Route::post('/settings/assign-courses', [SettingsController::class, 'assignCourses'])->name('settings.assignCourses');
+        Route::post('/settings/assign-student-courses', [SettingsController::class, 'assignStudentCourses'])->name('settings.assignStudentCourses');
+        Route::post('/settings/instructors', [SettingsController::class, 'createInstructor'])->name('settings.instructors.create');
+        Route::post('/settings/pending-enrollments/{pending}/approve', [SettingsController::class, 'approvePending'])->name('settings.pending.approve');
+        Route::post('/settings/pending-enrollments/{pending}/reject', [SettingsController::class, 'rejectPending'])->name('settings.pending.reject');
     });
 
     Route::middleware('instructor')->group(function () {

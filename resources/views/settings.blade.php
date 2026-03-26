@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Settings - Academix</title>
+    <title>Admin Panel - Academix</title>
     @vite('resources/css/app.css')
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -150,7 +150,7 @@
                 <a href="{{ route('courses.index') }}" class="nav-item"><svg fill="currentColor" viewBox="0 0 20 20"><path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"/><path fill-rule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clip-rule="evenodd"/></svg><span>Courses</span></a>
                 <a href="{{ route('profile.show') }}" class="nav-item"><svg fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-6-3a2 2 0 11-4 0 2 2 0 014 0zm-2 4a5 5 0 00-4.546 2.916A5.986 5.986 0 0010 16a5.986 5.986 0 004.546-2.084A5 5 0 0010 11z" clip-rule="evenodd"/></svg><span>Profile</span></a>
                 <a href="{{ route('certificates.index') }}" class="nav-item"><svg fill="currentColor" viewBox="0 0 20 20"><path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z"/></svg><span>Certificates</span></a>
-                <a href="{{ route('settings.index') }}" class="nav-item active"><svg fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd"/></svg><span>Settings</span></a>
+                <a href="{{ route('settings.index') }}" class="nav-item active"><svg fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd"/></svg><span>Admin Panel</span></a>
                 @if(!Auth::user()->isAdmin() && !Auth::user()->isInstructor())
                 <a href="{{ route('enroll') }}" class="nav-item"><svg fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"/></svg><span>Enroll Online</span></a>
                 @endif
@@ -162,60 +162,141 @@
             </div>
         </div>
         <div class="main-content">
-            <h1 class="page-title">Settings</h1>
-            <p style="color: #6b7280; margin-bottom: 1rem;">Set user roles. You can make an existing user an <strong>Instructor</strong> or <strong>Admin</strong>.</p>
+            <h1 class="page-title">Admin Panel</h1>
+            <p style="color: #6b7280; margin-bottom: 1rem;">Manage students, instructors, and pending enrollments.</p>
             @if(session('success'))
                 <div class="alert-success">{{ session('success') }}</div>
             @endif
             @if(session('error'))
                 <div class="alert-danger">{{ session('error') }}</div>
             @endif
-            <div class="card">
+            <div style="display:flex; gap:.5rem; margin-bottom: 1rem; flex-wrap: wrap;">
+                <button type="button" class="btn-secondary" onclick="showTab('students')" id="tabBtnStudents">Students</button>
+                <button type="button" class="btn-secondary" onclick="showTab('instructors')" id="tabBtnInstructors">Instructors</button>
+                <button type="button" class="btn-secondary" onclick="showTab('pending')" id="tabBtnPending">Pending Enrollments</button>
+            </div>
+
+            <div id="tab-students" class="card">
                 <table>
                     <thead>
                         <tr>
                             <th>Name</th>
                             <th>Email</th>
-                            <th>Current role</th>
-                            <th>Set role</th>
+                            <th>Role</th>
+                            <th>Personal Info</th>
+                            <th>Courses</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($users->filter(fn($u) => $u->role !== 'admin' && $u->role !== 'instructor') as $u)
+                            <tr>
+                                <td>{{ $u->name ?? '—' }}</td>
+                                <td>{{ $u->email }}</td>
+                                <td><span class="badge-role badge-student">Student</span></td>
+                                <td>
+                                    @if($u->registration)
+                                        <button type="button" class="btn-assign" onclick="openPersonalInfoModal({{ json_encode($u->registration) }}, {{ json_encode($u->email) }})">View</button>
+                                    @else
+                                        —
+                                    @endif
+                                </td>
+                                <td>
+                                    <button type="button"
+                                            class="btn-assign"
+                                            onclick="openStudentModal({{ $u->id }}, {{ json_encode($u->name ?? $u->email) }}, {{ json_encode($u->enrollments->pluck('course_id')->values()) }})">
+                                        Manage Courses
+                                    </button>
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+
+            <div id="tab-instructors" class="card" style="display:none;">
+                <div style="padding: 1rem 1.25rem; border-bottom: 1px solid #e5e7eb;">
+                    <strong>Create Instructor</strong>
+                    <form action="{{ route('settings.instructors.create') }}" method="POST" style="margin-top:.75rem; display:flex; gap:.5rem; flex-wrap: wrap;">
+                        @csrf
+                        <input name="email" type="email" placeholder="Email" required style="padding:.5rem .6rem; border:1px solid #d1d5db; border-radius:8px; min-width: 240px;">
+                        <input name="password" type="password" placeholder="Password" required style="padding:.5rem .6rem; border:1px solid #d1d5db; border-radius:8px; min-width: 180px;">
+                        <input name="password_confirmation" type="password" placeholder="Confirm password" required style="padding:.5rem .6rem; border:1px solid #d1d5db; border-radius:8px; min-width: 180px;">
+                        <button type="submit" class="btn-primary" style="border-radius:8px;">Create</button>
+                    </form>
+                    @if($errors->any())
+                        <div style="color:#b91c1c; margin-top:.5rem; font-size:.9rem;">{{ $errors->first() }}</div>
+                    @endif
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Role</th>
                             <th>Assigned Courses</th>
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach($users as $u)
+                        @foreach($users->filter(fn($u) => $u->role === 'instructor') as $u)
                             <tr>
-                                <td>{{ $u->name }}</td>
+                                <td>{{ $u->name ?? '—' }}</td>
                                 <td>{{ $u->email }}</td>
+                                <td><span class="badge-role badge-instructor">Instructor</span></td>
                                 <td>
-                                    @if($u->role === 'admin')
-                                        <span class="badge-role badge-admin">Admin</span>
-                                    @elseif($u->role === 'instructor')
-                                        <span class="badge-role badge-instructor">Instructor</span>
+                                    <button onclick="openModal({{ $u->id }}, '{{ $u->name ?? $u->email }}', {{ $u->courses->toJson() }})"
+                                            type="button"
+                                            class="btn-assign">
+                                        Assign Courses
+                                    </button>
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+
+            <div id="tab-pending" class="card" style="display:none;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Student</th>
+                            <th>Submitted</th>
+                            <th>Status</th>
+                            <th>Personal Info</th>
+                            <th>Payment Evidence</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($pendingEnrollments as $p)
+                            <tr>
+                                <td>{{ $p->user->email }}</td>
+                                <td>{{ optional($p->submitted_at)->format('Y-m-d H:i') }}</td>
+                                <td>{{ ucfirst($p->status) }}</td>
+                                <td>
+                                    @if($p->user->registration)
+                                        <button type="button" class="btn-assign" onclick="openPersonalInfoModal({{ json_encode($p->user->registration) }}, {{ json_encode($p->user->email) }})">View</button>
                                     @else
-                                        <span class="badge-role badge-student">Student</span>
+                                        —
                                     @endif
                                 </td>
                                 <td>
-                                    <form action="{{ route('settings.updateRole') }}" method="POST" class="role-form">
-                                        @csrf
-                                        <input type="hidden" name="user_id" value="{{ $u->id }}">
-                                        <select name="role">
-                                            <option value="student" {{ $u->role === 'student' ? 'selected' : '' }}>Student</option>
-                                            <option value="instructor" {{ $u->role === 'instructor' ? 'selected' : '' }}>Instructor</option>
-                                            <option value="admin" {{ $u->role === 'admin' ? 'selected' : '' }}>Admin</option>
-                                        </select>
-                                        <button type="submit">Update</button>
-                                    </form>
-                                </td>
-                                <td>
-                                    @if($u->role === 'instructor')
-                                        <button onclick="openModal({{ $u->id }}, '{{ $u->name }}', {{ $u->courses->toJson() }})"
-                                                type="button"
-                                                class="btn-assign">
-                                            Assign Courses
-                                        </button>
+                                    @if($p->payment_evidence_path)
+                                        <a class="btn-assign" style="text-decoration:none; display:inline-block;" href="{{ asset('storage/' . $p->payment_evidence_path) }}" target="_blank">View</a>
                                     @else
-                                        N/A
+                                        —
+                                    @endif
+                                </td>
+                                <td style="display:flex; gap:.4rem; flex-wrap: wrap;">
+                                    @if($p->status === 'pending')
+                                        <form method="POST" action="{{ route('settings.pending.approve', $p) }}">@csrf
+                                            <button type="submit" class="btn-primary" style="border-radius:8px;">Approve</button>
+                                        </form>
+                                        <form method="POST" action="{{ route('settings.pending.reject', $p) }}">@csrf
+                                            <button type="submit" class="btn-secondary" style="border-radius:8px;">Reject</button>
+                                        </form>
+                                    @else
+                                        —
                                     @endif
                                 </td>
                             </tr>
@@ -259,9 +340,64 @@
         </div>
     </div>
 
+    <div id="student-assign-modal" class="modal">
+        <div class="modal-content">
+            <form id="student-assign-form" action="{{ route('settings.assignStudentCourses') }}" method="POST">
+                @csrf
+                <input type="hidden" name="user_id" id="student-modal-user-id">
+                <div class="modal-header">
+                    <h2 id="student-modal-title">Manage Student Courses</h2>
+                    <span class="close" onclick="closeStudentModal()">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <div id="student-assigned-courses-container">
+                        <h3>Enrolled Courses</h3>
+                        <div id="student-assigned-courses-list" class="courses-list"></div>
+                    </div>
+                    <div id="student-available-courses-container">
+                        <h3>Available Courses</h3>
+                        <input type="text" id="student-search-courses" placeholder="Search for courses...">
+                        <div id="student-available-courses-list" class="courses-list"></div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <div class="footer-info">
+                        Total Credits: <span id="student-total-credits">0</span>
+                    </div>
+                    <div class="footer-buttons">
+                        <button type="button" class="btn-secondary" onclick="closeStudentModal()">Cancel</button>
+                        <button type="submit" class="btn-primary">Save Changes</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="personal-info-modal" class="modal">
+        <div class="modal-content" style="max-width: 900px;">
+            <div class="modal-header">
+                <h2 id="personal-info-title">Personal Information</h2>
+                <span class="close" onclick="closePersonalInfoModal()">&times;</span>
+            </div>
+            <div class="modal-body" style="grid-template-columns: 1fr;">
+                <div>
+                    <h3 style="margin-top:0;">Details</h3>
+                    <div id="personal-info-body" style="display:grid; grid-template-columns: 1fr 1fr; gap: .75rem 1rem;"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <div class="footer-info"></div>
+                <div class="footer-buttons">
+                    <button type="button" class="btn-secondary" onclick="closePersonalInfoModal()">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         const allCourses = @json($courses);
         let currentAssignedCourses = [];
+        let currentStudentAssignedCourses = [];
 
         function openModal(userId, userName, assignedCourses) {
             document.body.classList.add('modal-open');
@@ -342,12 +478,139 @@
             renderCourseLists(e.target.value);
         });
 
+        function openStudentModal(userId, userName, assignedCourseIds) {
+            document.body.classList.add('modal-open');
+            document.getElementById('student-modal-user-id').value = userId;
+            document.getElementById('student-modal-title').innerText = 'Manage Courses for ' + userName;
+            currentStudentAssignedCourses = (assignedCourseIds || []).map(id => parseInt(id, 10));
+            renderStudentCourseLists();
+            document.getElementById('student-assign-modal').style.display = 'block';
+        }
+
+        function closeStudentModal() {
+            document.body.classList.remove('modal-open');
+            document.getElementById('student-assign-modal').style.display = 'none';
+        }
+
+        function renderStudentCourseLists(searchTerm = '') {
+            const assignedList = document.getElementById('student-assigned-courses-list');
+            const availableList = document.getElementById('student-available-courses-list');
+
+            assignedList.innerHTML = '';
+            availableList.innerHTML = '';
+            let totalCredits = 0;
+
+            const filteredCourses = allCourses.filter(course =>
+                course.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                course.code.toLowerCase().includes(searchTerm.toLowerCase())
+            );
+
+            allCourses.forEach(course => {
+                const isAssigned = currentStudentAssignedCourses.includes(course.id);
+                if (isAssigned) {
+                    totalCredits += parseFloat(course.credits);
+                    assignedList.innerHTML += createStudentCourseItem(course);
+                }
+            });
+
+            filteredCourses.forEach(course => {
+                const isAssigned = currentStudentAssignedCourses.includes(course.id);
+                if (!isAssigned) {
+                    availableList.innerHTML += createStudentCourseItem(course);
+                }
+            });
+
+            document.getElementById('student-total-credits').innerText = totalCredits.toFixed(2);
+        }
+
+        function createStudentCourseItem(course) {
+            const isChecked = currentStudentAssignedCourses.includes(course.id);
+            const hiddenInputs = isChecked ? `<input type="hidden" name="courses[]" value="${course.id}">` : '';
+
+            return `
+                <div class="course-item">
+                    <input type="checkbox" id="student-course-${course.id}" value="${course.id}" ${isChecked ? 'checked' : ''} onchange="toggleStudentCourse(${course.id})">
+                    <label for="student-course-${course.id}">
+                        <span class="course-code">(${course.code})</span>
+                        ${course.title}
+                        <span class="course-credits">${course.credits} units</span>
+                    </label>
+                    ${hiddenInputs}
+                </div>
+            `;
+        }
+
+        function toggleStudentCourse(courseId) {
+            const index = currentStudentAssignedCourses.indexOf(courseId);
+            if (index > -1) {
+                currentStudentAssignedCourses.splice(index, 1);
+            } else {
+                currentStudentAssignedCourses.push(courseId);
+            }
+            renderStudentCourseLists(document.getElementById('student-search-courses').value);
+        }
+
+        document.getElementById('student-search-courses').addEventListener('input', (e) => {
+            renderStudentCourseLists(e.target.value);
+        });
+
         window.onclick = function(event) {
             const modal = document.getElementById('assign-modal');
+            const studentModal = document.getElementById('student-assign-modal');
             if (event.target == modal) {
                 closeModal();
             }
+            if (event.target == studentModal) {
+                closeStudentModal();
+            }
         }
+
+        function showTab(tab) {
+            document.getElementById('tab-students').style.display = tab === 'students' ? 'block' : 'none';
+            document.getElementById('tab-instructors').style.display = tab === 'instructors' ? 'block' : 'none';
+            document.getElementById('tab-pending').style.display = tab === 'pending' ? 'block' : 'none';
+        }
+
+        function openPersonalInfoModal(registration, email) {
+            document.body.classList.add('modal-open');
+            document.getElementById('personal-info-title').innerText = 'Personal Information — ' + (email || '');
+            const container = document.getElementById('personal-info-body');
+            container.innerHTML = '';
+
+            const fields = [
+                ['First Name', registration.first_name],
+                ['Middle Name', registration.middle_name || '—'],
+                ['Last Name', registration.last_name],
+                ['Suffix', registration.suffix || '—'],
+                ['Age', registration.age],
+                ['Nationality', registration.nationality],
+                ['Gender', registration.gender],
+                ['Contact Number', registration.contact_number],
+                ['Address', registration.address_line],
+                ['City', registration.city],
+                ['Province', registration.province],
+                ['Zip Code', registration.zip_code || '—'],
+                ['Guardian Name', registration.guardian_name || '—'],
+                ['Guardian Contact', registration.guardian_contact_number || '—'],
+            ];
+
+            fields.forEach(([label, value]) => {
+                const div = document.createElement('div');
+                div.innerHTML = `<div style="font-size:.85rem;color:#6b7280;">${label}</div><div style="font-weight:600;color:#111827;">${value ?? '—'}</div>`;
+                container.appendChild(div);
+            });
+
+            document.getElementById('personal-info-modal').style.display = 'block';
+        }
+
+        function closePersonalInfoModal() {
+            document.body.classList.remove('modal-open');
+            document.getElementById('personal-info-modal').style.display = 'none';
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            showTab('students');
+        });
     </script>
 </body>
 </html>

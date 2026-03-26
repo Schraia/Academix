@@ -23,14 +23,12 @@ class ProfileController extends Controller
         $user = Auth::user();
         $schoolYear = now()->year;
 
-        // Enrolled courses (current year) for students; for instructors we could show their courses
         $enrollmentIds = $user->enrollments()
             ->whereYear('enrolled_at', $schoolYear)
             ->where('status', 'enrolled')
             ->pluck('course_id');
         $enrolledCourses = Course::whereIn('id', $enrollmentIds)->get();
 
-        // Overall progress: completed lessons vs total published lessons that have an attached file across enrolled courses
         $totalLessons = LessonModule::whereIn('course_id', $enrollmentIds)
             ->where('status', 'published')
             ->whereNotNull('attachment_path')
@@ -44,7 +42,6 @@ class ProfileController extends Controller
             ->count();
         $progressPercent = $totalLessons > 0 ? round($completedCount / $totalLessons * 100, 1) : 0;
 
-        // Grades collectively: per-course weighted grade + overall average
         $gradesByCourse = [];
         $overallWeightedSum = 0;
         $coursesWithGrades = 0;
@@ -67,7 +64,6 @@ class ProfileController extends Controller
         }
         $overallGradeAverage = $coursesWithGrades > 0 ? round($overallWeightedSum / $coursesWithGrades, 2) : null;
 
-        // Discussion threads the user participated in (authored or replied), excluding unfollowed/hidden
         $hiddenThreadIds = DB::table('user_hidden_profile_threads')->where('user_id', $user->id)->pluck('thread_id');
         $threadIdsAuthored = DiscussionThread::where('user_id', $user->id)->pluck('id');
         $threadIdsReplied = DiscussionMessage::where('user_id', $user->id)->pluck('thread_id')->unique();
@@ -78,7 +74,6 @@ class ProfileController extends Controller
             ->limit(15)
             ->get();
 
-        // Learning curve diagnostics: completions per week (last 12 weeks) in app timezone (UTC+8)
         $tz = config('app.timezone', 'Asia/Manila');
         $completionRecords = LessonProgress::where('user_id', $user->id)
             ->where('status', 'completed')
@@ -149,7 +144,7 @@ class ProfileController extends Controller
     }
 
     /**
-     * All enrollments grouped by year and semester, with units and grades.
+     * All enrollments grouped by year and semester, with units and grades
      */
     public function enrollmentsIndex()
     {

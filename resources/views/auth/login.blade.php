@@ -458,13 +458,6 @@
 
               <div class="form-group">
                 <span class="icon"><img src="{{ asset('images/user.png') }}"></span>
-                <label for="signup_name">Name</label>
-                <input type="text" id="signup_name" name="name" value="{{ old('name') }}" required placeholder="Name">
-                @error('name') <div class="error-message">{{ $message }}</div> @enderror
-              </div>
-
-              <div class="form-group">
-                <span class="icon"><img src="{{ asset('images/user.png') }}"></span>
                 <label for="signup_email">Email</label>
                 <input type="email" id="signup_email" name="email" value="{{ old('email') }}" required placeholder="Email">
                 @error('email') <div class="error-message">{{ $message }}</div> @enderror

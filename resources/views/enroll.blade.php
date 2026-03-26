@@ -862,7 +862,51 @@ button:disabled {
         </div>
     </div>
 
+    <div class="modal-overlay" id="personalInfoModal" style="display:none;">
+        <div class="modal-box">
+            <div class="modal-title">Complete your personal information</div>
+            <p class="restriction-message" style="margin-top:.5rem;">
+                Please fill-up the personal information form before registering/enrolling.
+            </p>
+            <div class="enroll-modal-actions" style="margin-top: 1rem; display:flex; gap:.75rem; justify-content:flex-end;">
+                <a href="{{ route('registration.form') }}" class="modal-close" style="text-decoration:none; display:inline-block;">Go to Form</a>
+                <button type="button" class="modal-close" onclick="closePersonalInfoModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
     <script>
+        window.needsPersonalInfo = @json($needsPersonalInfo ?? false);
+        window.showPersonalInfoModal = @json((bool) session('show_personal_info_modal'));
+
+        function openPersonalInfoModal() {
+            const modal = document.getElementById('personalInfoModal');
+            if (!modal) return;
+            modal.style.display = 'flex';
+        }
+        function closePersonalInfoModal() {
+            const modal = document.getElementById('personalInfoModal');
+            if (!modal) return;
+            modal.style.display = 'none';
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            if (window.needsPersonalInfo && window.showPersonalInfoModal) {
+                openPersonalInfoModal();
+            }
+
+            if (window.needsPersonalInfo) {
+                const form = document.getElementById('saveEnrollmentsForm');
+                const btn = form ? form.querySelector('button[type="submit"]') : null;
+                if (btn) {
+                    btn.addEventListener('click', function (e) {
+                        e.preventDefault();
+                        openPersonalInfoModal();
+                    });
+                }
+            }
+        });
+
         window.alreadyEnrolled = @json($alreadyEnrolled ?? []);
         window.curriculumByCollege = @json($curriculumByCollege ?? []);
         window.sectionsByCollege = @json($sectionsByCollege ?? []);

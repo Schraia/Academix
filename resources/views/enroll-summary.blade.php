@@ -92,12 +92,57 @@
             margin-top: 1rem; padding-top: 1rem; border-top: 2px solid #e5e7eb;
             display: flex; justify-content: space-between; font-size: 1.125rem; font-weight: 700; color: #1f2937;
         }
-        .payment-type { margin: 1rem 0; padding: 0.75rem; background: #f9fafb; border-radius: 8px; color: #6b7280; }
-        .btn-skip-payment {
-            margin-top: 1.5rem; padding: 0.75rem 1.5rem; background: #16a34a; color: white;
-            border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 1rem;
+        .section-box{
+            margin-top: 1.25rem;
+            padding: 1rem;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            background: #fff;
         }
-        .btn-skip-payment:hover { background: #15803d; }
+        .section-title{ font-size: 1.05rem; font-weight: 700; color:#1f2937; margin-bottom:.75rem; }
+        .error-text{ color:#b91c1c; font-size:.85rem; }
+        .btn{
+            border: none;
+            border-radius: 10px;
+            padding: 0.6rem 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            text-decoration: none;
+        }
+        .btn-primary{
+            background: #b91c1c;
+            color: white;
+        }
+        .btn-primary:hover{ background: #991b1b; transform: translateY(-1px); }
+        .btn-secondary{
+            background: #6b7280;
+            color: white;
+        }
+        .btn-secondary:hover{ background: #4b5563; transform: translateY(-1px); }
+        .btn-outline{
+            background: #fff;
+            color: #b91c1c;
+            border: 1px solid #fecaca;
+            font-weight: 700;
+        }
+        .btn-outline:hover{ background: #fff5f5; transform: translateY(-1px); }
+        .btn-primary:disabled{
+            opacity: .55;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .method-row{ display:flex; gap:.75rem; flex-wrap: wrap; }
+        .method-hint{ margin-top:.5rem; color:#6b7280; font-size:.9rem; }
+        .upload-wrap{ margin-top: .9rem; display:none; }
+        .file-input{ position:absolute; left:-9999px; width:1px; height:1px; }
+        .file-btn{ user-select:none; }
+        .file-name{ margin-left:.5rem; color:#6b7280; font-size:.9rem; }
+        .field{ display:flex; flex-direction:column; gap:.35rem; margin-top:.75rem; }
+        .field label{ font-size:.9rem; color:#374151; }
         .summary-actions { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.5rem; }
         .btn-back {
             padding: 0.5rem 1rem; background: #6b7280; color: white; border: none; border-radius: 8px;
@@ -199,12 +244,87 @@
                     <span>Total ({{ count($items) }} subject{{ count($items) !== 1 ? 's' : '' }})</span>
                     <span>Php {{ number_format($totalAmount) }}</span>
                 </div>
-                <div class="payment-type"><strong>Payment:</strong> {{ $paymentType }}</div>
-                <form method="POST" action="{{ route('enroll.complete') }}">@csrf
-                    <button type="submit" class="btn-skip-payment">Skip payment (development) — Complete enrollment</button>
-                </form>
+                <div class="section-box">
+                    <div class="section-title">Personal Information</div>
+                    <a class="btn btn-outline" href="{{ route('registration.form', ['redirect_to' => route('enroll.summary')]) }}">Review Form</a>
+                    <div class="method-hint">You can edit the form there, then come back here to submit.</div>
+                </div>
+
+                <div class="section-box">
+                    <div class="section-title">Payment</div>
+                    <div class="field" style="margin-top:0;">
+                        <label>Method:</label>
+                        <div class="method-row">
+                            <button type="button" class="btn btn-outline" id="methodOnlineBtn">Online Payment</button>
+                        </div>
+                        <div class="method-hint">Select a payment method to continue.</div>
+                    </div>
+                    <form method="POST" action="{{ route('enroll.complete') }}" enctype="multipart/form-data" id="submitEnrollmentForm">
+                        @csrf
+                        <input type="hidden" name="payment_type" id="payment_type" value="">
+
+                        <div class="upload-wrap" id="uploadWrap">
+                            <div class="field">
+                                <label>Upload payment evidence (JPG/JPEG/PNG)</label>
+                                <input class="file-input" id="payment_evidence" name="payment_evidence" type="file" accept=".jpg,.jpeg,.png">
+                                <div>
+                                    <label for="payment_evidence" class="btn btn-secondary file-btn" style="color: white;">Choose File</label>
+                                    <span class="file-name" id="fileName">No file chosen</span>
+                                </div>
+                                @error('payment_evidence') <div class="error-text">{{ $message }}</div> @enderror
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary" id="submitBtn" disabled style="margin-top: 1rem;">Submit Enrollment</button>
+                    </form>
+                </div>
             </div>
         </div>
     </div>
+
+    <script>
+        (function () {
+            const evidence = document.getElementById('payment_evidence');
+            const submitBtn = document.getElementById('submitBtn');
+            const paymentType = document.getElementById('payment_type');
+            const uploadWrap = document.getElementById('uploadWrap');
+            const methodOnlineBtn = document.getElementById('methodOnlineBtn');
+            const fileName = document.getElementById('fileName');
+
+            function setMethod(method) {
+                paymentType.value = method || '';
+                if (method === 'online') {
+                    uploadWrap.style.display = 'block';
+                    methodOnlineBtn.classList.remove('btn-outline');
+                    methodOnlineBtn.classList.add('btn-primary');
+                } else {
+                    uploadWrap.style.display = 'none';
+                    methodOnlineBtn.classList.add('btn-outline');
+                    methodOnlineBtn.classList.remove('btn-primary');
+                }
+                setEnabled();
+            }
+
+            function setEnabled() {
+                const hasEvidence = evidence && evidence.files && evidence.files.length > 0;
+                const hasMethod = paymentType && paymentType.value !== '';
+                submitBtn.disabled = !(hasMethod && hasEvidence);
+            }
+
+            if (methodOnlineBtn) methodOnlineBtn.addEventListener('click', function () { setMethod('online'); });
+            if (evidence) evidence.addEventListener('change', function () {
+                const f = evidence.files && evidence.files[0] ? evidence.files[0].name : '';
+                if (fileName) fileName.textContent = f || 'No file chosen';
+                setEnabled();
+            });
+
+            // If there are validation errors, show the upload UI
+            @if($errors->has('payment_evidence') || $errors->has('payment_type'))
+                setMethod('online');
+            @endif
+
+            setEnabled();
+        })();
+    </script>
 </body>
 </html>
