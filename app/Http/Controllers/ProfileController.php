@@ -30,11 +30,17 @@ class ProfileController extends Controller
             ->pluck('course_id');
         $enrolledCourses = Course::whereIn('id', $enrollmentIds)->get();
 
-        // Overall progress: completed lessons vs total published lessons across enrolled courses
-        $totalLessons = LessonModule::whereIn('course_id', $enrollmentIds)->where('status', 'published')->count();
+        // Overall progress: completed lessons vs total published lessons that have an attached file across enrolled courses
+        $totalLessons = LessonModule::whereIn('course_id', $enrollmentIds)
+            ->where('status', 'published')
+            ->whereNotNull('attachment_path')
+            ->count();
         $completedCount = LessonProgress::where('user_id', $user->id)
             ->where('status', 'completed')
-            ->whereIn('lesson_module_id', LessonModule::whereIn('course_id', $enrollmentIds)->where('status', 'published')->pluck('id'))
+            ->whereIn('lesson_module_id', LessonModule::whereIn('course_id', $enrollmentIds)
+                ->where('status', 'published')
+                ->whereNotNull('attachment_path')
+                ->pluck('id'))
             ->count();
         $progressPercent = $totalLessons > 0 ? round($completedCount / $totalLessons * 100, 1) : 0;
 
@@ -119,7 +125,10 @@ class ProfileController extends Controller
 
         $breakdown = [];
         foreach ($enrolledCourses as $course) {
-            $publishedModuleIds = LessonModule::where('course_id', $course->id)->where('status', 'published')->pluck('id');
+            $publishedModuleIds = LessonModule::where('course_id', $course->id)
+                ->where('status', 'published')
+                ->whereNotNull('attachment_path')
+                ->pluck('id');
             $total = $publishedModuleIds->count();
             $completed = LessonProgress::where('user_id', $user->id)
                 ->where('status', 'completed')
