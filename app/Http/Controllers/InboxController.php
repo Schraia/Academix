@@ -7,6 +7,7 @@ use App\Models\Enrollment;
 use App\Models\Message;
 use App\Models\MessageAttachment;
 use App\Models\MessageRecipient;
+use App\Models\UserNotification;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -176,6 +177,18 @@ class InboxController extends Controller
                     'recipient_id' => $recipientId,
                     'folder'       => 'inbox',
                 ]);
+
+                if ((int) $recipientId !== (int) $user->id) {
+                    $subject = trim((string) ($request->subject ?? ''));
+                    $title = $subject !== '' ? "New message: {$subject}" : 'New message';
+
+                    UserNotification::create([
+                        'user_id' => $recipientId,
+                        'title' => $title,
+                        'message' => 'From: ' . ($user->name ?? 'Someone'),
+                        'link_url' => '/inbox?folder=inbox&open_message_id=' . $message->id,
+                    ]);
+                }
             }
 
             // Handle file attachments

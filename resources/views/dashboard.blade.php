@@ -153,6 +153,47 @@
   }
   .top-header-left{ min-width:0; }
 
+  .top-header-right{
+    display:flex;
+    justify-content:flex-end;
+    align-items:flex-start;
+  }
+  .notif-btn{
+    width: 52px;
+    height: 52px;
+    border-radius: 16px;
+    background:#fff;
+    border:1px solid rgba(229,231,235,0.95);
+    box-shadow: var(--shadow);
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    color:#6b7280;
+    text-decoration:none;
+    position:relative;
+    transition:.2s ease;
+    flex-shrink:0;
+  }
+  .notif-btn:hover{ color:#dc2626; transform:translateY(-1px); }
+  .notif-btn svg{ width:22px; height:22px; }
+  .notif-badge{
+    position:absolute;
+    top:10px;
+    right:10px;
+    min-width:18px;
+    height:18px;
+    padding:0 5px;
+    border-radius:999px;
+    background:#ef4444;
+    color:#fff;
+    font-size:.7rem;
+    font-weight:950;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    box-shadow:0 0 0 2px #fff;
+  }
+
   .dashboard-grid{
     flex:1;                 /* take remaining height */
     min-height:0;           /* allow internal sizing */
@@ -193,7 +234,12 @@
   }
 
 
-  .top-profile{ width:100%; height:140px }
+  .top-profile{
+    width:100%;
+    height:90px;
+    padding: .05rem 1rem; 
+    gap: .7rem;           
+  }
 
   .profile-container{
     display:flex;
@@ -609,7 +655,16 @@
         <div class="subtitle">Here’s what’s happening today in your Academix dashboard.</div>
     </div>
 
-    <!-- MOVE PROFILE CARD HERE (top right) -->
+    <div class="top-header-right">
+        <a class="notif-btn" href="{{ route('notifications.index') }}" aria-label="Notifications" title="Notifications">
+            <svg viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 22a2.5 2.5 0 0 0 2.45-2h-4.9A2.5 2.5 0 0 0 12 22Zm7-6V11a7 7 0 1 0-14 0v5l-2 2v1h18v-1l-2-2Z"/>
+            </svg>
+            @if(($unreadNotificationsCount ?? 0) > 0)
+                <span class="notif-badge">{{ ($unreadNotificationsCount ?? 0) > 99 ? '99+' : ($unreadNotificationsCount ?? 0) }}</span>
+            @endif
+        </a>
+    </div>
 
 </div>
 

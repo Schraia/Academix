@@ -7,6 +7,7 @@ use App\Models\CourseAnnouncement;
 use App\Models\LessonModule;
 use App\Models\LessonProgress;
 use App\Models\UserCourseSectionView;
+use App\Models\UserNotification;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 
@@ -156,6 +157,11 @@ class DashboardController extends Controller
 
         $profileRoleLabel = $user->isAdmin() ? 'Admin' : ($user->isInstructor() ? 'Instructor' : ($enrollments->first()?->section_name ?? 'Student'));
 
+        $unreadNotificationsCount = UserNotification::query()
+            ->where('user_id', $user->id)
+            ->whereNull('read_at')
+            ->count();
+
         return view('dashboard', [
             'todaysSchedules' => $todaysSchedules,
             'dateFormatted' => $dateFormatted,
@@ -165,6 +171,7 @@ class DashboardController extends Controller
             'profileRoleLabel' => $profileRoleLabel,
             'announcements' => $announcements,
             'recentlyOpened' => $recentlyOpened,
+            'unreadNotificationsCount' => $unreadNotificationsCount,
         ]);
     }
 

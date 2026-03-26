@@ -12,6 +12,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\CertificatesController;
 use App\Http\Controllers\InboxController;
 use App\Http\Controllers\UserRegistrationController;
+use App\Http\Controllers\NotificationsController;
 
 Route::get('/', function () {
     return redirect('/login');
@@ -29,6 +30,8 @@ Route::middleware('guest')->group(function () {
 
 Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/notifications', [NotificationsController::class, 'index'])->name('notifications.index');
+    Route::get('/notifications/{notification}', [NotificationsController::class, 'go'])->name('notifications.go');
     Route::get('/registration', [UserRegistrationController::class, 'form'])->name('registration.form');
     Route::post('/registration', [UserRegistrationController::class, 'save'])->name('registration.save');
     Route::get('/enroll', [EnrollController::class, 'index'])->name('enroll');

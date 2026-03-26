@@ -703,6 +703,19 @@ textarea.form-control{resize:vertical;min-height:100px;}
         });
     });
 
+    // ── Deep link: open message from URL param ───────────
+    (function openFromQueryParam(){
+        try {
+            const url = new URL(window.location.href);
+            const id = url.searchParams.get('open_message_id');
+            if (!id) return;
+            const item = document.querySelector(`.msg-item[data-id="${CSS.escape(String(id))}"]`);
+            if (item) openMessage(item);
+        } catch (e) {
+            // no-op
+        }
+    })();
+
     // ── Remove active message helper ──────────────────────
     function removeActiveMessage() {
         const item = document.querySelector(`.msg-item[data-id="${activeMessageId}"]`);
