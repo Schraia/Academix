@@ -190,7 +190,14 @@
                     <tbody>
                         @foreach($users->filter(fn($u) => $u->role !== 'admin' && $u->role !== 'instructor') as $u)
                             <tr>
-                                <td>{{ $u->name ?? '—' }}</td>
+                                @php
+                                    $displayName = trim((string) ($u->name ?? ''));
+                                    if ($displayName === '' && $u->registration) {
+                                        $displayName = trim(($u->registration->first_name ?? '') . ' ' . ($u->registration->last_name ?? ''));
+                                    }
+                                    if ($displayName === '') $displayName = $u->email;
+                                @endphp
+                                <td>{{ $displayName }}</td>
                                 <td>{{ $u->email }}</td>
                                 <td><span class="badge-role badge-student">Student</span></td>
                                 <td>
@@ -203,7 +210,7 @@
                                 <td>
                                     <button type="button"
                                             class="btn-assign"
-                                            onclick="openStudentModal({{ $u->id }}, {{ json_encode($u->name ?? $u->email) }}, {{ json_encode($u->enrollments->pluck('course_id')->values()) }})">
+                                            onclick="openStudentModal({{ $u->id }}, {{ json_encode($displayName) }}, {{ json_encode($u->enrollments->pluck('course_id')->values()) }})">
                                         Manage Courses
                                     </button>
                                 </td>
@@ -239,11 +246,18 @@
                     <tbody>
                         @foreach($users->filter(fn($u) => $u->role === 'instructor') as $u)
                             <tr>
-                                <td>{{ $u->name ?? '—' }}</td>
+                                @php
+                                    $displayName = trim((string) ($u->name ?? ''));
+                                    if ($displayName === '' && $u->registration) {
+                                        $displayName = trim(($u->registration->first_name ?? '') . ' ' . ($u->registration->last_name ?? ''));
+                                    }
+                                    if ($displayName === '') $displayName = $u->email;
+                                @endphp
+                                <td>{{ $displayName }}</td>
                                 <td>{{ $u->email }}</td>
                                 <td><span class="badge-role badge-instructor">Instructor</span></td>
                                 <td>
-                                    <button onclick="openModal({{ $u->id }}, '{{ $u->name ?? $u->email }}', {{ $u->courses->toJson() }})"
+                                    <button onclick="openModal({{ $u->id }}, '{{ $displayName }}', {{ $u->courses->toJson() }})"
                                             type="button"
                                             class="btn-assign">
                                         Assign Courses
