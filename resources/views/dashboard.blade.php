@@ -153,6 +153,47 @@
   }
   .top-header-left{ min-width:0; }
 
+  .top-header-right{
+    display:flex;
+    justify-content:flex-end;
+    align-items:flex-start;
+  }
+  .notif-btn{
+    width: 52px;
+    height: 52px;
+    border-radius: 16px;
+    background:#fff;
+    border:1px solid rgba(229,231,235,0.95);
+    box-shadow: var(--shadow);
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    color:#6b7280;
+    text-decoration:none;
+    position:relative;
+    transition:.2s ease;
+    flex-shrink:0;
+  }
+  .notif-btn:hover{ color:#dc2626; transform:translateY(-1px); }
+  .notif-btn svg{ width:22px; height:22px; }
+  .notif-badge{
+    position:absolute;
+    top:10px;
+    right:10px;
+    min-width:18px;
+    height:18px;
+    padding:0 5px;
+    border-radius:999px;
+    background:#ef4444;
+    color:#fff;
+    font-size:.7rem;
+    font-weight:950;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    box-shadow:0 0 0 2px #fff;
+  }
+
   .dashboard-grid{
     flex:1;                 /* take remaining height */
     min-height:0;           /* allow internal sizing */
@@ -193,7 +234,12 @@
   }
 
 
-  .top-profile{ width:100%; height:140px }
+  .top-profile{
+    width:100%;
+    height:90px;
+    padding: .05rem 1rem; 
+    gap: .7rem;           
+  }
 
   .profile-container{
     display:flex;
@@ -392,7 +438,8 @@
   .course-card-dash:hover{transform:translateY(-3px);box-shadow:0 18px 35px rgba(17,24,39,0.12);}
 
   .course-card-dash .thumb{
-    height: var(--course-thumb-h);
+    flex: 1;
+    min-height: var(--course-thumb-h);
     background: linear-gradient(135deg, #fecaca, #fff1f2);
     flex-shrink:0;
   }
@@ -403,8 +450,14 @@
     display:flex;
     flex-direction:column;
     gap:.35rem;
-    flex:1;
+    flex: 0 0 auto;
     min-height:0;
+  }
+  .course-card-dash .course-meta{
+    margin-top: auto; /* pushes code/title lower to give image more space */
+    display:flex;
+    flex-direction:column;
+    gap:.25rem;
   }
   .course-card-dash .code{
     font-size: clamp(.9rem, .95vw, .95rem);
@@ -418,20 +471,32 @@
   }
 
   .course-card-dash .icons{
-    margin-top:auto;
     display:flex;
     gap:.6rem;
     align-items:center;
     opacity:.95;
   }
-  .course-card-dash .icons span{
-    color:#6b7280;
+  .course-card-dash .icons .icon{
+    position:relative;
     display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    color:#6b7280;
     cursor:pointer;
     transition:.2s;
   }
-  .course-card-dash .icons span:hover{color:#dc2626;}
+  .course-card-dash .icons .icon:hover{color:#dc2626;}
   .course-card-dash .icons svg{width:18px;height:18px;}
+  .course-card-dash .icons .icon-dot{
+    position:absolute;
+    top:-3px;
+    right:-3px;
+    width:8px;
+    height:8px;
+    border-radius:999px;
+    background:#ef4444;
+    box-shadow: 0 0 0 2px #fff;
+  }
 
   .courses-overflow-btn{
     flex-shrink:0;
@@ -559,7 +624,7 @@
                 <svg fill="currentColor" viewBox="0 0 20 20">
                     <path fill-rule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd"/>
                 </svg>
-                <span>Settings</span>
+                <span>Admin Panel</span>
             </a>
             @endif
         </nav>
@@ -581,11 +646,25 @@
 
         <div class="top-header">
     <div class="top-header-left">
-        <div class="title">Welcome Back, {{ Auth::user()->isAdmin() ? 'Admin' : Auth::user()->name }}!</div>
+        @php
+            $u = Auth::user();
+            $fallbackFullName = trim(($u->first_name ?? '') . ' ' . ($u->last_name ?? ''));
+            $displayName = trim($u->name ?: $fallbackFullName) ?: 'User';
+        @endphp
+        <div class="title">Welcome Back, {{ $u->isAdmin() ? 'Admin' : $displayName }}!</div>
         <div class="subtitle">Here’s what’s happening today in your Academix dashboard.</div>
     </div>
 
-    <!-- MOVE PROFILE CARD HERE (top right) -->
+    <div class="top-header-right">
+        <a class="notif-btn" href="{{ route('notifications.index') }}" aria-label="Notifications" title="Notifications">
+            <svg viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 22a2.5 2.5 0 0 0 2.45-2h-4.9A2.5 2.5 0 0 0 12 22Zm7-6V11a7 7 0 1 0-14 0v5l-2 2v1h18v-1l-2-2Z"/>
+            </svg>
+            @if(($unreadNotificationsCount ?? 0) > 0)
+                <span class="notif-badge">{{ ($unreadNotificationsCount ?? 0) > 99 ? '99+' : ($unreadNotificationsCount ?? 0) }}</span>
+            @endif
+        </a>
+    </div>
 
 </div>
 
@@ -640,37 +719,26 @@
                                                     </div>
 
                                                     <div class="body">
-                                                        <div class="code">{{ $c->code ?? '—' }}</div>
-                                                        <div class="title">{{ $c ? Str::limit($c->title, 28) : '—' }}</div>
-
-                                                        @if($badges && ($badges->grades > 0 || $badges->announcements > 0 || $badges->lessons > 0 || $badges->discussions > 0))
-                                                        <div class="card-badges">
-                                                            @if($badges->grades > 0)
-                                                                <span class="card-badge grades">{{ $badges->grades }} grade{{ $badges->grades !== 1 ? 's' : '' }}</span>
-                                                            @endif
-                                                            @if($badges->announcements > 0)
-                                                                <span class="card-badge announcements">{{ $badges->announcements }}</span>
-                                                            @endif
-                                                            @if($badges->lessons > 0)
-                                                                <span class="card-badge lessons">{{ $badges->lessons }}</span>
-                                                            @endif
-                                                            @if($badges->discussions > 0)
-                                                                <span class="card-badge discussions">{{ $badges->discussions }}</span>
-                                                            @endif
+                                                        <div class="course-meta">
+                                                            <div class="code">{{ $c->code ?? '—' }}</div>
+                                                            <div class="title">{{ $c ? Str::limit($c->title, 28) : '—' }}</div>
                                                         </div>
-                                                        @endif
 
                                                         <div class="icons">
-                                                            <span onclick="event.preventDefault(); event.stopPropagation(); window.location='{{ route('courses.announcements', $cid) }}';" title="Announcements">
+                                                            <span class="icon" onclick="event.preventDefault(); event.stopPropagation(); window.location='{{ route('courses.announcements', $cid) }}';" title="Announcements">
+                                                                @if($badges && $badges->announcements > 0)<span class="icon-dot" aria-hidden="true"></span>@endif
                                                                 <svg fill="currentColor" viewBox="0 0 20 20"><path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"/><path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z"/></svg>
                                                             </span>
-                                                            <span onclick="event.preventDefault(); event.stopPropagation(); window.location='{{ route('courses.lessons', $cid) }}';" title="Lessons">
+                                                            <span class="icon" onclick="event.preventDefault(); event.stopPropagation(); window.location='{{ route('courses.lessons', $cid) }}';" title="Lessons">
+                                                                @if($badges && $badges->lessons > 0)<span class="icon-dot" aria-hidden="true"></span>@endif
                                                                 <svg fill="currentColor" viewBox="0 0 20 20"><path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z"/></svg>
                                                             </span>
-                                                            <span onclick="event.preventDefault(); event.stopPropagation(); window.location='{{ route('courses.grades', $cid) }}';" title="Grades">
+                                                            <span class="icon" onclick="event.preventDefault(); event.stopPropagation(); window.location='{{ route('courses.grades', $cid) }}';" title="Grades">
+                                                                @if($badges && $badges->grades > 0)<span class="icon-dot" aria-hidden="true"></span>@endif
                                                                 <svg fill="currentColor" viewBox="0 0 20 20"><path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"/><path fill-rule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm9.707 5.707a1 1 0 00-1.414-1.414L9 12.586l-1.293-1.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
                                                             </span>
-                                                            <span onclick="event.preventDefault(); event.stopPropagation(); window.location='{{ route('courses.discussions', $cid) }}';" title="Chat / Forum">
+                                                            <span class="icon" onclick="event.preventDefault(); event.stopPropagation(); window.location='{{ route('courses.discussions', $cid) }}';" title="Chat / Forum">
+                                                                @if($badges && $badges->discussions > 0)<span class="icon-dot" aria-hidden="true"></span>@endif
                                                                 <svg fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9H5v2h2V9zm8 0h-2v2h2V9zM9 9h2v2H9V9z" clip-rule="evenodd"/></svg>
                                                             </span>
                                                         </div>

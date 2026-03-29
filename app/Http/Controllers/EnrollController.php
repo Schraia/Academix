@@ -7,10 +7,13 @@ use App\Models\CollegeSection;
 use App\Models\Course;
 use App\Models\Curriculum;
 use App\Models\Enrollment;
+use App\Models\PendingEnrollment;
+use App\Models\PendingEnrollmentItem;
 use App\Models\SectionSubjectSchedule;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class EnrollController extends Controller
@@ -18,6 +21,11 @@ class EnrollController extends Controller
     public function index(Request $request)
     {
         $user = Auth::user();
+        $hasPending = PendingEnrollment::where('user_id', $user->id)->where('status', 'pending')->exists();
+        if ($hasPending) {
+            return redirect()->route('enroll.summary');
+        }
+        $needsPersonalInfo = !$user->hasCompletedRegistration();
         $schoolYear = now()->year;
         $alreadyEnrolled = $user->enrollments()
             ->whereYear('enrolled_at', $schoolYear)
@@ -93,6 +101,7 @@ class EnrollController extends Controller
             'returnCollegeCourseId' => $returnCollegeCourseId,
             'canTakePeForSemester' => $canTakePeForSemester,
             'canTakeMlcForSemester' => $canTakeMlcForSemester,
+            'needsPersonalInfo' => $needsPersonalInfo,
         ]);
     }
 
@@ -320,6 +329,17 @@ class EnrollController extends Controller
 
     public function save(Request $request)
     {
+        if (!Auth::user()->hasCompletedRegistration()) {
+            return redirect()
+                ->route('registration.form')
+                ->with('error', 'Please fill up your personal information form before registering/enrolling.');
+        }
+
+        $user = Auth::user();
+        if (PendingEnrollment::where('user_id', $user->id)->where('status', 'pending')->exists()) {
+            return redirect()->route('enroll.summary')->with('info', 'You already have a pending enrollment.');
+        }
+
         $request->validate([
             'items' => 'required|string',
         ]);
@@ -329,7 +349,6 @@ class EnrollController extends Controller
             return redirect()->route('enroll')->with('error', 'Please select at least one section to enroll.');
         }
 
-        $user = Auth::user();
         $placeholders = [];
         foreach ($items as $item) {
             $courseName = $item['courseName'] ?? '';
@@ -368,115 +387,136 @@ class EnrollController extends Controller
 
     public function summary(Request $request)
     {
-        $items = $request->session()->get('pending_enrollments', []);
-        if (empty($items)) {
-            return redirect()->route('enroll')->with('info', 'No pending enrollments.');
+        if (!Auth::user()->hasCompletedRegistration()) {
+            return redirect()
+                ->route('registration.form')
+                ->with('error', 'Please fill up your personal information form before registering/enrolling.');
+        }
+
+        $user = Auth::user();
+        $pending = PendingEnrollment::with('items')
+            ->where('user_id', $user->id)
+            ->where('status', 'pending')
+            ->latest('submitted_at')
+            ->first();
+
+        $isPending = false;
+        if ($pending) {
+            $isPending = true;
+            $items = $pending->items
+                ->map(fn ($i) => [
+                    'college_course_id' => $i->college_course_id,
+                    'course_name' => $i->course_name,
+                    'section_name' => $i->section_name,
+                    'section_code' => $i->section_code,
+                    'time_slot' => $i->time_slot,
+                    'days' => $i->days,
+                    'units' => $i->units,
+                ])
+                ->values()
+                ->toArray();
+        } else {
+            $items = $request->session()->get('pending_enrollments', []);
+            if (empty($items)) {
+                return redirect()->route('enroll')->with('info', 'No pending enrollments.');
+            }
         }
 
         $pricePerSubject = 8000;
         $totalAmount = count($items) * $pricePerSubject;
-        $paymentType = 'To be selected'; // placeholder
+        $paymentType = 'Online payment';
+        $registration = Auth::user()->registration;
 
         return view('enroll-summary', [
             'items' => $items,
             'totalAmount' => $totalAmount,
             'pricePerSubject' => $pricePerSubject,
             'paymentType' => $paymentType,
+            'registration' => $registration,
+            'isPending' => $isPending,
+            'pendingEnrollment' => $pending,
         ]);
     }
 
     public function complete(Request $request)
     {
+        if (!Auth::user()->hasCompletedRegistration()) {
+            return redirect()
+                ->route('registration.form')
+                ->with('error', 'Please fill up your personal information form before registering/enrolling.');
+        }
+
+        $user = Auth::user();
+        if (PendingEnrollment::where('user_id', $user->id)->where('status', 'pending')->exists()) {
+            return redirect()->route('enroll.summary')->with('info', 'You already have a pending enrollment.');
+        }
+
+        $request->validate([
+            'payment_type' => 'required|in:online',
+            'payment_evidence' => 'required|file|mimes:jpg,jpeg,png|max:5120',
+        ]);
+
         $items = $request->session()->get('pending_enrollments', []);
         if (empty($items)) {
             return redirect()->route('enroll')->with('info', 'No pending enrollments.');
         }
 
-        $user = Auth::user();
-        $schoolYear = now()->year;
+        $evidencePath = $request->file('payment_evidence')->store('payment-evidence', 'public');
 
-        // Remove existing PE/MLC enrollments for the same semester so only one PE and one MLC per semester
-        $semesterBasesToReplace = [];
+        $pending = PendingEnrollment::create([
+            'user_id' => $user->id,
+            'status' => 'pending',
+            'payment_type' => 'online',
+            'payment_evidence_path' => $evidencePath,
+            'submitted_at' => now(),
+        ]);
+
         foreach ($items as $item) {
             $courseName = $item['course_name'] ?? '';
             $sectionName = $item['section_name'] ?? '';
             if ($courseName === '' || $sectionName === '') {
                 continue;
             }
-            $base = $this->semesterBaseFromSectionName($sectionName);
-            if ($base === null) {
-                continue;
-            }
-            if ($this->isPeEnrollment($courseName)) {
-                $semesterBasesToReplace['pe'][$base] = true;
-            }
-            if ($this->isMlcEnrollment($courseName, $sectionName)) {
-                $semesterBasesToReplace['mlc'][$base] = true;
-            }
-        }
-
-        foreach (array_keys($semesterBasesToReplace['pe'] ?? []) as $base) {
-            $user->enrollments()
-                ->whereYear('enrolled_at', $schoolYear)
-                ->where('status', 'enrolled')
-                ->where(function ($q) use ($base) {
-                    $q->where('course_name', 'like', 'PPE %')
-                        ->where('section_name', 'like', $base . '%');
-                })
-                ->delete();
-        }
-        foreach (array_keys($semesterBasesToReplace['mlc'] ?? []) as $base) {
-            $user->enrollments()
-                ->whereYear('enrolled_at', $schoolYear)
-                ->where('status', 'enrolled')
-                ->where(function ($q) use ($base) {
-                    $q->where('course_name', 'like', 'MLC%')
-                        ->where('section_name', 'like', $base . '%');
-                })
-                ->delete();
-        }
-
-        foreach ($items as $item) {
-            $courseName = $item['course_name'] ?? '';
-            if ($courseName === '') {
-                continue;
-            }
-
-            $course = Course::where('title', $courseName)->first();
-            if (! $course) {
-                $baseCode = strtoupper(Str::slug(substr($courseName, 0, 20), ''));
-                $code = $baseCode;
-                $n = 0;
-                while (Course::where('code', $code)->exists()) {
-                    $code = $baseCode . (string) (++$n);
-                }
-                $course = Course::create([
-                    'title' => $courseName,
-                    'code' => $code,
-                    'description' => null,
-                    'status' => 'published',
-                ]);
-            }
-
-            Enrollment::updateOrCreate(
-                [
-                    'user_id' => $user->id,
-                    'course_id' => $course->id,
-                ],
-                [
-                    'college_course_id' => $item['college_course_id'] ?? null,
-                    'course_name' => $courseName,
-                    'section_name' => $item['section_name'],
-                    'section_code' => $item['section_code'] ?? null,
-                    'time_slot' => $item['time_slot'] ?? null,
-                    'days' => $item['days'] ?? null,
-                    'status' => 'enrolled',
-                ]
-            );
+            PendingEnrollmentItem::create([
+                'pending_enrollment_id' => $pending->id,
+                'college_course_id' => $item['college_course_id'] ?? null,
+                'course_name' => $courseName,
+                'section_name' => $sectionName,
+                'section_code' => $item['section_code'] ?? null,
+                'time_slot' => $item['time_slot'] ?? null,
+                'days' => $item['days'] ?? null,
+                'units' => isset($item['units']) ? (int) $item['units'] : null,
+            ]);
         }
 
         $request->session()->forget('pending_enrollments');
-        return redirect()->route('courses.index')->with('success', 'You have been successfully enrolled.');
+        return redirect()->route('dashboard')->with('success', 'Enrollment submitted. Please wait for admin approval.');
+    }
+
+    public function cancelPending(Request $request)
+    {
+        $user = Auth::user();
+
+        $pending = PendingEnrollment::with('items')
+            ->where('user_id', $user->id)
+            ->where('status', 'pending')
+            ->latest('submitted_at')
+            ->first();
+
+        if (! $pending) {
+            return redirect()->route('enroll')->with('info', 'No pending enrollment to cancel.');
+        }
+
+        if ($pending->payment_evidence_path) {
+            Storage::disk('public')->delete($pending->payment_evidence_path);
+        }
+
+        $pending->items()->delete();
+        $pending->delete();
+
+        $request->session()->forget('pending_enrollments');
+
+        return redirect()->route('enroll')->with('success', 'Pending enrollment cancelled.');
     }
 
     /**

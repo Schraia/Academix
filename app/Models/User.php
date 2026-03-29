@@ -60,6 +60,11 @@ class User extends Authenticatable
         return $this->hasMany(\App\Models\Enrollment::class);
     }
 
+    public function registration()
+    {
+        return $this->hasOne(\App\Models\UserRegistration::class);
+    }
+
     /**
      * Check if user has enrollments for the current school year.
      */
@@ -70,6 +75,11 @@ class User extends Authenticatable
             ->whereYear('enrolled_at', $currentYear)
             ->where('status', 'enrolled')
             ->exists();
+    }
+
+    public function hasCompletedRegistration(): bool
+    {
+        return $this->registration()->exists();
     }
 
     public function isAdmin(): bool

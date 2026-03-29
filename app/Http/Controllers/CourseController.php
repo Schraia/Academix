@@ -169,11 +169,15 @@ class CourseController extends Controller
         if (! $isInstructor) {
             $course->setRelation('lessonModules', $course->lessonModules->where('status', 'published'));
         }
+
+        // For student progress, only count lessons that have an attached file
         $completedIds = [];
-        $totalPublished = $course->lessonModules->count();
-        if (! $isInstructor && $totalPublished > 0) {
+        $progressEligibleLessons = $course->lessonModules->whereNotNull('attachment_path');
+        $totalForProgress = $progressEligibleLessons->count();
+
+        if (! $isInstructor && $totalForProgress > 0) {
             $completedIds = LessonProgress::where('user_id', $user->id)
-                ->whereIn('lesson_module_id', $course->lessonModules->pluck('id'))
+                ->whereIn('lesson_module_id', $progressEligibleLessons->pluck('id'))
                 ->where('status', 'completed')
                 ->pluck('lesson_module_id')
                 ->all();
@@ -182,7 +186,7 @@ class CourseController extends Controller
             'course' => $course,
             'isInstructor' => $isInstructor,
             'completedLessonIds' => $completedIds,
-            'totalLessons' => $totalPublished,
+            'totalLessons' => $totalForProgress,
             'completedCount' => count($completedIds),
         ]);
     }
@@ -429,8 +433,8 @@ class CourseController extends Controller
             'announcement_id' => 'nullable|integer|exists:course_announcements,id',
         ]);
         $data = [
-            'title' => $request->title,
-            'content' => $request->content,
+            'title' => $request->input('title'),
+            'content' => $request->input('content'),
             'user_id' => Auth::id(),
             'course_id' => $course->id,
         ];
@@ -463,7 +467,7 @@ class CourseController extends Controller
         }
         $request->validate(['content' => 'required|string']);
         DiscussionMessage::create([
-            'content' => $request->content,
+            'content' => $request->input('content'),
             'user_id' => Auth::id(),
             'thread_id' => $thread->id,
         ]);
@@ -527,6 +531,18 @@ class CourseController extends Controller
         if (! $lesson->attachment_path) {
             return redirect()->route('courses.lessons', $course)->with('info', 'No file to preview.');
         }
+
+        // Persist "Recently Opened" per user by touching lesson_progress
+        $progress = LessonProgress::firstOrCreate(
+            ['user_id' => $user->id, 'lesson_module_id' => $lesson->id],
+            ['status' => 'not_started', 'progress_percentage' => 0]
+        );
+        if (! $progress->started_at) {
+            $progress->started_at = now();
+        }
+        // Touch updated_at so dashboard ordering reflects last open
+        $progress->save();
+
         $path = $lesson->attachment_path;
         $ext = strtolower(pathinfo($path, PATHINFO_EXTENSION));
         $url = asset('storage/' . $path);
@@ -562,9 +578,9 @@ class CourseController extends Controller
             'attachment' => 'nullable|file|mimes:pdf,pptx,docx,png|max:51200',
         ]);
         $data = [
-            'title' => $request->title,
-            'description' => $request->description,
-            'content' => $request->content,
+            'title' => $request->input('title'),
+            'description' => $request->input('description'),
+            'content' => $request->input('content'),
         ];
         if ($request->hasFile('attachment')) {
             if ($lesson->attachment_path) {
@@ -649,7 +665,10 @@ class CourseController extends Controller
             'content' => 'required|string',
             'image' => 'nullable|image|mimes:jpeg,jpg,png,gif,webp|max:10240',
         ]);
-        $data = ['title' => $request->title, 'content' => $request->content];
+        $data = [
+            'title' => $request->input('title'),
+            'content' => $request->input('content'),
+        ];
         if ($request->hasFile('image')) {
             if ($announcement->image_path) {
                 Storage::disk('public')->delete($announcement->image_path);
@@ -702,10 +721,10 @@ class CourseController extends Controller
             'max_score' => 'nullable|numeric',
         ]);
         $grade->update([
-            'name' => $request->name,
-            'category' => $request->category,
-            'score' => $request->score,
-            'max_score' => $request->max_score ?? 100,
+            'name' => $request->input('name'),
+            'category' => $request->input('category'),
+            'score' => $request->input('score'),
+            'max_score' => $request->input('max_score') ?? 100,
         ]);
         return redirect()->route('courses.grades', $course)->with('success', 'Grade updated.');
     }

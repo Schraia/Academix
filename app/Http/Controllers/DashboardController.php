@@ -5,7 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\Course;
 use App\Models\CourseAnnouncement;
 use App\Models\LessonModule;
+use App\Models\LessonProgress;
 use App\Models\UserCourseSectionView;
+use App\Models\UserNotification;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 
@@ -139,16 +141,26 @@ class DashboardController extends Controller
 
         $recentlyOpened = collect();
         if ($courseIds->isNotEmpty()) {
-            $recentlyOpened = LessonModule::whereIn('course_id', $courseIds)
-                ->whereNotNull('attachment_path')
-                ->where('status', 'published')
+            // Per-user recently opened files (previews) — not global lesson updates
+            $recentlyOpened = LessonModule::query()
+                ->select('lessons_modules.*')
+                ->join('lesson_progress as lp', 'lp.lesson_module_id', '=', 'lessons_modules.id')
+                ->where('lp.user_id', $user->id)
+                ->whereIn('lessons_modules.course_id', $courseIds)
+                ->whereNotNull('lessons_modules.attachment_path')
+                ->where('lessons_modules.status', 'published')
                 ->with('course')
-                ->orderByDesc('updated_at')
+                ->orderByDesc('lp.updated_at')
                 ->limit(10)
                 ->get();
         }
 
         $profileRoleLabel = $user->isAdmin() ? 'Admin' : ($user->isInstructor() ? 'Instructor' : ($enrollments->first()?->section_name ?? 'Student'));
+
+        $unreadNotificationsCount = UserNotification::query()
+            ->where('user_id', $user->id)
+            ->whereNull('read_at')
+            ->count();
 
         return view('dashboard', [
             'todaysSchedules' => $todaysSchedules,
@@ -159,6 +171,7 @@ class DashboardController extends Controller
             'profileRoleLabel' => $profileRoleLabel,
             'announcements' => $announcements,
             'recentlyOpened' => $recentlyOpened,
+            'unreadNotificationsCount' => $unreadNotificationsCount,
         ]);
     }
 

@@ -46,13 +46,12 @@ class AuthController extends Controller
     public function register(Request $request)
     {
         $request->validate([
-            'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:8|confirmed',
         ]);
 
         $user = User::create([
-            'name' => $request->name,
+            'name' => null,
             'email' => $request->email,
             'password' => Hash::make($request->password),
         ]);
@@ -65,7 +64,7 @@ class AuthController extends Controller
         }
         // Students without current-year enrollments go to enroll page
         if (!$user->hasCurrentYearEnrollments()) {
-            return redirect()->route('enroll');
+            return redirect()->route('enroll')->with('show_personal_info_modal', true);
         }
 
         return redirect()->intended('/dashboard');
