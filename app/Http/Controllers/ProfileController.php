@@ -236,7 +236,6 @@ class ProfileController extends Controller
 
         $request->validate([
             'bio' => 'nullable|string|max:2000',
-            'private_notes' => 'nullable|string|max:10000',
             'profile_picture' => ['nullable', File::types(['jpg', 'jpeg', 'png', 'gif', 'webp'])->max(2 * 1024)],
         ]);
 
@@ -250,9 +249,6 @@ class ProfileController extends Controller
 
         if ($request->has('bio')) {
             $user->bio = $request->input('bio');
-        }
-        if ($request->has('private_notes')) {
-            $user->private_notes = $request->input('private_notes');
         }
         $user->save();
 

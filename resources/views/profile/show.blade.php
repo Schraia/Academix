@@ -487,18 +487,15 @@
                         </div>
                         <div class="profile-notes-view" style="margin-top: 0.75rem;">
                             <div class="profile-notes-label">Private notes</div>
-                            <p class="profile-notes-text {{ empty($user->private_notes) ? 'empty' : '' }}">{{ $user->private_notes ?: 'No private notes.' }}</p>
+                            <a href="{{ route('notes.index') }}" class="btn-outline" style="margin-top: 0.5rem; width: 100%; justify-content: center; text-decoration: none;">
+                                Go to Private Notes →
+                            </a>
                         </div>
                         <form action="{{ route('profile.update') }}" method="POST" id="profile-save-form" style="display: none;">
                             @csrf
                             <div class="profile-bio-edit form-group">
                                 <label for="bio">Description (visible on profile)</label>
                                 <textarea id="bio" name="bio" rows="3" placeholder="Tell others a bit about yourself...">{{ old('bio', $user->bio) }}</textarea>
-                            </div>
-                            <div class="profile-notes-edit form-group" style="margin-top: 0.75rem;">
-                                <label for="private_notes">Private notes (only you see this)</label>
-                                <textarea id="private_notes" name="private_notes" rows="3" placeholder="Notes only you can see...">{{ old('private_notes', $user->private_notes) }}</textarea>
-                                <p class="private-note-hint">Only you can see this.</p>
                             </div>
                             <button type="submit" class="btn btn-primary">Save profile</button>
                         </form>

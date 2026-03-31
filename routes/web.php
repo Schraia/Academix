@@ -13,6 +13,7 @@ use App\Http\Controllers\CertificatesController;
 use App\Http\Controllers\InboxController;
 use App\Http\Controllers\UserRegistrationController;
 use App\Http\Controllers\NotificationsController;
+use App\Http\Controllers\NotesController;
 
 Route::get('/', function () {
     return redirect('/login');
@@ -56,6 +57,18 @@ Route::middleware('auth')->group(function () {
     Route::post('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::post('/profile/picture/remove', [ProfileController::class, 'removePicture'])->name('profile.picture.remove');
     Route::post('/profile/discussions/{thread}/unfollow', [ProfileController::class, 'unfollowDiscussion'])->name('profile.discussions.unfollow');
+
+    // Private Notes
+    Route::prefix('notes')->name('notes.')->group(function () {
+        Route::get('/', [NotesController::class, 'index'])->name('index');
+        Route::get('/create', [NotesController::class, 'create'])->name('create');
+        Route::post('/', [NotesController::class, 'store'])->name('store');
+        Route::get('/{note}/edit', [NotesController::class, 'edit'])->name('edit');
+        Route::put('/{note}', [NotesController::class, 'update'])->name('update');
+        Route::delete('/{note}', [NotesController::class, 'destroy'])->name('destroy');
+        Route::post('/attachments', [NotesController::class, 'uploadAttachment'])->name('attachments.upload');
+        Route::get('/{note}/download/{format}', [NotesController::class, 'download'])->whereIn('format', ['txt', 'docx', 'pdf'])->name('download');
+    });
     Route::get('/certificates', [CertificatesController::class, 'index'])->name('certificates.index');
     Route::get('/certificates/course/{course}', [CertificatesController::class, 'show'])->name('certificates.show');
     Route::get('/certificates/{certificate}/download', [CertificatesController::class, 'download'])->name('certificates.download');
