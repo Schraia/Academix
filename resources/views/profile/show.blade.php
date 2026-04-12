@@ -434,10 +434,11 @@
         <div class="main-content">
             <div class="page-header">
     <div class="page-header-left">
-        <h1 class="page-title">My Profile</h1>
-        <p class="page-subtitle">Manage your personal information and activity</p>
+        <h1 class="page-title">{{ ($isOwnProfile ?? true) ? 'My Profile' : ($user->name ?: $user->email) }}</h1>
+        <p class="page-subtitle">{{ ($isOwnProfile ?? true) ? 'Manage your personal information and activity' : 'Profile' }}</p>
     </div>
 
+    @if($isOwnProfile ?? true)
     <button type="button" 
             class="btn-edit-profile" 
             id="profile-edit-toggle" 
@@ -445,6 +446,7 @@
             aria-label="Edit profile">
         Edit Profile
     </button>
+    @endif
 </div>
             @if(session('success'))
                 <div class="alert-success">{{ session('success') }}</div>
@@ -485,20 +487,29 @@
                             <div class="profile-bio-label">About me</div>
                             <p class="profile-bio-text {{ empty($user->bio) ? 'empty' : '' }}">{{ $user->bio ?: 'No description added.' }}</p>
                         </div>
-                        <div class="profile-notes-view" style="margin-top: 0.75rem;">
-                            <div class="profile-notes-label">Private notes</div>
-                            <a href="{{ route('notes.index') }}" class="btn-outline" style="margin-top: 0.5rem; width: 100%; justify-content: center; text-decoration: none;">
-                                Go to Private Notes →
-                            </a>
-                        </div>
                         <form action="{{ route('profile.update') }}" method="POST" id="profile-save-form" style="display: none;">
                             @csrf
                             <div class="profile-bio-edit form-group">
                                 <label for="bio">Description (visible on profile)</label>
                                 <textarea id="bio" name="bio" rows="3" placeholder="Tell others a bit about yourself...">{{ old('bio', $user->bio) }}</textarea>
                             </div>
+                            <div class="profile-bio-edit form-group" style="margin-top: 0.75rem;">
+                                <label style="display:flex;align-items:flex-start;gap:0.5rem;font-weight:500;cursor:pointer;">
+                                    <input type="hidden" name="grades_visible_on_profile" value="0">
+                                    <input type="checkbox" name="grades_visible_on_profile" value="1" {{ old('grades_visible_on_profile', $user->grades_visible_on_profile) ? 'checked' : '' }} style="margin-top:0.2rem;">
+                                    <span>Show “Grades across courses” to others who open my profile</span>
+                                </label>
+                            </div>
                             <button type="submit" class="btn btn-primary">Save profile</button>
                         </form>
+                        @if($isOwnProfile ?? true)
+                        <div class="profile-notes-view" style="margin-top: auto; padding-top: 1.25rem;">
+                            <div class="profile-notes-label">Private notes</div>
+                            <a href="{{ route('notes.index') }}" class="btn-outline" style="margin-top: 0.5rem; width: 100%; justify-content: center; text-decoration: none;">
+                                Go to Private Notes →
+                            </a>
+                        </div>
+                        @endif
                     </div>
                 </div>
 
@@ -506,10 +517,14 @@
                     <div class="card"  id="grades-section">
                         <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem;">
                             <h3 style="margin-bottom: 0;">📊 Grades Across Courses</h3>
+                            @if($isOwnProfile ?? true)
                             <a href="{{ route('profile.enrollments') }}" class="btn-outline" style="margin-top: 0;">View all by year & semester →</a>
+                            @endif
                         </div>
                         <p class="progress-text" style="margin-bottom: 0.75rem;">Current enrollment only.</p>
-                        @if(!empty($gradesByCourse))
+                        @if(!($showGrades ?? true))
+                            <p class="progress-text">This user has chosen to hide grades on their profile.</p>
+                        @elseif(!empty($gradesByCourse))
                             <table class="grades-table">
                                 <thead>
                                     <tr><th>Course</th><th>Weighted grade</th></tr>
@@ -527,7 +542,7 @@
                                 <p style="margin-top: 1rem; font-weight: 600; color: #1f2937;">Overall average (across courses): {{ $overallGradeAverage }}%</p>
                             @endif
                         @else
-                            <p class="progress-text">No grades yet. Grades from your current enrolled courses will appear here.</p>
+                            <p class="progress-text">No grades yet. Grades from current enrolled courses will appear here.</p>
                         @endif
                     </div>
                    
@@ -539,17 +554,19 @@
                                     <li>
                                         <div class="discussion-title-row">
                                             <a href="{{ route('courses.discussions.thread', [$thread->course_id, $thread]) }}">{{ $thread->title }}</a>
+                                            @if($isOwnProfile ?? true)
                                             <form action="{{ route('profile.discussions.unfollow', $thread) }}" method="POST" style="display: inline;">
                                                 @csrf
                                                 <button type="submit" class="btn-unfollow" title="Unfollow Discussion" aria-label="Unfollow Discussion">
                                                     <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"/></svg>
                                                 </button>
                                             </form>
+                                            @endif
                                         </div>
                                         <div class="discussion-meta">{{ $thread->course?->title ?? 'Course' }} · {{ $thread->last_activity_at?->diffForHumans() }}</div>
                                         @php $lastMsg = $thread->messages->first(); @endphp
                                         @if($lastMsg)
-                                            <div class="discussion-last-reply" title="{{ Str::limit(strip_tags($lastMsg->content ?? ''), 200) }}">{{ $lastMsg->user->name ?? 'Someone' }}: {{ Str::limit(strip_tags($lastMsg->content ?? ''), 80) }}</div>
+                                            <div class="discussion-last-reply" title="{{ Str::limit(strip_tags($lastMsg->content ?? ''), 200) }}">@if($lastMsg->user)<a href="{{ route('users.profile', $lastMsg->user) }}" style="color:#dc2626;text-decoration:none;font-weight:600;">{{ $lastMsg->user->name }}</a>@else Someone @endif: {{ Str::limit(strip_tags($lastMsg->content ?? ''), 80) }}</div>
                                         @endif
                                     </li>
                                 @endforeach
@@ -580,8 +597,15 @@
                 <h3>🧠Learning Diagnostics</h3>
                 <p class="progress-text">Lesson completions per week</p>
                 <div class="diagnostics-chart">
+                    @php
+                        $maxCount = max(1, (int) collect($completionsByWeek)->max('count'));
+                        $denom = max($maxCount, 3);
+                    @endphp
                     @foreach($completionsByWeek as $week)
-                        @php $max = max(1, collect($completionsByWeek)->max('count')); $h = $max > 0 ? (100 * $week['count'] / $max) : 0; @endphp
+                        @php
+                            $c = (int) $week['count'];
+                            $h = $c === 0 ? 0 : max(22, min(100, round(100 * $c / $denom)));
+                        @endphp
                         <div class="chart-bar-wrap">
                             <span class="chart-tooltip">{{ $week['label'] }}: {{ $week['count'] }} {{ $week['count'] === 1 ? 'module' : 'modules' }} completed</span>
                             <div class="chart-bar" style="height: {{ $h }}%;"></div>

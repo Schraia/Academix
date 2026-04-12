@@ -272,10 +272,14 @@
     <div id="listView" class="courses-card">
         @if($enrollments->isEmpty() && $allCourses->isEmpty())
             <div class="empty-state">
-                <p>You are not enrolled in any courses for this school year.</p>
-                <p style="margin-top: 0.5rem;">
-                    <a href="{{ route('enroll') }}">Enroll online</a>
-                </p>
+                @if(Auth::user()->isInstructor())
+                    <p>No courses assigned yet. Ask an admin to assign courses to you in Settings.</p>
+                @else
+                    <p>You are not enrolled in any courses for this school year.</p>
+                    <p style="margin-top: 0.5rem;">
+                        <a href="{{ route('enroll') }}">Enroll online</a>
+                    </p>
+                @endif
             </div>
         @elseif($enrollments->isNotEmpty())
             <table class="courses-table">

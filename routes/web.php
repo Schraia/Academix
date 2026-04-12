@@ -14,6 +14,7 @@ use App\Http\Controllers\InboxController;
 use App\Http\Controllers\UserRegistrationController;
 use App\Http\Controllers\NotificationsController;
 use App\Http\Controllers\NotesController;
+use App\Http\Controllers\CourseArchivingController;
 
 Route::get('/', function () {
     return redirect('/login');
@@ -50,8 +51,11 @@ Route::middleware('auth')->group(function () {
     Route::post('/courses/{course}/discussions/{thread}/messages', [CourseController::class, 'storeMessage'])->name('courses.discussions.messages.store');
     Route::get('/courses/{course}/announcements', [CourseController::class, 'announcements'])->name('courses.announcements');
     Route::get('/courses/{course}/lessons/{lesson}/preview', [CourseController::class, 'lessonPreview'])->name('courses.lessons.preview');
+    Route::get('/courses/{course}/archive', [CourseController::class, 'courseArchiveIndex'])->name('courses.archive.index');
+    Route::get('/courses/{course}/archive/{archive}', [CourseController::class, 'courseArchiveShow'])->name('courses.archive.show');
     Route::post('/courses/{course}/lessons/{lesson}/progress', [CourseController::class, 'toggleLessonProgress'])->name('courses.lessons.progress.toggle');
     Route::get('/profile', [ProfileController::class, 'show'])->name('profile.show');
+    Route::get('/users/{user}', [ProfileController::class, 'showUser'])->name('users.profile');
     Route::get('/profile/progress', [ProfileController::class, 'progressBreakdown'])->name('profile.progress');
     Route::get('/profile/enrollments', [ProfileController::class, 'enrollmentsIndex'])->name('profile.enrollments');
     Route::post('/profile', [ProfileController::class, 'update'])->name('profile.update');
@@ -96,6 +100,12 @@ Route::middleware('auth')->group(function () {
         Route::post('/settings/instructors', [SettingsController::class, 'createInstructor'])->name('settings.instructors.create');
         Route::post('/settings/pending-enrollments/{pending}/approve', [SettingsController::class, 'approvePending'])->name('settings.pending.approve');
         Route::post('/settings/pending-enrollments/{pending}/reject', [SettingsController::class, 'rejectPending'])->name('settings.pending.reject');
+        Route::get('/settings/course-archiving', [CourseArchivingController::class, 'index'])->name('settings.courseArchiving');
+        Route::post('/settings/course-archiving', [CourseArchivingController::class, 'store'])->name('settings.courseArchiving.store');
+        Route::delete('/settings/course-archiving/{courseArchive}', [CourseArchivingController::class, 'destroy'])->name('settings.courseArchiving.destroy');
+        Route::get('/settings/instructors/{user}/archive-access', [CourseArchivingController::class, 'instructorArchiveAccessForm'])->name('settings.instructorArchiveAccess');
+        Route::post('/settings/instructors/{user}/archive-access', [CourseArchivingController::class, 'instructorArchiveAccessSave'])->name('settings.instructorArchiveAccess.save');
+        Route::post('/settings/instructors/{user}/toggle-archive-access', [SettingsController::class, 'toggleInstructorArchiveAccess'])->name('settings.instructors.toggleArchiveAccess');
     });
 
     Route::middleware('instructor')->group(function () {
@@ -114,6 +124,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/courses/{course}/lessons/{lesson}', [CourseController::class, 'updateLesson'])->name('courses.lessons.update');
         Route::post('/courses/{course}/lessons/{lesson}/toggle', [CourseController::class, 'toggleLesson'])->name('courses.lessons.toggle');
         Route::delete('/courses/{course}/lessons/{lesson}', [CourseController::class, 'destroyLesson'])->name('courses.lessons.destroy');
+        Route::post('/courses/{course}/archive/{archive}/lessons/{archivedLesson}/import', [CourseController::class, 'importArchivedLesson'])->name('courses.archive.import');
         Route::get('/courses/{course}/announcements/{announcement}/edit', [CourseController::class, 'editAnnouncement'])->name('courses.announcements.edit');
         Route::post('/courses/{course}/announcements/{announcement}', [CourseController::class, 'updateAnnouncement'])->name('courses.announcements.update');
         Route::post('/courses/{course}/announcements/{announcement}/toggle', [CourseController::class, 'toggleAnnouncement'])->name('courses.announcements.toggle');

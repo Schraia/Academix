@@ -55,6 +55,12 @@
         .meta{font-size:.78rem;color:#9ca3af;white-space:nowrap;}
         .message{margin-top:.35rem;color:#6b7280;font-size:.9rem;line-height:1.35;}
         .empty{background:#fff;border:1px dashed #e5e7eb;border-radius:16px;padding:2rem;text-align:center;color:#6b7280;}
+        .tabs-wrap{background:#fff;border-bottom:1px solid #e5e7eb;padding:.5rem 1rem;flex-shrink:0;overflow-x:auto;}
+        .tabs{display:flex;flex-wrap:wrap;gap:.4rem;align-items:center;}
+        .tab{padding:.35rem .75rem;border-radius:999px;font-size:.8rem;font-weight:700;text-decoration:none;color:#374151;border:1px solid #e5e7eb;background:#f9fafb;white-space:nowrap;}
+        .tab:hover{background:#f3f4f6;color:#b91c1c;}
+        .tab.active{background:#b91c1c;color:#fff;border-color:#b91c1c;}
+        .kind-tag{font-size:.68rem;font-weight:800;text-transform:uppercase;color:#9ca3af;margin-top:.25rem;}
     </style>
 </head>
 <body>
@@ -125,6 +131,16 @@
             <a href="{{ route('dashboard') }}" class="btn">Back to Dashboard</a>
         </div>
 
+        <div class="tabs-wrap">
+            <div class="tabs">
+                <a class="tab {{ ($activeTab ?? 'all') === 'all' ? 'active' : '' }}" href="{{ route('notifications.index', ['tab' => 'all']) }}">All</a>
+                <a class="tab {{ ($activeTab ?? '') === 'discussions' ? 'active' : '' }}" href="{{ route('notifications.index', ['tab' => 'discussions']) }}">Discussions</a>
+                @foreach($tabCourses ?? [] as $c)
+                    <a class="tab {{ (string)($activeTab ?? '') === (string)$c->id ? 'active' : '' }}" href="{{ route('notifications.index', ['tab' => $c->id]) }}">{{ $c->code ? $c->code . ' — ' : '' }}{{ Str::limit($c->title, 22) }}</a>
+                @endforeach
+            </div>
+        </div>
+
         <div class="content">
             @if($notifications->count() === 0)
                 <div class="empty">No notifications yet.</div>
@@ -138,6 +154,9 @@
                             </div>
                             @if($n->message)
                                 <div class="message">{{ $n->message }}</div>
+                            @endif
+                            @if($n->kind)
+                                <div class="kind-tag">{{ str_replace('_', ' ', $n->kind) }}</div>
                             @endif
                         </a>
                     @endforeach

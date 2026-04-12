@@ -3,7 +3,7 @@
 @section('page_heading', 'Upload Lesson')
 @section('content')
     <style>
-        .form-card { background: white; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); padding: 1.5rem; max-width: 560px; }
+        .form-card { background: white; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); padding: 1.5rem; width: 100%; max-width: none; }
         .form-group { margin-bottom: 1rem; }
         .form-group label { display: block; font-weight: 600; color: #374151; margin-bottom: 0.35rem; }
         .form-group input, .form-group textarea { width: 100%; padding: 0.5rem 0.75rem; border: 1px solid #d1d5db; border-radius: 8px; font-size: 1rem; }
@@ -31,9 +31,15 @@
             </div>
             <div class="form-group">
                 <label for="attachment">File (optional)</label>
-                <input type="file" id="attachment" name="attachment" accept=".pdf,.pptx,.docx,.png,application/pdf,application/vnd.openxmlformats-officedocument.presentationml.presentation,application/vnd.openxmlformats-officedocument.wordprocessingml.document,image/png">
-                <p class="hint" style="font-size: 0.875rem; color: #6b7280; margin-top: 0.25rem;">PDF, PPTX, DOCX, or PNG. Max 50MB.</p>
+                <input type="file" id="attachment" name="attachment" accept=".pdf,.pptx,.docx,.png,.mp4,.webm,.mov,video/*,application/pdf,application/vnd.openxmlformats-officedocument.presentationml.presentation,application/vnd.openxmlformats-officedocument.wordprocessingml.document,image/png">
+                <p class="hint" style="font-size: 0.875rem; color: #6b7280; margin-top: 0.25rem;">PDF, PPTX, DOCX, PNG, or video (MP4, WebM, MOV). Max 50MB.</p>
                 @error('attachment') <p class="error">{{ $message }}</p> @enderror
+            </div>
+            <div class="form-group">
+                <label for="video_url">Or YouTube link (optional)</label>
+                <input type="url" id="video_url" name="video_url" value="{{ old('video_url') }}" placeholder="https://www.youtube.com/watch?v=...">
+                <p class="hint" style="font-size: 0.875rem; color: #6b7280; margin-top: 0.25rem;">If set, students open a watch page with the embedded video.</p>
+                @error('video_url') <p class="error">{{ $message }}</p> @enderror
             </div>
             <button type="submit" class="btn-submit">Add lesson</button>
         </form>

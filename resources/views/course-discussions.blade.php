@@ -33,7 +33,7 @@
         @forelse($threads as $thread)
             <a href="{{ route('courses.discussions.thread', [$course, $thread]) }}" style="display: block; text-decoration: none; color: inherit; padding: 1rem 0; border-bottom: 1px solid #e5e7eb; transition: background 0.15s;" class="thread-link" onmouseover="this.style.background='#f9fafb'" onmouseout="this.style.background='transparent'">
                 <strong style="color: #1f2937;">{{ $thread->title }}</strong>
-                <p style="margin-top: 0.25rem; color: #6b7280; font-size: 0.875rem;">{{ $thread->user->name ?? 'User' }} · {{ $thread->created_at->format('M j, Y') }}@if($thread->messages_count > 0) · {{ $thread->messages_count }} {{ Str::plural('reply', $thread->messages_count) }}@endif</p>
+                <p style="margin-top: 0.25rem; color: #6b7280; font-size: 0.875rem;">@if($thread->user)<a href="{{ route('users.profile', $thread->user) }}" style="color:#dc2626;font-weight:600;text-decoration:none;" onclick="event.stopPropagation();">{{ $thread->user->name ?? 'User' }}</a>@else User @endif · {{ $thread->created_at->format('M j, Y') }}@if($thread->messages_count > 0) · {{ $thread->messages_count }} {{ Str::plural('reply', $thread->messages_count) }}@endif</p>
                 @if($thread->announcement_id && $thread->announcement)
                     <p style="margin-top: 0.25rem; font-size: 0.8125rem; color: #6b7280;">Re: {{ $thread->announcement->title }} (announcement by {{ $thread->announcement->user->name ?? 'Instructor' }})</p>
                 @endif

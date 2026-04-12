@@ -104,6 +104,15 @@ body{
     text-decoration:none;
 }
 
+.course-header-row{
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:1rem;
+    flex-wrap:wrap;
+    margin-bottom:0.25rem;
+}
+
 .course-title{
     font-size:2rem;
     font-weight:700;
@@ -114,6 +123,21 @@ body{
     font-size:.9rem;
     margin-bottom:1.25rem;
 }
+
+.btn-archive{
+    display:inline-flex;
+    align-items:center;
+    padding:.45rem .95rem;
+    border-radius:999px;
+    font-size:.8rem;
+    font-weight:600;
+    text-decoration:none;
+    border:1px solid #e5e7eb;
+    background:#fff;
+    color:#374151;
+    white-space:nowrap;
+}
+.btn-archive:hover{background:#f9fafb;color:#b91c1c;}
 
 .course-actions{
     margin-bottom:1.75rem;
@@ -158,7 +182,7 @@ body{
 .course-nav{
     display:flex;
     gap:2.5rem;
-    border-bottom:2px solid #e5e7eb;
+    border-bottom:2px solid #111827;
     margin-bottom:2.5rem;
     padding-bottom:.85rem;
 }
@@ -363,8 +387,15 @@ body{
 
 <a href="{{ route('courses.index') }}" class="back-link">← Back to Courses</a>
 
-<div class="course-title">{{ $course->title }}</div>
-<div class="course-code">{{ $course->code ?? $course->id }}</div>
+<div class="course-header-row">
+    <div>
+        <div class="course-title">{{ $course->title }}</div>
+        <div class="course-code">{{ $course->code ?? $course->id }}</div>
+    </div>
+    @if(!empty($canSeeCourseArchive))
+        <a href="{{ route('courses.archive.index', $course) }}" class="btn-archive">Course archive</a>
+    @endif
+</div>
 
 @if(Auth::user()->isInstructor())
     <div class="course-actions">
@@ -387,7 +418,7 @@ body{
     <div class="left-column">
 
         @if($course->banner_path)
-            <img src="{{ asset('storage/'.$course->banner_path) }}" class="course-banner">
+            <img src="{{ asset('storage/'.$course->banner_path) }}" class="course-banner" style="object-position: {{ $course->banner_object_position ?: 'center' }};">
         @else
             <div class="banner-placeholder">
                 {{ $course->title }} — Learning Materials

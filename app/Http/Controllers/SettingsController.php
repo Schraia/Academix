@@ -220,6 +220,17 @@ class SettingsController extends Controller
         return back()->with('success', 'Pending enrollment rejected.');
     }
 
+    public function toggleInstructorArchiveAccess(Request $request, User $user)
+    {
+        if ($user->role !== 'instructor') {
+            abort(404);
+        }
+        $user->can_access_course_archive = ! $user->can_access_course_archive;
+        $user->save();
+
+        return back()->with('success', 'Course archive access updated for instructor.');
+    }
+
     protected function semesterBaseFromSectionName(string $sectionName): ?string
     {
         $patterns = [
