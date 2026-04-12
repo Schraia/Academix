@@ -20,7 +20,8 @@
         .nav-item:hover svg { opacity: 1; transform: scale(1.15); }
         .nav-item.active { background: rgba(255,255,255,0.12); }
         .nav-logout { margin-top: auto; padding: 1rem 1.5rem; border-top: 1px solid rgba(255,255,255,0.08); }
-        .logout-btn { width: 100%; padding: 0.75rem; background: rgba(255, 255, 255, 0.1); color: white; border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 10px; cursor: pointer; font-size: 1rem; font-weight: 600; transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; gap: 0.5rem; }
+        .logout-btn { width: 100%; padding: 0.5rem 0.65rem; background: rgba(255, 255, 255, 0.1); color: white; border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 10px; cursor: pointer; font-size: 0.875rem; font-weight: 600; transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; gap: 0.45rem; }
+        .logout-btn svg { width: 18px; height: 18px; }
         .logout-btn:hover { background: white; color: #b91c1c; transform: translateY(-2px); }
         .main-content { flex: 1; padding: 3rem 4rem; overflow-y: auto; background: radial-gradient(circle at 10% 10%, rgba(185,28,28,0.18), transparent 50%), radial-gradient(circle at 90% 30%, rgba(220,38,38,0.15), transparent 50%), linear-gradient(180deg, #ffffff 0%, #f3f4f6 100%); }
         .page-header { background: white; padding: 1.75rem 2rem; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap; }

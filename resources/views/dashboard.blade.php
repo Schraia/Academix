@@ -353,6 +353,11 @@
     transition:.2s ease;
   }
   .dash-card .btn-nav:hover{background:#b91c1c;transform:translateY(-1px);}
+  .ann-filters{display:flex;flex-wrap:wrap;gap:.4rem;align-items:center;justify-content:flex-end;margin-bottom:.5rem;}
+  .ann-filter-btn{font-size:.72rem;font-weight:800;padding:.28rem .55rem;border-radius:8px;border:1px solid #e5e7eb;background:#f9fafb;color:#374151;cursor:pointer;}
+  .ann-filter-btn:hover{background:#f3f4f6;color:#dc2626;}
+  .section-title-row{display:flex;align-items:center;justify-content:space-between;gap:.5rem;flex-wrap:wrap;margin-bottom:.35rem;}
+  .section-title-row h3{margin-bottom:0;}
 
   .course-overview-card{
     flex:1;           
@@ -646,6 +651,7 @@
 
         <div class="top-header">
     <div class="top-header-left">
+        <div class="dash-card" style="padding: var(--card-pad-y) var(--card-pad-x);">
         @php
             $u = Auth::user();
             $fallbackFullName = trim(($u->first_name ?? '') . ' ' . ($u->last_name ?? ''));
@@ -653,6 +659,7 @@
         @endphp
         <div class="title">Welcome Back, {{ $u->isAdmin() ? 'Admin' : $displayName }}!</div>
         <div class="subtitle">Here’s what’s happening today in your Academix dashboard.</div>
+        </div>
     </div>
 
     <div class="top-header-right">
@@ -812,11 +819,19 @@
                 
 
                 <div class="dash-card">
-                    <h3 class="section-title">Announcements</h3>
+                    <div class="section-title-row">
+                        <h3 class="section-title">Announcements</h3>
+                        <div class="ann-filters">
+                            <button type="button" class="ann-filter-btn" id="annBtnCourse" title="Cycle course filter">All</button>
+                            <button type="button" class="ann-filter-btn" id="annBtnDate" title="Cycle date range">All dates</button>
+                        </div>
+                    </div>
                     <div class="announcements-wrap" style="height: 130px;">
-                        <ul class="announcements-list">
+                        <ul class="announcements-list" id="announcementsList">
                             @forelse($announcements as $a)
-                            <li class="announcement-item">
+                            <li class="announcement-item"
+                                data-course-id="{{ $a->course_id }}"
+                                data-created="{{ $a->created_at->toIso8601String() }}">
                                 <div style="font-size:.78rem;color:#9ca3af;margin-bottom:.15rem;">{{ $a->created_at->format('M j') }}</div>
                                 <a href="{{ route('courses.announcements', $a->course_id) }}" style="font-weight:950;color:#111827;text-decoration:none;">
                                     {{ Str::limit($a->title, 50) }}
@@ -827,11 +842,12 @@
                                 <div style="font-size:.78rem;color:#9ca3af;margin-top:.15rem;">{{ $a->created_at->format('g:i A - M j, Y') }}</div>
                             </li>
                             @empty
-                            <li style="color:#9ca3af;">No announcements.</li>
+                            <li style="color:#9ca3af;" id="annEmptyDefault">No announcements.</li>
                             @endforelse
                         </ul>
                     </div>
                 </div>
+                <script type="application/json" id="annCourseOptions">@json($announcementCourseOptions ?? [])</script>
 
                 <div class="dash-card">
                     <h3 class="section-title">Recently Opened</h3>
@@ -901,6 +917,106 @@
             });
         }
     }
+})();
+
+(function(){
+    var list = document.getElementById('announcementsList');
+    var btnCourse = document.getElementById('annBtnCourse');
+    var btnDate = document.getElementById('annBtnDate');
+    var optEl = document.getElementById('annCourseOptions');
+    if (!list || !btnCourse || !btnDate) return;
+    var courses = [];
+    try { courses = JSON.parse(optEl ? optEl.textContent : '[]') || []; } catch (e) { courses = []; }
+    var LS_C = 'academix_dash_ann_course';
+    var LS_D = 'academix_dash_ann_period';
+    var courseState = localStorage.getItem(LS_C) || 'all';
+    var dateState = localStorage.getItem(LS_D) || 'all';
+
+    function startOfDay(d) {
+        return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    }
+    function inDatePeriod(iso, period) {
+        if (period === 'all') return true;
+        var d = new Date(iso);
+        if (isNaN(d.getTime())) return true;
+        var now = new Date();
+        var sod = startOfDay(now);
+        if (period === 'today') {
+            return d >= sod && d < new Date(sod.getTime() + 864e5);
+        }
+        if (period === 'yesterday') {
+            var y = new Date(sod.getTime() - 864e5);
+            return d >= y && d < sod;
+        }
+        if (period === 'week') {
+            return d >= new Date(now.getTime() - 7 * 864e5);
+        }
+        if (period === 'month') {
+            return d >= new Date(now.getFullYear(), now.getMonth(), 1);
+        }
+        return true;
+    }
+    function applyFilters() {
+        var items = list.querySelectorAll('.announcement-item');
+        var visible = 0;
+        items.forEach(function(li) {
+            var cid = String(li.getAttribute('data-course-id') || '');
+            var created = li.getAttribute('data-created') || '';
+            var okC = (courseState === 'all') || (cid === String(courseState));
+            var okD = inDatePeriod(created, dateState);
+            var show = okC && okD;
+            li.style.display = show ? '' : 'none';
+            if (show) visible++;
+        });
+        var empty = list.querySelector('#annEmptyFiltered');
+        if (!empty && visible === 0 && items.length) {
+            empty = document.createElement('li');
+            empty.id = 'annEmptyFiltered';
+            empty.style.color = '#9ca3af';
+            empty.textContent = 'No announcements for this filter.';
+            list.appendChild(empty);
+        } else if (empty) {
+            empty.style.display = visible === 0 && items.length ? '' : 'none';
+        }
+    }
+    function courseLabel() {
+        if (courseState === 'all') return 'All';
+        var id = parseInt(courseState, 10);
+        for (var i = 0; i < courses.length; i++) {
+            if (courses[i].id === id) {
+                return courses[i].code || (courses[i].title && courses[i].title.slice(0, 10)) || 'Course';
+            }
+        }
+        return 'All';
+    }
+    function dateLabel() {
+        var m = { all: 'All dates', today: 'Today', yesterday: 'Yesterday', week: 'This week', month: 'This month' };
+        return m[dateState] || 'All dates';
+    }
+    function syncButtons() {
+        btnCourse.textContent = courseLabel();
+        btnDate.textContent = dateLabel();
+    }
+    btnCourse.addEventListener('click', function() {
+        var seq = ['all'];
+        courses.forEach(function(c) { seq.push(String(c.id)); });
+        var idx = Math.max(0, seq.indexOf(String(courseState)));
+        courseState = seq[(idx + 1) % seq.length];
+        localStorage.setItem(LS_C, courseState);
+        syncButtons();
+        applyFilters();
+    });
+    btnDate.addEventListener('click', function() {
+        var seq = ['all', 'today', 'yesterday', 'week', 'month'];
+        var idx = seq.indexOf(dateState);
+        if (idx < 0) idx = 0;
+        dateState = seq[(idx + 1) % seq.length];
+        localStorage.setItem(LS_D, dateState);
+        syncButtons();
+        applyFilters();
+    });
+    syncButtons();
+    applyFilters();
 })();
 </script>
 

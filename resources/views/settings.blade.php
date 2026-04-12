@@ -164,10 +164,11 @@
             @if(session('error'))
                 <div class="alert-danger">{{ session('error') }}</div>
             @endif
-            <div style="display:flex; gap:.5rem; margin-bottom: 1rem; flex-wrap: wrap;">
+            <div style="display:flex; gap:.5rem; margin-bottom: 1rem; flex-wrap: wrap; align-items: center;">
                 <button type="button" class="btn-secondary" onclick="showTab('students')" id="tabBtnStudents">Students</button>
                 <button type="button" class="btn-secondary" onclick="showTab('instructors')" id="tabBtnInstructors">Instructors</button>
                 <button type="button" class="btn-secondary" onclick="showTab('pending')" id="tabBtnPending">Pending Enrollments</button>
+                <a href="{{ route('settings.courseArchiving') }}" class="btn-secondary" style="text-decoration:none;display:inline-block;padding:.5rem .85rem;border-radius:6px;font-size:.875rem;font-weight:600;border:1px solid #d1d5db;background:#e5e7eb;color:#374151;">Course Archiving</a>
             </div>
 
             <div id="tab-students" class="card">
@@ -235,6 +236,7 @@
                             <th>Email</th>
                             <th>Role</th>
                             <th>Assigned Courses</th>
+                            <th>Archive</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -256,6 +258,15 @@
                                             class="btn-assign">
                                         Assign Courses
                                     </button>
+                                </td>
+                                <td style="font-size: 0.8125rem;">
+                                    <a href="{{ route('settings.instructorArchiveAccess', $u) }}" style="color:#dc2626;font-weight:600;">Per-archive access</a>
+                                    <form action="{{ route('settings.instructors.toggleArchiveAccess', $u) }}" method="POST" style="margin-top:0.35rem;">
+                                        @csrf
+                                        <button type="submit" class="btn-secondary" style="font-size:0.75rem;padding:0.25rem 0.5rem;cursor:pointer;">
+                                            {{ $u->can_access_course_archive ? 'Turn off course archive' : 'Turn on course archive' }}
+                                        </button>
+                                    </form>
                                 </td>
                             </tr>
                         @endforeach

@@ -3,7 +3,7 @@
 @section('page_heading', 'Edit Announcement')
 @section('content')
     <style>
-        .form-card { background: white; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); padding: 1.5rem; max-width: 560px; }
+        .form-card { background: white; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); padding: 1.5rem; width: 100%; max-width: none; }
         .form-group { margin-bottom: 1rem; }
         .form-group label { display: block; font-weight: 600; color: #374151; margin-bottom: 0.35rem; }
         .form-group input, .form-group textarea { width: 100%; padding: 0.5rem 0.75rem; border: 1px solid #d1d5db; border-radius: 8px; font-size: 1rem; }

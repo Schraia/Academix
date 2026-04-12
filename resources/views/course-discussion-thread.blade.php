@@ -7,7 +7,7 @@
 
     <div class="courses-card" style="padding: 1.5rem; margin-bottom: 1.5rem;">
         <h2 style="font-size: 1.25rem; font-weight: 700; color: #1f2937; margin-bottom: 0.5rem;">{{ $thread->title }}</h2>
-        <p style="color: #6b7280; font-size: 0.875rem; margin-bottom: 0.5rem;">{{ $thread->user->name ?? 'User' }} · {{ $thread->created_at->format('M j, Y g:i A') }}</p>
+        <p style="color: #6b7280; font-size: 0.875rem; margin-bottom: 0.5rem;">@if($thread->user)<a href="{{ route('users.profile', $thread->user) }}" style="color:#dc2626;font-weight:600;text-decoration:none;">{{ $thread->user->name ?? 'User' }}</a>@else User @endif · {{ $thread->created_at->format('M j, Y g:i A') }}</p>
         @if($thread->announcement_id && $thread->announcement)
             <p style="font-size: 0.8125rem; color: #6b7280; margin-bottom: 0.5rem;">Re: <a href="{{ route('courses.announcements', $course) }}#ann-item-{{ $thread->announcement->id }}" style="color: #dc2626;">{{ $thread->announcement->title }}</a> (announcement by {{ $thread->announcement->user->name ?? 'Instructor' }})</p>
         @endif
@@ -17,7 +17,7 @@
             <h3 style="font-size: 1rem; font-weight: 600; color: #1f2937; margin-bottom: 0.75rem;">Replies ({{ $thread->messages->count() }})</h3>
             @forelse($thread->messages as $msg)
                 <div style="padding: 0.75rem 0; border-bottom: 1px solid #f3f4f6;">
-                    <p style="font-size: 0.875rem; font-weight: 600; color: #1f2937;">{{ $msg->user->name ?? 'User' }}</p>
+                    <p style="font-size: 0.875rem; font-weight: 600; color: #1f2937;">@if($msg->user)<a href="{{ route('users.profile', $msg->user) }}" style="color:#dc2626;text-decoration:none;">{{ $msg->user->name ?? 'User' }}</a>@else User @endif</p>
                     <p style="font-size: 0.8125rem; color: #6b7280; margin-bottom: 0.25rem;">{{ $msg->created_at->format('M j, Y g:i A') }}</p>
                     <p style="font-size: 0.9375rem; color: #374151; line-height: 1.5;">{{ $msg->content }}</p>
                 </div>

@@ -9,6 +9,8 @@ class UserNotification extends Model
 {
     protected $fillable = [
         'user_id',
+        'kind',
+        'course_id',
         'title',
         'message',
         'link_url',
@@ -22,6 +24,11 @@ class UserNotification extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function course(): BelongsTo
+    {
+        return $this->belongsTo(Course::class);
     }
 }
 

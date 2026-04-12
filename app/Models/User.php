@@ -27,6 +27,8 @@ class User extends Authenticatable
         'signature_path',
         'bio',
         'private_notes',
+        'grades_visible_on_profile',
+        'can_access_course_archive',
     ];
 
     /**
@@ -49,6 +51,8 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'grades_visible_on_profile' => 'boolean',
+            'can_access_course_archive' => 'boolean',
         ];
     }
 

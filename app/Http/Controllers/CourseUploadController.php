@@ -8,6 +8,8 @@ use App\Models\CourseAnnouncement;
 use App\Models\CourseGrade;
 use App\Models\Enrollment;
 use App\Models\LessonModule;
+use App\Services\UserNotifier;
+use App\Support\VideoHelper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -28,8 +30,17 @@ class CourseUploadController extends Controller
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
             'content' => 'nullable|string',
-            'attachment' => 'nullable|file|mimes:pdf,pptx,docx,png|max:51200',
+            'attachment' => 'nullable|file|mimes:pdf,pptx,docx,png,mp4,webm,mov|max:51200',
+            'video_url' => 'nullable|string|max:500',
         ]);
+
+        $videoUrl = $request->filled('video_url') ? trim((string) $request->video_url) : null;
+        if ($videoUrl !== null && $videoUrl !== '' && VideoHelper::youtubeId($videoUrl) === null) {
+            return back()->withErrors(['video_url' => 'Enter a valid YouTube link (youtube.com or youtu.be).'])->withInput();
+        }
+        if ($videoUrl === '') {
+            $videoUrl = null;
+        }
 
         $attachmentPath = null;
         $attachmentOriginalName = null;
@@ -40,18 +51,30 @@ class CourseUploadController extends Controller
         }
 
         $order = $course->lessonModules()->max('order') + 1;
-        LessonModule::create([
+        $lesson = LessonModule::create([
             'course_id' => $course->getKey(),
             'title' => $request->title,
             'description' => $request->description,
             'content' => $request->content,
             'attachment_path' => $attachmentPath,
             'attachment_original_name' => $attachmentOriginalName,
+            'video_url' => $videoUrl,
             'order' => $order,
             'type' => 'lesson',
             'status' => 'published',
             'published_at' => now(),
         ]);
+
+        $studentIds = Enrollment::where('course_id', $course->id)->where('status', 'enrolled')->pluck('user_id')->all();
+        $previewUrl = '/courses/' . $course->id . '/lessons/' . $lesson->id . '/preview';
+        UserNotifier::notifyMany(
+            $studentIds,
+            'New lesson: ' . $lesson->title,
+            $course->title,
+            $previewUrl,
+            'lesson',
+            $course->id
+        );
 
         if ($request->input('return_to') === 'lessons') {
             return redirect()->route('courses.lessons', $course)->with('success', 'Lesson added.');
@@ -77,13 +100,24 @@ class CourseUploadController extends Controller
             $imagePath = $request->file('image')->store('announcements', 'public');
         }
 
-        CourseAnnouncement::create([
+        $announcement = CourseAnnouncement::create([
             'course_id' => $course->getKey(),
             'user_id' => Auth::id(),
             'title' => $request->title,
             'content' => $request->content,
             'image_path' => $imagePath,
         ]);
+
+        $studentIds = Enrollment::where('course_id', $course->id)->where('status', 'enrolled')->pluck('user_id')->all();
+        $annUrl = '/courses/' . $course->id . '/announcements#ann-item-' . $announcement->id;
+        UserNotifier::notifyMany(
+            $studentIds,
+            'New announcement: ' . $announcement->title,
+            $course->title,
+            $annUrl,
+            'announcement',
+            $course->id
+        );
 
         if ($request->input('return_to') === 'announcements') {
             return redirect()->route('courses.announcements', $course)->with('success', 'Announcement added.');
@@ -143,6 +177,15 @@ class CourseUploadController extends Controller
             'max_score' => $request->max_score ?? 100,
             'graded_at' => now(),
         ]);
+
+        UserNotifier::notifyUser(
+            (int) $request->user_id,
+            'New grade posted: ' . $request->name,
+            $course->title,
+            '/courses/' . $course->id . '/grades',
+            'grade',
+            $course->id
+        );
 
         if ($request->input('return_to') === 'grades') {
             return redirect()->route('courses.grades', $course)->with('success', 'Grade recorded.');
@@ -283,6 +326,15 @@ class CourseUploadController extends Controller
                 'template_id' => 'Unable to render certificate image right now. Please try again.',
             ])->withInput();
         }
+
+        UserNotifier::notifyUser(
+            (int) $request->user_id,
+            'You received a certificate for ' . $course->title,
+            'Open Certificates to view or download.',
+            '/certificates/course/' . $course->id,
+            'certificate',
+            $course->id
+        );
 
         return redirect()->route('courses.upload.certificates', $course)->with('certificate_sent', [
             'student' => $enrollment->user->name,

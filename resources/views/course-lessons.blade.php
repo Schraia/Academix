@@ -45,9 +45,9 @@
                 @if($lesson->description)
                     <p style="margin-top: 0.25rem; color: #6b7280; font-size: 0.875rem;">{{ Str::limit($lesson->description, 120) }}</p>
                 @endif
-                @if($lesson->attachment_path)
+                @if($lesson->attachment_path || $lesson->video_url)
                     <p style="margin-top: 0.5rem;">
-                        <a href="{{ route('courses.lessons.preview', [$course, $lesson]) }}" style="color: #dc2626; font-weight: 600;">See File</a>
+                        <a href="{{ route('courses.lessons.preview', [$course, $lesson]) }}" style="color: #dc2626; font-weight: 600;">{{ ($lesson->video_url && ! $lesson->attachment_path) ? 'Watch lesson' : 'Open lesson' }}</a>
                         @if(!$isInstructor)
                             <form action="{{ route('courses.lessons.progress.toggle', [$course, $lesson]) }}" method="POST" style="display: inline; margin-left: 1rem;">
                                 @csrf
