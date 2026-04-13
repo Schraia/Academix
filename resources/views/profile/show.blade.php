@@ -8,7 +8,7 @@
     @vite('resources/css/app.css')
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        body { font-family: var(--font-sans);
         background: linear-gradient(180deg, #f8fafc 0%, #eef2f7 100%); }
         .dashboard-container { display: flex; min-height: 100vh; }
         .sidebar { width: 260px; height: 100vh;position: sticky; top: 0;flex-shrink: 0;
@@ -179,11 +179,22 @@
 .profile-col-left {
     align-self: start;
 }
+.profile-password-corner {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    font-size: 0.75rem;
+    color: #b91c1c;
+    text-decoration: none;
+}
+.password-card { display: none; }
+.password-card.open { display: block; }
 
 .profile-card {
     min-height: 440px;
     display: flex;
     flex-direction: column;
+    position: relative;
 
     background: linear-gradient(145deg, #ffffff 0%, #f1f5f9 100%);
     border-radius: 22px;
@@ -352,7 +363,7 @@
         .modal-actions { display: flex; gap: 0.75rem; justify-content: flex-end; margin-top: 1.25rem; }
         .discussion-meta { font-size: 0.75rem; color: #6b7280; margin-top: 0.2rem; }
         .discussion-last-reply { font-size: 0.8125rem; color: #4b5563; margin-top: 0.35rem; margin-left: 1.25rem; padding-left: 0.75rem; border-left: 2px solid #e5e7eb; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
-        .diagnostics-chart { display: flex; align-items: flex-end; gap: 4px; height: 120px; margin-top: 1rem; }
+        .diagnostics-chart { display: flex; align-items: flex-end; gap: 4px; height: 180px; margin-top: 1rem; }
         .chart-bar-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; position: relative; cursor: default; }
         .chart-bar { width: 100%; max-width: 24px; background: #dc2626; border-radius: 4px 4px 0 0; min-height: 4px; transition: height 0.2s; }
         .chart-label { font-size: 0.7rem; color: #6b7280; margin-top: 0.35rem; text-align: center; }
@@ -463,6 +474,9 @@
 
                 <div class="profile-col-left">
                     <div class="profile-card profile-view-mode" id="profile-left-card">
+                        @if($isOwnProfile ?? true)
+                            <button type="button" id="change-password-toggle" class="profile-password-corner" style="background:none;border:none;cursor:pointer;">Change Password</button>
+                        @endif
                         @if($user->profile_picture)
                             <img src="{{ asset('storage/' . $user->profile_picture) }}" alt="Profile" class="profile-avatar" id="profile-avatar-img">
                         @else
@@ -584,7 +598,7 @@
             <div class="card">
                 <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem;">
                     <h3 style="margin-bottom: 0;">📈 Overall Progress</h3>
-                    <a href="{{ route('profile.progress') }}" class="btn-outline" style="margin-top: 0;">View breakdown by course →</a>
+                    <a href="{{ route('profile.progress', ['user' => ($isOwnProfile ?? true) ? null : $user->id]) }}" class="btn-outline" style="margin-top: 0;">View breakdown by course →</a>
                 </div>
                 <p class="progress-text">{{ $completedLessons }} of {{ $totalLessons }} lessons completed across all your courses</p>
                 <div class="progress-bar-wrap">
@@ -598,13 +612,12 @@
                 <p class="progress-text">Lesson completions per week</p>
                 <div class="diagnostics-chart">
                     @php
-                        $maxCount = max(1, (int) collect($completionsByWeek)->max('count'));
-                        $denom = max($maxCount, 3);
+                        $maxCount = max(1, (int) ($maxCompletionsByWeek ?? collect($completionsByWeek)->max('count')));
                     @endphp
                     @foreach($completionsByWeek as $week)
                         @php
                             $c = (int) $week['count'];
-                            $h = $c === 0 ? 0 : max(22, min(100, round(100 * $c / $denom)));
+                            $h = $c === 0 ? 2 : max(14, min(100, round(100 * $c / $maxCount)));
                         @endphp
                         <div class="chart-bar-wrap">
                             <span class="chart-tooltip">{{ $week['label'] }}: {{ $week['count'] }} {{ $week['count'] === 1 ? 'module' : 'modules' }} completed</span>
@@ -614,7 +627,21 @@
                     @endforeach
                 </div>
                 <p style="margin-top: 0.5rem;" class="progress-text">Current streak: <strong>{{ $streak }} day(s)</strong> in a row with at least one lesson completed.</p>
+                <a href="{{ route('profile.diagnostics', ['user' => ($isOwnProfile ?? true) ? null : $user->id]) }}" class="btn-outline" style="margin-top: .75rem;">Open in-depth diagnostics →</a>
             </div>
+
+            @if($isOwnProfile ?? true)
+            <div class="card password-card" id="change-password-form">
+                <h3>🔐 Change Password</h3>
+                <form method="POST" action="{{ route('profile.password.update') }}">
+                    @csrf
+                    <div class="form-group"><label for="current_password">Current password</label><input id="current_password" name="current_password" type="password" style="width:100%;padding:.55rem;border:1px solid #d1d5db;border-radius:8px;"></div>
+                    <div class="form-group"><label for="new_password">New password</label><input id="new_password" name="new_password" type="password" required style="width:100%;padding:.55rem;border:1px solid #d1d5db;border-radius:8px;"></div>
+                    <div class="form-group"><label for="new_password_confirmation">Confirm new password</label><input id="new_password_confirmation" name="new_password_confirmation" type="password" required style="width:100%;padding:.55rem;border:1px solid #d1d5db;border-radius:8px;"></div>
+                    <button type="submit" class="btn btn-primary">Update password</button>
+                </form>
+            </div>
+            @endif
         </div>
     </div>
 
@@ -676,6 +703,14 @@
             if (confirmBtn) confirmBtn.addEventListener('click', function() { form.submit(); });
             modal.addEventListener('click', function(e) {
                 if (e.target === modal) closeModal();
+            });
+        })();
+        (function() {
+            var toggle = document.getElementById('change-password-toggle');
+            var card = document.getElementById('change-password-form');
+            if (!toggle || !card) return;
+            toggle.addEventListener('click', function() {
+                card.classList.toggle('open');
             });
         })();
     </script>

@@ -396,10 +396,21 @@ class CourseUploadController extends Controller
             mkdir($tempDir, 0777, true);
         }
 
-        Browsershot::html($html)
-            ->setNodeBinary('c:/laragon/bin/nodejs/node-v22/node.exe')
-            ->setNpmBinary('c:/laragon/bin/nodejs/node-v22/npm.cmd')
-            ->setNodeModulePath(base_path('node_modules'))
+        $shot = Browsershot::html($html);
+        $nodeBinary = env('BROWSERSHOT_NODE_BINARY');
+        $npmBinary = env('BROWSERSHOT_NPM_BINARY');
+        $nodeModules = env('BROWSERSHOT_NODE_MODULES', base_path('node_modules'));
+        if (is_string($nodeBinary) && $nodeBinary !== '' && is_file($nodeBinary)) {
+            $shot->setNodeBinary($nodeBinary);
+        }
+        if (is_string($npmBinary) && $npmBinary !== '' && is_file($npmBinary)) {
+            $shot->setNpmBinary($npmBinary);
+        }
+        if (is_string($nodeModules) && $nodeModules !== '' && is_dir($nodeModules)) {
+            $shot->setNodeModulePath($nodeModules);
+        }
+
+        $shot
             ->windowSize(1123, 794)
             ->setScreenshotType('png')
             ->timeout(120)

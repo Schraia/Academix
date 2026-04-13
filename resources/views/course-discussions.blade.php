@@ -31,9 +31,9 @@
         <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 1rem;">Discussions</h3>
         @if(session('success'))<p style="color: #059669; margin-bottom: 0.75rem; font-size: 0.9375rem;">{{ session('success') }}</p>@endif
         @forelse($threads as $thread)
-            <a href="{{ route('courses.discussions.thread', [$course, $thread]) }}" style="display: block; text-decoration: none; color: inherit; padding: 1rem 0; border-bottom: 1px solid #e5e7eb; transition: background 0.15s;" class="thread-link" onmouseover="this.style.background='#f9fafb'" onmouseout="this.style.background='transparent'">
-                <strong style="color: #1f2937;">{{ $thread->title }}</strong>
-                <p style="margin-top: 0.25rem; color: #6b7280; font-size: 0.875rem;">@if($thread->user)<a href="{{ route('users.profile', $thread->user) }}" style="color:#dc2626;font-weight:600;text-decoration:none;" onclick="event.stopPropagation();">{{ $thread->user->name ?? 'User' }}</a>@else User @endif · {{ $thread->created_at->format('M j, Y') }}@if($thread->messages_count > 0) · {{ $thread->messages_count }} {{ Str::plural('reply', $thread->messages_count) }}@endif</p>
+            <a href="{{ route('courses.discussions.thread', [$course, $thread]) }}" style="display: block; text-decoration: none; color: inherit; padding: 1rem 0; border-bottom: 1px solid #e5e7eb; transition: background 0.15s; line-height:1.4;" class="thread-link" onmouseover="this.style.background='#f9fafb'" onmouseout="this.style.background='transparent'">
+                <div style="font-weight:700;color:#1f2937;">{{ $thread->title }}</div>
+                <div style="margin-top: 0.2rem; color: #6b7280; font-size: 0.875rem;">@if($thread->user)<a href="{{ route('users.profile', $thread->user) }}" style="color:#dc2626;font-weight:600;text-decoration:none;" onclick="event.stopPropagation();">{{ $thread->user->name ?? 'User' }}</a>@else User @endif · {{ $thread->created_at->format('M j, Y') }}@if($thread->messages_count > 0) · {{ $thread->messages_count }} {{ Str::plural('reply', $thread->messages_count) }}@endif</div>
                 @if($thread->announcement_id && $thread->announcement)
                     <p style="margin-top: 0.25rem; font-size: 0.8125rem; color: #6b7280;">Re: {{ $thread->announcement->title }} (announcement by {{ $thread->announcement->user->name ?? 'Instructor' }})</p>
                 @endif

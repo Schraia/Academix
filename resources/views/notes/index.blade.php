@@ -7,7 +7,7 @@
     @vite('resources/css/app.css')
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: linear-gradient(180deg, #f8fafc 0%, #eef2f7 100%); }
+        body { font-family: var(--font-sans); background: linear-gradient(180deg, #f8fafc 0%, #eef2f7 100%); }
         .dashboard-container { display: flex; min-height: 100vh; }
         .sidebar { width: 260px; height: 100vh; position: sticky; top: 0; flex-shrink: 0; background: linear-gradient(180deg, #962121 0%, #991b1b 40%, #450a0a 100%); color: rgba(255,255,255,0.92); display: flex; flex-direction: column; box-shadow: 8px 0 40px rgba(0,0,0,0.35); overflow: hidden; }
         .sidebar::after { content: ""; position: absolute; inset: 0; background: radial-gradient(circle at 20% 10%, rgba(255,255,255,0.05), transparent 40%), radial-gradient(circle at 80% 30%, rgba(255,255,255,0.04), transparent 40%); pointer-events: none; }

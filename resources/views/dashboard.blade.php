@@ -41,7 +41,7 @@
 }
 
   body{
-    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,Ubuntu,Cantarell,sans-serif;
+    font-family:var(--font-sans);
     background:#f3f4f6;
     color:#111827;
   }
@@ -767,7 +767,7 @@
                 </div>
                  <div class="todays-schedule-section dash-card" style="min-height: 170px;">
                     <h2 class="todays-schedule-header">Today's Schedule</h2>
-                    <p class="todays-schedule-date">{{ $dateFormatted }}</p>
+                    <p class="todays-schedule-date"><a href="{{ route('dashboard.schedule.week') }}" style="color:#b91c1c;text-decoration:underline;">{{ $dateFormatted }}</a></p>
 
                     <ul class="todays-schedule-list">
                         @forelse($todaysSchedules as $schedule)
@@ -810,7 +810,7 @@
                             <h3 style="margin-bottom:.2rem;">Diagnostics</h3>
                             <p style="margin-bottom:.65rem;">Your learning stats &amp; progress</p>
                             <div class="mini-actions">
-                                <a href="{{ route('profile.show') }}" class="btn-nav">View Diagnostics ›</a>
+                                <a href="{{ route('profile.diagnostics') }}" class="btn-nav">View Diagnostics ›</a>
                             </div>
                         </div>
                     </div>

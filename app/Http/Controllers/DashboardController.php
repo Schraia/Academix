@@ -214,6 +214,42 @@ class DashboardController extends Controller
         ]);
     }
 
+    public function weekSchedule()
+    {
+        $user = Auth::user();
+        $schoolYear = now()->year;
+
+        $enrollments = $user->enrollments()
+            ->whereYear('enrolled_at', $schoolYear)
+            ->where('status', 'enrolled')
+            ->with('course')
+            ->get();
+
+        $weekdays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+        $mapped = collect($weekdays)->mapWithKeys(fn ($day) => [$day => []])->all();
+
+        foreach ($enrollments as $enrollment) {
+            foreach ($weekdays as $idx => $day) {
+                if ($this->enrollmentMatchesDayOfWeek($enrollment->days ?? '', $idx + 1)) {
+                    $mapped[$day][] = [
+                        'course_id' => $enrollment->course_id,
+                        'course_code' => $enrollment->course?->code ?? '',
+                        'course_name' => $enrollment->course_name ?? ($enrollment->course?->title ?? ''),
+                        'time_slot' => $enrollment->time_slot ?? '',
+                    ];
+                }
+            }
+        }
+
+        foreach ($mapped as $day => $items) {
+            $mapped[$day] = $this->sortSchedulesByTime(collect($items))->values()->all();
+        }
+
+        return view('dashboard-week-schedule', [
+            'weekSchedule' => $mapped,
+        ]);
+    }
+
     /**
      * Check if enrollment days string includes the given day of week.
      */

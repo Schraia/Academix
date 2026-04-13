@@ -443,10 +443,10 @@ body{
                 <div class="preview" style="font-weight: 700;">{{ Str::limit($thread->title, 60) }}</div>
                 @php $latestMessage = $thread->messages->sortByDesc('created_at')->first(); @endphp
                 @if($latestMessage)
-                    <div class="discussion-reply" title="{{ $latestMessage->user->name ?? 'User' }}: {{ $latestMessage->content }}">{{ $latestMessage->user->name ?? 'User' }}: {{ $latestMessage->content }}</div>
+                    <div class="discussion-reply" title="{{ $latestMessage->user->name ?? 'User' }}: {{ $latestMessage->content }}"><a href="{{ route('users.profile', $latestMessage->user_id) }}" style="color:#dc2626;text-decoration:none;font-weight:600;">{{ $latestMessage->user->name ?? 'User' }}</a>: {{ $latestMessage->content }}</div>
                 @elseif($thread->content)
                     @php $author = $thread->user->name ?? 'User'; @endphp
-                    <div class="discussion-reply" title="{{ $author }}: {{ $thread->content }}">{{ $author }}: {{ $thread->content }}</div>
+                    <div class="discussion-reply" title="{{ $author }}: {{ $thread->content }}"><a href="{{ route('users.profile', $thread->user_id) }}" style="color:#dc2626;text-decoration:none;font-weight:600;">{{ $author }}</a>: {{ $thread->content }}</div>
                 @endif
             @empty
                 <div class="preview">No discussions yet.</div>
@@ -458,10 +458,12 @@ body{
             <h3>Last lesson uploaded:</h3>
             @if($lastLesson)
                 <div class="preview" style="font-weight: 700;">{{ $lastLesson->title }}</div>
-                <div class="preview" style="padding-left: 1.25rem; font-weight: normal;">{{ Str::limit($lastLesson->description, 100) ?: '—' }}</div>
+                @if(filled($lastLesson->description))
+                    <div class="preview" style="padding-left: 1.25rem; font-weight: normal;">{{ Str::limit($lastLesson->description, 100) }}</div>
+                @endif
                 @if($lastLesson->attachment_path)
-                    @php $ext = pathinfo($lastLesson->attachment_path, PATHINFO_EXTENSION); $filename = $lastLesson->attachment_original_name ?? ($lastLesson->title . ($ext ? '.' . $ext : '')); @endphp
-                    <div class="preview" style="padding-left: 1.25rem; font-weight: normal; margin-top: 0.25rem;"><a href="{{ route('courses.lessons.preview', [$course, $lastLesson]) }}" style="color: #dc2626; text-decoration: none;">{{ $filename }}</a></div>
+                    @php $ext = pathinfo($lastLesson->attachment_path, PATHINFO_EXTENSION); $filename = $lastLesson->attachment_original_name ?? ($lastLesson->title . ($ext ? '.' . $ext : '')); $fileMarginTop = filled($lastLesson->description) ? '0.25rem' : '0'; @endphp
+                    <div class="preview" style="padding-left: 1.25rem; font-weight: normal; margin-top: {{ $fileMarginTop }};"><a href="{{ route('courses.lessons.preview', [$course, $lastLesson]) }}" style="color: #dc2626; text-decoration: none;">{{ $filename }}</a></div>
                 @endif
                 <div class="preview" style="padding-left: 1.25rem; font-size: 0.8125rem; color: #6b7280; margin-top: 0.25rem;">{{ ($lastLesson->published_at ?? $lastLesson->updated_at)->format('M j, Y g:i A') }}</div>
             @else

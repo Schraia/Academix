@@ -15,10 +15,12 @@ class UserNotification extends Model
         'message',
         'link_url',
         'read_at',
+        'is_starred',
     ];
 
     protected $casts = [
         'read_at' => 'datetime',
+        'is_starred' => 'boolean',
     ];
 
     public function user(): BelongsTo

@@ -32,8 +32,10 @@ Route::middleware('guest')->group(function () {
 
 Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/dashboard/schedule-week', [DashboardController::class, 'weekSchedule'])->name('dashboard.schedule.week');
     Route::get('/notifications', [NotificationsController::class, 'index'])->name('notifications.index');
     Route::get('/notifications/{notification}', [NotificationsController::class, 'go'])->name('notifications.go');
+    Route::patch('/notifications/{notification}/star', [NotificationsController::class, 'star'])->name('notifications.star');
     Route::get('/registration', [UserRegistrationController::class, 'form'])->name('registration.form');
     Route::post('/registration', [UserRegistrationController::class, 'save'])->name('registration.save');
     Route::get('/enroll', [EnrollController::class, 'index'])->name('enroll');
@@ -56,9 +58,11 @@ Route::middleware('auth')->group(function () {
     Route::post('/courses/{course}/lessons/{lesson}/progress', [CourseController::class, 'toggleLessonProgress'])->name('courses.lessons.progress.toggle');
     Route::get('/profile', [ProfileController::class, 'show'])->name('profile.show');
     Route::get('/users/{user}', [ProfileController::class, 'showUser'])->name('users.profile');
-    Route::get('/profile/progress', [ProfileController::class, 'progressBreakdown'])->name('profile.progress');
+    Route::get('/profile/progress/{user?}', [ProfileController::class, 'progressBreakdown'])->name('profile.progress');
+    Route::get('/profile/diagnostics/{user?}', [ProfileController::class, 'diagnostics'])->name('profile.diagnostics');
     Route::get('/profile/enrollments', [ProfileController::class, 'enrollmentsIndex'])->name('profile.enrollments');
     Route::post('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::post('/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password.update');
     Route::post('/profile/picture/remove', [ProfileController::class, 'removePicture'])->name('profile.picture.remove');
     Route::post('/profile/discussions/{thread}/unfollow', [ProfileController::class, 'unfollowDiscussion'])->name('profile.discussions.unfollow');
 
@@ -100,6 +104,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/settings/instructors', [SettingsController::class, 'createInstructor'])->name('settings.instructors.create');
         Route::post('/settings/pending-enrollments/{pending}/approve', [SettingsController::class, 'approvePending'])->name('settings.pending.approve');
         Route::post('/settings/pending-enrollments/{pending}/reject', [SettingsController::class, 'rejectPending'])->name('settings.pending.reject');
+        Route::post('/settings/courses/{course}/reset-content', [SettingsController::class, 'resetCourseContent'])->name('settings.courses.reset-content');
         Route::get('/settings/course-archiving', [CourseArchivingController::class, 'index'])->name('settings.courseArchiving');
         Route::post('/settings/course-archiving', [CourseArchivingController::class, 'store'])->name('settings.courseArchiving.store');
         Route::delete('/settings/course-archiving/{courseArchive}', [CourseArchivingController::class, 'destroy'])->name('settings.courseArchiving.destroy');

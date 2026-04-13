@@ -168,6 +168,7 @@
                 <button type="button" class="btn-secondary" onclick="showTab('students')" id="tabBtnStudents">Students</button>
                 <button type="button" class="btn-secondary" onclick="showTab('instructors')" id="tabBtnInstructors">Instructors</button>
                 <button type="button" class="btn-secondary" onclick="showTab('pending')" id="tabBtnPending">Pending Enrollments</button>
+                <button type="button" class="btn-secondary" onclick="showTab('course-reset')" id="tabBtnCourseReset">Course Reset</button>
                 <a href="{{ route('settings.courseArchiving') }}" class="btn-secondary" style="text-decoration:none;display:inline-block;padding:.5rem .85rem;border-radius:6px;font-size:.875rem;font-weight:600;border:1px solid #d1d5db;background:#e5e7eb;color:#374151;">Course Archiving</a>
             </div>
 
@@ -253,14 +254,14 @@
                                 <td>{{ $u->email }}</td>
                                 <td><span class="badge-role badge-instructor">Instructor</span></td>
                                 <td>
-                                    <button onclick="openModal({{ $u->id }}, '{{ $displayName }}', {{ $u->courses->toJson() }})"
+                                    <button onclick="openModal({{ $u->id }}, '{{ $displayName }}', {{ $u->courses->toJson() }}, {{ json_encode(($instructorBlockedArchives[$u->id] ?? collect())->values()) }})"
                                             type="button"
                                             class="btn-assign">
                                         Assign Courses
                                     </button>
                                 </td>
                                 <td style="font-size: 0.8125rem;">
-                                    <a href="{{ route('settings.instructorArchiveAccess', $u) }}" style="color:#dc2626;font-weight:600;">Per-archive access</a>
+                                    <span style="color:#6b7280;">Configure inside Assign Courses</span>
                                     <form action="{{ route('settings.instructors.toggleArchiveAccess', $u) }}" method="POST" style="margin-top:0.35rem;">
                                         @csrf
                                         <button type="submit" class="btn-secondary" style="font-size:0.75rem;padding:0.25rem 0.5rem;cursor:pointer;">
@@ -323,6 +324,30 @@
                     </tbody>
                 </table>
             </div>
+
+            <div id="tab-course-reset" class="card" style="display:none;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Course</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($courses as $course)
+                            <tr>
+                                <td>{{ $course->code ? $course->code . ' - ' : '' }}{{ $course->title }}</td>
+                                <td>
+                                    <form method="POST" action="{{ route('settings.courses.reset-content', $course) }}" onsubmit="return confirm('Reset this course content? This keeps rows in DB but clears/hides content.');">
+                                        @csrf
+                                        <button type="submit" class="btn-primary" style="border-radius:8px;">Reset Content</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 
@@ -344,6 +369,10 @@
                         <h3>Available Courses</h3>
                         <input type="text" id="search-courses" placeholder="Search for courses...">
                         <div id="available-courses-list" class="courses-list"></div>
+                    </div>
+                    <div id="archive-access-container" style="grid-column: 1 / -1;">
+                        <h3>Per-archive access (checked = blocked)</h3>
+                        <div id="archive-access-list" class="courses-list" style="height: 180px;"></div>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -415,15 +444,18 @@
 
     <script>
         const allCourses = @json($courses);
+        const allArchives = @json($archives ?? []);
         let currentAssignedCourses = [];
+        let currentBlockedArchives = [];
         let currentStudentAssignedCourses = [];
 
-        function openModal(userId, userName, assignedCourses) {
+        function openModal(userId, userName, assignedCourses, blockedArchives) {
             document.body.classList.add('modal-open');
             document.getElementById('modal-user-id').value = userId;
             document.getElementById('modal-title').innerText = 'Assign Courses to ' + userName;
             
             currentAssignedCourses = assignedCourses.map(c => c.id);
+            currentBlockedArchives = (blockedArchives || []).map(id => Number(id));
 
             renderCourseLists();
             
@@ -438,9 +470,11 @@
         function renderCourseLists(searchTerm = '') {
             const assignedList = document.getElementById('assigned-courses-list');
             const availableList = document.getElementById('available-courses-list');
+            const archiveList = document.getElementById('archive-access-list');
             
             assignedList.innerHTML = '';
             availableList.innerHTML = '';
+            if (archiveList) archiveList.innerHTML = '';
             let totalCredits = 0;
 
             const filteredCourses = allCourses.filter(course => 
@@ -464,6 +498,22 @@
             });
 
             document.getElementById('total-credits').innerText = totalCredits.toFixed(2);
+
+            if (archiveList) {
+                allArchives.forEach(archive => {
+                    const isBlocked = currentBlockedArchives.includes(archive.id);
+                    archiveList.innerHTML += `
+                        <div class="course-item">
+                            <input type="checkbox" id="archive-${archive.id}" value="${archive.id}" ${isBlocked ? 'checked' : ''} onchange="toggleArchive(${archive.id})">
+                            <label for="archive-${archive.id}">
+                                <span class="course-code">(${archive.course?.code || 'N/A'})</span>
+                                ${archive.course ? archive.course.title : 'Course'} - ${archive.label}
+                            </label>
+                            ${isBlocked ? `<input type="hidden" name="blocked_archives[]" value="${archive.id}">` : ''}
+                        </div>
+                    `;
+                });
+            }
         }
 
         function createCourseItem(course, isAssigned) {
@@ -489,6 +539,16 @@
                 currentAssignedCourses.splice(index, 1);
             } else {
                 currentAssignedCourses.push(courseId);
+            }
+            renderCourseLists(document.getElementById('search-courses').value);
+        }
+
+        function toggleArchive(archiveId) {
+            const index = currentBlockedArchives.indexOf(archiveId);
+            if (index > -1) {
+                currentBlockedArchives.splice(index, 1);
+            } else {
+                currentBlockedArchives.push(archiveId);
             }
             renderCourseLists(document.getElementById('search-courses').value);
         }
@@ -588,6 +648,7 @@
             document.getElementById('tab-students').style.display = tab === 'students' ? 'block' : 'none';
             document.getElementById('tab-instructors').style.display = tab === 'instructors' ? 'block' : 'none';
             document.getElementById('tab-pending').style.display = tab === 'pending' ? 'block' : 'none';
+            document.getElementById('tab-course-reset').style.display = tab === 'course-reset' ? 'block' : 'none';
         }
 
         function openPersonalInfoModal(registration, email) {
