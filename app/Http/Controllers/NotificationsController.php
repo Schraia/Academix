@@ -31,6 +31,8 @@ class NotificationsController extends Controller
 
         if ($tab === 'discussions') {
             $q->where('kind', 'discussion');
+        } elseif ($tab === 'starred') {
+            $q->where('is_starred', true);
         } elseif ($tab !== 'all' && is_numeric($tab)) {
             $q->where('course_id', (int) $tab);
         }
@@ -67,6 +69,20 @@ class NotificationsController extends Controller
         }
 
         return redirect()->route('notifications.index');
+    }
+
+    public function star(UserNotification $notification)
+    {
+        $user = Auth::user();
+        abort_unless((int) $notification->user_id === (int) $user->id, 403);
+
+        $notification->forceFill([
+            'is_starred' => ! $notification->is_starred,
+        ])->save();
+
+        return response()->json([
+            'starred' => (bool) $notification->is_starred,
+        ]);
     }
 }
 

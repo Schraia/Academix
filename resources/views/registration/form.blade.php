@@ -153,6 +153,12 @@
                     </div>
 
                     <div class="field">
+                        <label for="birthdate">Birthdate</label>
+                        <input id="birthdate" name="birthdate" type="date" value="{{ old('birthdate', optional($registration->birthdate ?? null)->format('Y-m-d')) }}" {{ $isExisting ? 'disabled' : '' }}>
+                        @error('birthdate') <div class="error">{{ $message }}</div> @enderror
+                    </div>
+
+                    <div class="field">
                         <label for="nationality">Nationality</label>
                         <input id="nationality" name="nationality" value="{{ old('nationality', $registration->nationality ?? '') }}" required {{ $isExisting ? 'disabled' : '' }}>
                         @error('nationality') <div class="error">{{ $message }}</div> @enderror

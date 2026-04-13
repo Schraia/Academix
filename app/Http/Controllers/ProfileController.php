@@ -14,6 +14,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rules\File;
 
@@ -128,13 +129,51 @@ class ProfileController extends Controller
             'overallGradeAverage' => $overallGradeAverage,
             'discussionThreads' => $discussionThreads,
             'completionsByWeek' => $weeks,
+            'maxCompletionsByWeek' => (int) max(1, collect($weeks)->max('count')),
             'streak' => $streak,
         ]);
     }
 
-    public function progressBreakdown()
+    public function diagnostics(?User $user = null)
     {
-        $user = Auth::user();
+        $viewer = Auth::user();
+        $user = $user ?: $viewer;
+        if ($user->isAdmin() && ! $viewer->isAdmin()) {
+            abort(403);
+        }
+
+        $byWeekday = array_fill_keys(['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'], 0);
+        $records = LessonProgress::where('user_id', $user->id)
+            ->where('status', 'completed')
+            ->whereNotNull('completed_at')
+            ->get(['completed_at']);
+        foreach ($records as $record) {
+            $day = $record->completed_at->format('D');
+            $byWeekday[$day] = ($byWeekday[$day] ?? 0) + 1;
+        }
+
+        $sessionsByWeekday = array_fill_keys(['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'], 0);
+        $sessionRows = DB::table('sessions')->where('user_id', $user->id)->get(['last_activity']);
+        foreach ($sessionRows as $row) {
+            $day = now()->setTimestamp((int) $row->last_activity)->format('D');
+            $sessionsByWeekday[$day] = ($sessionsByWeekday[$day] ?? 0) + 1;
+        }
+
+        return view('profile.diagnostics', [
+            'user' => $user,
+            'isOwnProfile' => (int) $user->id === (int) $viewer->id,
+            'completedByWeekday' => $byWeekday,
+            'sessionsByWeekday' => $sessionsByWeekday,
+        ]);
+    }
+
+    public function progressBreakdown(?User $user = null)
+    {
+        $viewer = Auth::user();
+        $user = $user ?: $viewer;
+        if ($user->isAdmin() && ! $viewer->isAdmin()) {
+            abort(403);
+        }
         $schoolYear = now()->year;
         $enrollmentIds = $user->enrollments()
             ->whereYear('enrolled_at', $schoolYear)
@@ -293,6 +332,26 @@ class ProfileController extends Controller
             $user->save();
         }
         return redirect()->route('profile.show')->with('success', 'Profile picture removed.');
+    }
+
+    public function updatePassword(Request $request)
+    {
+        $user = Auth::user();
+        $request->validate([
+            'current_password' => 'nullable|string',
+            'new_password' => 'required|string|min:8|confirmed',
+        ]);
+
+        if (! empty($user->password)) {
+            if (! Hash::check((string) $request->current_password, $user->password)) {
+                return back()->withErrors(['current_password' => 'Current password is incorrect.']);
+            }
+        }
+
+        $user->password = $request->new_password;
+        $user->save();
+
+        return back()->with('success', 'Password updated successfully.');
     }
 
     public function unfollowDiscussion(DiscussionThread $thread)

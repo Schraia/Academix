@@ -542,6 +542,7 @@ class CourseController extends Controller
             'description' => 'nullable|string',
             'banner' => 'nullable|image|mimes:jpeg,jpg,png,gif,webp|max:10240',
             'banner_object_position' => 'nullable|string|max:64',
+            'banner_crop_data' => 'nullable|string|max:1000',
         ]);
 
         $data = ['description' => $request->description];
@@ -554,12 +555,88 @@ class CourseController extends Controller
             if ($course->banner_path) {
                 Storage::disk('public')->delete($course->banner_path);
             }
-            $data['banner_path'] = $request->file('banner')->store('courses', 'public');
+            $bannerFile = $request->file('banner');
+            $cropData = null;
+            if ($request->filled('banner_crop_data')) {
+                $decoded = json_decode((string) $request->banner_crop_data, true);
+                if (is_array($decoded)) {
+                    $cropData = $decoded;
+                }
+            }
+            $stored = false;
+            if ($cropData) {
+                $imageContent = file_get_contents($bannerFile->getRealPath());
+                if ($imageContent !== false) {
+                    $srcImage = @imagecreatefromstring($imageContent);
+                    if ($srcImage !== false) {
+                        $srcW = imagesx($srcImage);
+                        $srcH = imagesy($srcImage);
+                        $x = max(0, (int) round($cropData['x'] ?? 0));
+                        $y = max(0, (int) round($cropData['y'] ?? 0));
+                        $w = max(1, (int) round($cropData['width'] ?? $srcW));
+                        $h = max(1, (int) round($cropData['height'] ?? $srcH));
+                        $x = min($x, max(0, $srcW - 1));
+                        $y = min($y, max(0, $srcH - 1));
+                        $w = min($w, $srcW - $x);
+                        $h = min($h, $srcH - $y);
+                        $dst = imagecreatetruecolor($w, $h);
+                        imagecopyresampled($dst, $srcImage, 0, 0, $x, $y, $w, $h, $w, $h);
+                        ob_start();
+                        imagejpeg($dst, null, 90);
+                        $jpg = ob_get_clean();
+                        if ($jpg !== false) {
+                            $path = 'courses/' . Str::uuid() . '.jpg';
+                            Storage::disk('public')->put($path, $jpg);
+                            $data['banner_path'] = $path;
+                            $stored = true;
+                        }
+                        imagedestroy($dst);
+                        imagedestroy($srcImage);
+                    }
+                }
+            }
+            if (! $stored) {
+                $data['banner_path'] = $bannerFile->store('courses', 'public');
+            }
         }
 
         $course->update($data);
 
         return redirect()->route('courses.show', $course)->with('success', 'Course updated.');
+    }
+
+    public function resetContent(Course $course)
+    {
+        if (! Auth::user()->isInstructor() && ! Auth::user()->isAdmin()) {
+            abort(403);
+        }
+
+        DB::transaction(function () use ($course) {
+            if ($course->banner_path) {
+                Storage::disk('public')->delete($course->banner_path);
+            }
+
+            $course->update([
+                'banner_path' => null,
+                'banner_object_position' => null,
+                'description' => null,
+            ]);
+
+            $course->lessonModules()->update([
+                'status' => 'draft',
+                'published_at' => null,
+            ]);
+
+            $course->courseAnnouncements()->update([
+                'is_visible' => false,
+            ]);
+
+            $course->courseGrades()->update([
+                'is_visible' => false,
+            ]);
+        });
+
+        return redirect()->route('courses.show', $course)->with('success', 'Course content reset successfully.');
     }
 
     public function lessonPreview(Course $course, LessonModule $lesson)

@@ -22,7 +22,17 @@ class AuthController extends Controller
             'password' => 'required',
         ]);
 
-        if (Auth::attempt($request->only('email', 'password'), $request->boolean('remember'))) {
+        $loginInput = strtolower(trim((string) $request->input('email')));
+        $user = User::whereRaw('LOWER(email) = ?', [$loginInput])
+            ->orWhereRaw('LOWER(institutional_email) = ?', [$loginInput])
+            ->first();
+
+        $credentials = [
+            'email' => $user?->email ?? $loginInput,
+            'password' => $request->input('password'),
+        ];
+
+        if (Auth::attempt($credentials, $request->boolean('remember'))) {
             $request->session()->regenerate();
             
             $user = Auth::user();
