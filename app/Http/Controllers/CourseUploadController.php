@@ -344,10 +344,9 @@ class CourseUploadController extends Controller
             mkdir($tempDir, 0777, true);
         }
 
-        Browsershot::html($html)
-            ->setNodeBinary('c:/laragon/bin/nodejs/node-v22/node.exe')
-            ->setNpmBinary('c:/laragon/bin/nodejs/node-v22/npm.cmd')
-            ->setNodeModulePath(base_path('node_modules'))
+        $browsershot = $this->configureBrowsershot(Browsershot::html($html));
+
+        $browsershot
             ->windowSize(1123, 794)
             ->setScreenshotType('png')
             ->timeout(120)
@@ -362,5 +361,31 @@ class CourseUploadController extends Controller
         @unlink($tempPath);
 
         return $relativePath;
+    }
+
+    private function configureBrowsershot(Browsershot $browsershot): Browsershot
+    {
+        $nodeBinary = config('browsershot.node_binary');
+        $npmBinary = config('browsershot.npm_binary');
+        $chromePath = config('browsershot.chrome_path');
+        $nodeModulePath = config('browsershot.node_module_path');
+
+        if (! empty($nodeBinary)) {
+            $browsershot->setNodeBinary($nodeBinary);
+        }
+
+        if (! empty($npmBinary)) {
+            $browsershot->setNpmBinary($npmBinary);
+        }
+
+        if (! empty($chromePath) && method_exists($browsershot, 'setChromePath')) {
+            $browsershot->setChromePath($chromePath);
+        }
+
+        if (! empty($nodeModulePath)) {
+            $browsershot->setNodeModulePath($nodeModulePath);
+        }
+
+        return $browsershot;
     }
 }
