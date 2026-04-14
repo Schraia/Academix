@@ -4,18 +4,19 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class CollegeSection extends Model
+class CollegeOptionSchedule extends Model
 {
-    protected $table = 'college_sections';
-
     protected $fillable = [
         'college_course_id',
         'year',
         'semester',
-        'section_code',
+        'option_type',
+        'option_code',
+        'option_label',
+        'course_code',
         'time_slot',
+        'days',
         'student_slots',
         'sort_order',
     ];
@@ -30,10 +31,5 @@ class CollegeSection extends Model
     public function collegeCourse(): BelongsTo
     {
         return $this->belongsTo(CollegeCourse::class);
-    }
-
-    public function sectionSubjectSchedules(): HasMany
-    {
-        return $this->hasMany(SectionSubjectSchedule::class, 'college_section_id');
     }
 }

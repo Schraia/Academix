@@ -34,4 +34,9 @@ class CollegeCourse extends Model
     {
         return $this->belongsToMany(User::class);
     }
+
+    public function optionSchedules()
+    {
+        return $this->hasMany(CollegeOptionSchedule::class);
+    }
 }

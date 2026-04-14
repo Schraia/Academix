@@ -766,19 +766,19 @@ button:disabled {
                                 '4th Year, 1st Semester', '4th Year, 2nd Semester',
                             ];
                         @endphp
-                        @foreach($collegeCourses ?? [] as $cc)
+                        @foreach(($collegeCourses ?? []) as $cc)
                         <div class="subcategory">
                             <div class="subcategory-header" onclick="toggleSubcategory(this)">
-                                <span class="subcategory-title">{{ $cc->name }}</span>
-                                @if($cc->code)<span class="category-subtitle">({{ $cc->code }})</span>@endif
+                                <span class="subcategory-title">{{ data_get($cc, 'name') }}</span>
+                                @if(data_get($cc, 'code'))<span class="category-subtitle">({{ data_get($cc, 'code') }})</span>@endif
                                 <svg class="caret" fill="currentColor" viewBox="0 0 20 20">
                                     <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/>
                                 </svg>
                             </div>
                             <div class="subcategory-content">
                                 @foreach($collegeSemesters as $sem)
-                                @php $courseNameSem = $cc->name . ' - ' . $sem; @endphp
-                                <div class="sub-subcategory" data-course-name="{{ $courseNameSem }}" data-college-course-id="{{ $cc->id }}" onclick="selectCourseWithCollege(this, {{ json_encode($courseNameSem) }}, {{ $cc->id }})">
+                                @php $courseNameSem = data_get($cc, 'name') . ' - ' . $sem; @endphp
+                                <div class="sub-subcategory" data-course-name="{{ $courseNameSem }}" data-college-course-id="{{ data_get($cc, 'id') }}" onclick="selectCourseWithCollege(this, {{ json_encode($courseNameSem) }}, {{ data_get($cc, 'id') }})">
                                     <span class="sub-subcategory-title">{{ $sem }}</span>
                                 </div>
                                 @endforeach
@@ -910,6 +910,7 @@ button:disabled {
         window.alreadyEnrolled = @json($alreadyEnrolled ?? []);
         window.curriculumByCollege = @json($curriculumByCollege ?? []);
         window.sectionsByCollege = @json($sectionsByCollege ?? []);
+        window.sectionEnrollmentStats = @json($sectionEnrollmentStats ?? []);
         window.sectionSubjectTimes = @json($sectionSubjectTimes ?? []);
         window.peMlcSchedules = @json($peMlcSchedules ?? ['pe' => [], 'mlc' => []]);
         window.pendingEnrollmentsFromSession = @json($pendingEnrollmentsFromSession ?? []);
@@ -1139,7 +1140,8 @@ button:disabled {
                 sectionItem.setAttribute('data-is-pe', isPE ? '1' : '0');
                 sectionItem.setAttribute('data-is-k12', isK12 ? '1' : '0');
                 sectionItem.setAttribute('data-time-slot', sec.timeSlot || '');
-                var enrolledCount = Math.floor(Math.random() * 36);
+                var enrolledCount = Number(sec.enrolled_count || 0);
+                var studentSlots = Number(sec.student_slots || 40);
                 var actionBtn = '';
                 if (isK12) {
                     actionBtn = '<button type="button" class="btn-view' + (isEnrolled ? ' enrolled' : '') + '" data-course-name="' + escapeAttr(courseName) + '" data-section-name="' + escapeAttr(sectionNameForEnroll) + '" onclick="openK12Modal(this)">' + (isEnrolled ? 'Enrolled' : 'View') + '</button>';
@@ -1167,13 +1169,13 @@ button:disabled {
                     if (sec.credits !== undefined && sec.credits > 0) {
                         detailsHtml = '<div class="section-details">' +
                             '<div class="section-detail-item"><span class="section-detail-label">Units</span><span class="section-detail-value">' + sec.credits + '</span></div>' +
-                            '<div class="section-detail-item"><span class="section-detail-label">Status</span><span class="section-detail-value">Available</span></div>' +
+                            '<div class="section-detail-item"><span class="section-detail-label">Status</span><span class="section-detail-value">' + (enrolledCount < studentSlots ? 'Available' : 'Full') + '</span></div>' +
                             '</div>';
                     } else {
                         detailsHtml = '<div class="section-details">' +
-                            '<div class="section-detail-item"><span class="section-detail-label">Max Enrollees</span><span class="section-detail-value">40</span></div>' +
+                            '<div class="section-detail-item"><span class="section-detail-label">Student Slots</span><span class="section-detail-value">' + studentSlots + '</span></div>' +
                             '<div class="section-detail-item"><span class="section-detail-label">Current Enrollees</span><span class="section-detail-value">' + enrolledCount + '</span></div>' +
-                            '<div class="section-detail-item"><span class="section-detail-label">Status</span><span class="section-detail-value">Available</span></div>' +
+                            '<div class="section-detail-item"><span class="section-detail-label">Status</span><span class="section-detail-value">' + (enrolledCount < studentSlots ? 'Available' : 'Full') + '</span></div>' +
                             '</div>';
                     }
                 }
@@ -1203,7 +1205,7 @@ button:disabled {
             var peSubjectsRaw = btn.getAttribute('data-pe-subjects');
             var peSubjects = [];
             try { if (peSubjectsRaw) peSubjects = JSON.parse(peSubjectsRaw); } catch (err) {}
-            var schedules = (window.peMlcSchedules && window.peMlcSchedules.pe) ? window.peMlcSchedules.pe : [];
+            var schedules = getOptionSchedulesForCurrentSelection('pe');
             if (!peSubjects.length) peSubjects = PE_OPTIONS.map(function(name, i) { return { courseCode: 'PPE ' + (1101 + i), courseName: name }; });
             peSubjects = peSubjects.map(function(p, i) {
                 var s = schedules[i] || {};
@@ -1212,7 +1214,9 @@ button:disabled {
                     courseName: p.courseName || s.courseName,
                     section_code: s.section_code || ('PE-' + (i + 1)),
                     time_slot: s.time_slot || '',
-                    days: s.days || ''
+                    days: s.days || '',
+                    student_slots: Number(s.student_slots || 40),
+                    enrolled_count: Number(s.enrolled_count || 0)
                 };
             });
             document.getElementById('peModalTitle').textContent = 'Choose PE subject - ' + sectionName;
@@ -1229,8 +1233,9 @@ button:disabled {
                 var hasConflict = timeSlot && hasTimeConflictGlobal(days, timeSlot);
                 var conflictWithLabels = hasConflict ? getConflictWithGlobal(days, timeSlot) : [];
                 var conflictText = conflictWithLabels.length ? ('Time conflict with: ' + conflictWithLabels.join(', ')) : '';
-                var enrolledCount = 10 + (idx * 4);
-                var statusText = enrolledCount < 40 ? 'Available' : 'Full';
+                var enrolledCount = Number(opt.enrolled_count || 0);
+                var studentSlots = Number(opt.student_slots || 40);
+                var statusText = enrolledCount < studentSlots ? 'Available' : 'Full';
                 var card = document.createElement('div');
                 card.className = 'enroll-modal-section-card' + (hasConflict ? ' enroll-modal-section-card--conflict' : '');
                 var actionBtn = document.createElement('button');
@@ -1265,7 +1270,7 @@ button:disabled {
                     '<div class="section-card-meta">' +
                     '<span><strong>Section:</strong> ' + escapeHtml(sectionCode) + '</span>' +
                     '<span><strong>Schedule:</strong> ' + escapeHtml(scheduleText || '—') + '</span>' +
-                    '<span><strong>Enrolled:</strong> ' + enrolledCount + ' / 40</span>' +
+                    '<span><strong>Enrolled:</strong> ' + enrolledCount + ' / ' + studentSlots + '</span>' +
                     '<span><strong>Status:</strong> ' + statusText + '</span>' +
                     (hasConflict && conflictText ? '<div class="conflict-warning" style="margin-top:0.5rem;">' + escapeHtml(conflictText) + '</div>' : '') +
                     '</div></div><div class="section-card-actions"></div>';
@@ -1428,8 +1433,9 @@ button:disabled {
                 var days = (schedule && typeof schedule === 'object' && schedule.days) ? schedule.days : '';
                 var timeAndDaysText = days ? (escapeHtml(days) + ' &nbsp; ' + escapeHtml(timeRange || '—')) : (escapeHtml(timeRange) || '—');
                 var fullSectionName = sectionName + ' - ' + sectionCode;
-                var enrolledCount = Math.floor(Math.random() * 36);
-                var available = enrolledCount < 40;
+                var enrolledCount = Number(sec.enrolled_count || 0);
+                var studentSlots = Number(sec.student_slots || 40);
+                var available = enrolledCount < studentSlots;
                 var conflictInSection = hasTimeConflictInSection(sectionCode, timeRange, days);
                 var conflictGlobal = hasTimeConflictGlobal(days, timeRange);
                 var timeConflict = conflictInSection || conflictGlobal;
@@ -1454,7 +1460,7 @@ button:disabled {
                     '<div class="section-card-name">' + escapeHtml(sectionCode) + '</div>' +
                     '<div class="section-card-meta">' +
                     '<span><strong>Schedule:</strong> ' + timeAndDaysText + '</span>' +
-                    '<span><strong>Enrolled:</strong> ' + enrolledCount + ' / 40</span>' +
+                    '<span><strong>Enrolled:</strong> ' + enrolledCount + ' / ' + studentSlots + '</span>' +
                     '<span><strong>Status:</strong> ' + statusText + '</span>' +
                     (conflictWarning ? '<div class="conflict-warning" style="margin-top:0.5rem;">' + escapeHtml(conflictWarning) + '</div>' : '') +
                     '</div></div>' +
@@ -1505,7 +1511,7 @@ button:disabled {
             mlcModalButton = btn;
             var courseName = btn.getAttribute('data-course-name');
             var sectionName = btn.getAttribute('data-section-name');
-            var mlcSchedules = (window.peMlcSchedules && window.peMlcSchedules.mlc) ? window.peMlcSchedules.mlc : [];
+            var mlcSchedules = getOptionSchedulesForCurrentSelection('mlc');
             document.getElementById('mlcModalTitle').textContent = 'Choose MLC track - ' + sectionName;
             var list = document.getElementById('mlcModalOptions');
             list.innerHTML = '';
@@ -1521,8 +1527,9 @@ button:disabled {
                 var hasConflict = timeSlot && hasTimeConflictGlobal(days, timeSlot);
                 var conflictWithLabels = hasConflict ? getConflictWithGlobal(days, timeSlot) : [];
                 var conflictText = conflictWithLabels.length ? ('Time conflict with: ' + conflictWithLabels.join(', ')) : '';
-                var enrolledCount = 12 + (idx * 5);
-                var statusText = enrolledCount < 40 ? 'Available' : 'Full';
+                var enrolledCount = Number(s.enrolled_count || 0);
+                var studentSlots = Number(s.student_slots || 40);
+                var statusText = enrolledCount < studentSlots ? 'Available' : 'Full';
                 var card = document.createElement('div');
                 card.className = 'enroll-modal-section-card' + (hasConflict ? ' enroll-modal-section-card--conflict' : '');
                 var actionBtn = document.createElement('button');
@@ -1556,7 +1563,7 @@ button:disabled {
                     '<div class="section-card-meta">' +
                     '<span><strong>Section:</strong> ' + escapeHtml(sectionCode) + '</span>' +
                     '<span><strong>Schedule:</strong> ' + escapeHtml(scheduleText || '—') + '</span>' +
-                    '<span><strong>Enrolled:</strong> ' + enrolledCount + ' / 40</span>' +
+                    '<span><strong>Enrolled:</strong> ' + enrolledCount + ' / ' + studentSlots + '</span>' +
                     '<span><strong>Status:</strong> ' + statusText + '</span>' +
                     (hasConflict && conflictText ? '<div class="conflict-warning" style="margin-top:0.5rem;">' + escapeHtml(conflictText) + '</div>' : '') +
                     '</div></div><div class="section-card-actions"></div>';
@@ -1575,6 +1582,20 @@ button:disabled {
 
         function escapeAttr(s) {
             return s.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+        }
+
+        function getOptionSchedulesForCurrentSelection(typeKey) {
+            var fallback = (window.peMlcSchedules && window.peMlcSchedules.default && window.peMlcSchedules.default[typeKey]) ? window.peMlcSchedules.default[typeKey] : [];
+            if (!currentCollegeCourseId || !currentCourseName || !window.peMlcSchedules) return fallback;
+            var parsed = parseCollegeYearSemester(currentCourseName);
+            if (!parsed) return fallback;
+            var byCollege = window.peMlcSchedules[String(currentCollegeCourseId)];
+            if (!byCollege) return fallback;
+            var byYear = byCollege[parsed.year];
+            if (!byYear) return fallback;
+            var bySem = byYear[parsed.semester];
+            if (!bySem || !bySem[typeKey] || !bySem[typeKey].length) return fallback;
+            return bySem[typeKey];
         }
 
         function toggleEnroll(btn) {
