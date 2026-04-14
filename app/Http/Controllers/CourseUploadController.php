@@ -426,4 +426,30 @@ class CourseUploadController extends Controller
 
         return $relativePath;
     }
+
+    private function configureBrowsershot(Browsershot $browsershot): Browsershot
+    {
+        $nodeBinary = config('browsershot.node_binary');
+        $npmBinary = config('browsershot.npm_binary');
+        $chromePath = config('browsershot.chrome_path');
+        $nodeModulePath = config('browsershot.node_module_path');
+
+        if (! empty($nodeBinary)) {
+            $browsershot->setNodeBinary($nodeBinary);
+        }
+
+        if (! empty($npmBinary)) {
+            $browsershot->setNpmBinary($npmBinary);
+        }
+
+        if (! empty($chromePath) && method_exists($browsershot, 'setChromePath')) {
+            $browsershot->setChromePath($chromePath);
+        }
+
+        if (! empty($nodeModulePath)) {
+            $browsershot->setNodeModulePath($nodeModulePath);
+        }
+
+        return $browsershot;
+    }
 }
