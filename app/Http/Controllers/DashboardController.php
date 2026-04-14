@@ -140,7 +140,7 @@ class DashboardController extends Controller
                 ->when(! $user->isInstructor() && ! $user->isAdmin(), fn ($q) => $q->where('is_visible', true))
                 ->with('course')
                 ->orderByDesc('created_at')
-                ->limit(15)
+                ->limit(80)
                 ->get();
         }
 
@@ -152,7 +152,10 @@ class DashboardController extends Controller
                 ->join('lesson_progress as lp', 'lp.lesson_module_id', '=', 'lessons_modules.id')
                 ->where('lp.user_id', $user->id)
                 ->whereIn('lessons_modules.course_id', $courseIds)
-                ->whereNotNull('lessons_modules.attachment_path')
+                ->where(function ($q) {
+                    $q->whereNotNull('lessons_modules.attachment_path')
+                        ->orWhereNotNull('lessons_modules.video_url');
+                })
                 ->where('lessons_modules.status', 'published')
                 ->with('course')
                 ->orderByDesc('lp.updated_at')
@@ -190,6 +193,12 @@ class DashboardController extends Controller
             ]);
         }
 
+        $announcementCourseOptions = $dashboardCards->map(fn ($item) => [
+            'id' => $item->course_id,
+            'code' => $item->course->code ?? '',
+            'title' => $item->course->title ?? '',
+        ])->values();
+
         // Otherwise, render instructor/student dashboard
         return view('dashboard', [
             'todaysSchedules' => $todaysSchedules,
@@ -199,8 +208,45 @@ class DashboardController extends Controller
             'cardBadges' => $cardBadges,
             'profileRoleLabel' => $profileRoleLabel,
             'announcements' => $announcements,
+            'announcementCourseOptions' => $announcementCourseOptions,
             'recentlyOpened' => $recentlyOpened,
             'unreadNotificationsCount' => $unreadNotificationsCount,
+        ]);
+    }
+
+    public function weekSchedule()
+    {
+        $user = Auth::user();
+        $schoolYear = now()->year;
+
+        $enrollments = $user->enrollments()
+            ->whereYear('enrolled_at', $schoolYear)
+            ->where('status', 'enrolled')
+            ->with('course')
+            ->get();
+
+        $weekdays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+        $mapped = collect($weekdays)->mapWithKeys(fn ($day) => [$day => []])->all();
+
+        foreach ($enrollments as $enrollment) {
+            foreach ($weekdays as $idx => $day) {
+                if ($this->enrollmentMatchesDayOfWeek($enrollment->days ?? '', $idx + 1)) {
+                    $mapped[$day][] = [
+                        'course_id' => $enrollment->course_id,
+                        'course_code' => $enrollment->course?->code ?? '',
+                        'course_name' => $enrollment->course_name ?? ($enrollment->course?->title ?? ''),
+                        'time_slot' => $enrollment->time_slot ?? '',
+                    ];
+                }
+            }
+        }
+
+        foreach ($mapped as $day => $items) {
+            $mapped[$day] = $this->sortSchedulesByTime(collect($items))->values()->all();
+        }
+
+        return view('dashboard-week-schedule', [
+            'weekSchedule' => $mapped,
         ]);
     }
 

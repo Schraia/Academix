@@ -9,6 +9,10 @@ class UserRegistration extends Model
 {
     use HasFactory;
 
+    protected $casts = [
+        'birthdate' => 'date',
+    ];
+
     protected $fillable = [
         'user_id',
         'first_name',
@@ -16,6 +20,7 @@ class UserRegistration extends Model
         'last_name',
         'suffix',
         'age',
+        'birthdate',
         'nationality',
         'gender',
         'contact_number',

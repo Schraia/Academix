@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="https://unpkg.com/trix@2.1.12/dist/trix.css">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: linear-gradient(180deg, #f8fafc 0%, #eef2f7 100%); }
+        body { font-family: var(--font-sans); background: linear-gradient(180deg, #f8fafc 0%, #eef2f7 100%); }
         .wrap { max-width: 1100px; margin: 2.5rem auto; padding: 0 1.25rem; }
         .card { background: white; border-radius: 18px; padding: 1.5rem; border: 1px solid #e2e8f0; box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
         .header { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-bottom: 1rem; }
@@ -30,6 +30,14 @@
         .actions { display:flex; gap:0.75rem; flex-wrap: wrap; margin-top: 1rem; }
         .alert-error { background: #fef2f2; color: #b91c1c; padding: 0.75rem 1rem; border-radius: 8px; margin-bottom: 1rem; }
         trix-editor { border-radius: 14px; border: 1px solid #e2e8f0; min-height: 320px; }
+        trix-toolbar [data-trix-attribute="href"],
+        trix-toolbar [data-trix-attribute="heading1"],
+        trix-toolbar [data-trix-attribute="quote"],
+        trix-toolbar [data-trix-attribute="code"],
+        trix-toolbar [data-trix-attribute="bullet"],
+        trix-toolbar [data-trix-attribute="number"],
+        trix-toolbar [data-trix-action="increaseNestingLevel"],
+        trix-toolbar [data-trix-action="decreaseNestingLevel"] { display: none !important; }
         .note-tools { display:flex; gap:0.5rem; flex-wrap: wrap; margin: 0.75rem 0 0.5rem; }
         .tool-btn { border: 1px solid #e2e8f0; background: #fff; border-radius: 999px; padding: 0.5rem 0.85rem; font-weight: 800; cursor: pointer; }
         .tool-btn:hover { background: #f8fafc; }
@@ -77,7 +85,8 @@
                     </div>
 
                     <input id="content_html" type="hidden" name="content_html" value="{{ old('content_html', $note->content_html) }}">
-                    <trix-editor input="content_html"></trix-editor>
+                    <trix-toolbar id="note-toolbar"></trix-toolbar>
+                    <trix-editor input="content_html" toolbar="note-toolbar"></trix-editor>
                     <input type="file" id="image-input" accept="image/*" style="display:none;">
                 </div>
 

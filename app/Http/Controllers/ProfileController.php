@@ -10,9 +10,11 @@ use App\Models\DiscussionThread;
 use App\Models\Enrollment;
 use App\Models\LessonModule;
 use App\Models\LessonProgress;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rules\File;
 
@@ -20,53 +22,74 @@ class ProfileController extends Controller
 {
     public function show()
     {
-        $user = Auth::user();
+        return $this->renderProfile(Auth::user());
+    }
+
+    public function showUser(User $user)
+    {
+        $viewer = Auth::user();
+        if ($user->isAdmin() && ! $viewer->isAdmin()) {
+            abort(403);
+        }
+
+        return $this->renderProfile($user);
+    }
+
+    protected function renderProfile(User $profileUser)
+    {
+        $viewer = Auth::user();
+        $isOwnProfile = (int) $profileUser->id === (int) $viewer->id;
         $schoolYear = now()->year;
 
-        $enrollmentIds = $user->enrollments()
+        $enrollmentIds = $profileUser->enrollments()
             ->whereYear('enrolled_at', $schoolYear)
             ->where('status', 'enrolled')
             ->pluck('course_id');
         $enrolledCourses = Course::whereIn('id', $enrollmentIds)->get();
 
-        $totalLessons = LessonModule::whereIn('course_id', $enrollmentIds)
+        $eligibleModuleQuery = LessonModule::query()
+            ->whereIn('course_id', $enrollmentIds)
             ->where('status', 'published')
-            ->whereNotNull('attachment_path')
-            ->count();
-        $completedCount = LessonProgress::where('user_id', $user->id)
+            ->where(function ($q) {
+                $q->whereNotNull('attachment_path')->orWhereNotNull('video_url');
+            });
+        $eligibleModuleIds = (clone $eligibleModuleQuery)->pluck('id');
+
+        $totalLessons = $eligibleModuleIds->count();
+        $completedCount = LessonProgress::where('user_id', $profileUser->id)
             ->where('status', 'completed')
-            ->whereIn('lesson_module_id', LessonModule::whereIn('course_id', $enrollmentIds)
-                ->where('status', 'published')
-                ->whereNotNull('attachment_path')
-                ->pluck('id'))
+            ->whereIn('lesson_module_id', $eligibleModuleIds)
             ->count();
         $progressPercent = $totalLessons > 0 ? round($completedCount / $totalLessons * 100, 1) : 0;
 
+        $showGrades = $isOwnProfile || $profileUser->grades_visible_on_profile;
         $gradesByCourse = [];
         $overallWeightedSum = 0;
         $coursesWithGrades = 0;
-        foreach ($enrolledCourses as $course) {
-            $grades = CourseGrade::where('user_id', $user->id)
-                ->where('course_id', $course->id)
-                ->where('is_visible', true)
-                ->whereNotNull('graded_at')
-                ->get();
-            $weights = $course->courseGradeWeights()->get()->keyBy('category');
-            $summary = $this->computeGradeSummary($grades, $weights);
-            if ($summary['weighted_grade'] !== null) {
-                $gradesByCourse[] = [
-                    'course' => $course,
-                    'summary' => $summary,
-                ];
-                $overallWeightedSum += $summary['weighted_grade'];
-                $coursesWithGrades++;
+        if ($showGrades) {
+            foreach ($enrolledCourses as $course) {
+                $grades = CourseGrade::where('user_id', $profileUser->id)
+                    ->where('course_id', $course->id)
+                    ->where('is_visible', true)
+                    ->whereNotNull('graded_at')
+                    ->get();
+                $weights = $course->courseGradeWeights()->get()->keyBy('category');
+                $summary = $this->computeGradeSummary($grades, $weights);
+                if ($summary['weighted_grade'] !== null) {
+                    $gradesByCourse[] = [
+                        'course' => $course,
+                        'summary' => $summary,
+                    ];
+                    $overallWeightedSum += $summary['weighted_grade'];
+                    $coursesWithGrades++;
+                }
             }
         }
         $overallGradeAverage = $coursesWithGrades > 0 ? round($overallWeightedSum / $coursesWithGrades, 2) : null;
 
-        $hiddenThreadIds = DB::table('user_hidden_profile_threads')->where('user_id', $user->id)->pluck('thread_id');
-        $threadIdsAuthored = DiscussionThread::where('user_id', $user->id)->pluck('id');
-        $threadIdsReplied = DiscussionMessage::where('user_id', $user->id)->pluck('thread_id')->unique();
+        $hiddenThreadIds = DB::table('user_hidden_profile_threads')->where('user_id', $profileUser->id)->pluck('thread_id');
+        $threadIdsAuthored = DiscussionThread::where('user_id', $profileUser->id)->pluck('id');
+        $threadIdsReplied = DiscussionMessage::where('user_id', $profileUser->id)->pluck('thread_id')->unique();
         $participatedThreadIds = $threadIdsAuthored->merge($threadIdsReplied)->unique()->values()->diff($hiddenThreadIds)->values();
         $discussionThreads = DiscussionThread::whereIn('id', $participatedThreadIds)
             ->with(['course:id,title', 'messages' => fn ($q) => $q->with('user:id,name')->latest()->limit(1)])
@@ -75,7 +98,7 @@ class ProfileController extends Controller
             ->get();
 
         $tz = config('app.timezone', 'Asia/Manila');
-        $completionRecords = LessonProgress::where('user_id', $user->id)
+        $completionRecords = LessonProgress::where('user_id', $profileUser->id)
             ->where('status', 'completed')
             ->whereNotNull('completed_at')
             ->get(['completed_at']);
@@ -93,10 +116,12 @@ class ProfileController extends Controller
                 'count' => (int) ($countByWeek[$week] ?? 0),
             ];
         }
-        $streak = $this->computeStreak($user->id);
+        $streak = $this->computeStreak($profileUser->id);
 
         return view('profile.show', [
-            'user' => $user,
+            'user' => $profileUser,
+            'isOwnProfile' => $isOwnProfile,
+            'showGrades' => $showGrades,
             'progressPercent' => $progressPercent,
             'completedLessons' => $completedCount,
             'totalLessons' => $totalLessons,
@@ -104,13 +129,51 @@ class ProfileController extends Controller
             'overallGradeAverage' => $overallGradeAverage,
             'discussionThreads' => $discussionThreads,
             'completionsByWeek' => $weeks,
+            'maxCompletionsByWeek' => (int) max(1, collect($weeks)->max('count')),
             'streak' => $streak,
         ]);
     }
 
-    public function progressBreakdown()
+    public function diagnostics(?User $user = null)
     {
-        $user = Auth::user();
+        $viewer = Auth::user();
+        $user = $user ?: $viewer;
+        if ($user->isAdmin() && ! $viewer->isAdmin()) {
+            abort(403);
+        }
+
+        $byWeekday = array_fill_keys(['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'], 0);
+        $records = LessonProgress::where('user_id', $user->id)
+            ->where('status', 'completed')
+            ->whereNotNull('completed_at')
+            ->get(['completed_at']);
+        foreach ($records as $record) {
+            $day = $record->completed_at->format('D');
+            $byWeekday[$day] = ($byWeekday[$day] ?? 0) + 1;
+        }
+
+        $sessionsByWeekday = array_fill_keys(['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'], 0);
+        $sessionRows = DB::table('sessions')->where('user_id', $user->id)->get(['last_activity']);
+        foreach ($sessionRows as $row) {
+            $day = now()->setTimestamp((int) $row->last_activity)->format('D');
+            $sessionsByWeekday[$day] = ($sessionsByWeekday[$day] ?? 0) + 1;
+        }
+
+        return view('profile.diagnostics', [
+            'user' => $user,
+            'isOwnProfile' => (int) $user->id === (int) $viewer->id,
+            'completedByWeekday' => $byWeekday,
+            'sessionsByWeekday' => $sessionsByWeekday,
+        ]);
+    }
+
+    public function progressBreakdown(?User $user = null)
+    {
+        $viewer = Auth::user();
+        $user = $user ?: $viewer;
+        if ($user->isAdmin() && ! $viewer->isAdmin()) {
+            abort(403);
+        }
         $schoolYear = now()->year;
         $enrollmentIds = $user->enrollments()
             ->whereYear('enrolled_at', $schoolYear)
@@ -122,7 +185,9 @@ class ProfileController extends Controller
         foreach ($enrolledCourses as $course) {
             $publishedModuleIds = LessonModule::where('course_id', $course->id)
                 ->where('status', 'published')
-                ->whereNotNull('attachment_path')
+                ->where(function ($q) {
+                    $q->whereNotNull('attachment_path')->orWhereNotNull('video_url');
+                })
                 ->pluck('id');
             $total = $publishedModuleIds->count();
             $completed = LessonProgress::where('user_id', $user->id)
@@ -250,6 +315,9 @@ class ProfileController extends Controller
         if ($request->has('bio')) {
             $user->bio = $request->input('bio');
         }
+        if ($request->has('grades_visible_on_profile')) {
+            $user->grades_visible_on_profile = $request->boolean('grades_visible_on_profile');
+        }
         $user->save();
 
         return redirect()->route('profile.show')->with('success', 'Profile updated.');
@@ -264,6 +332,26 @@ class ProfileController extends Controller
             $user->save();
         }
         return redirect()->route('profile.show')->with('success', 'Profile picture removed.');
+    }
+
+    public function updatePassword(Request $request)
+    {
+        $user = Auth::user();
+        $request->validate([
+            'current_password' => 'nullable|string',
+            'new_password' => 'required|string|min:8|confirmed',
+        ]);
+
+        if (! empty($user->password)) {
+            if (! Hash::check((string) $request->current_password, $user->password)) {
+                return back()->withErrors(['current_password' => 'Current password is incorrect.']);
+            }
+        }
+
+        $user->password = $request->new_password;
+        $user->save();
+
+        return back()->with('success', 'Password updated successfully.');
     }
 
     public function unfollowDiscussion(DiscussionThread $thread)

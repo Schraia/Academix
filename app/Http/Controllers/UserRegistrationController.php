@@ -29,6 +29,7 @@ class UserRegistrationController extends Controller
             'last_name' => ['required', 'string', 'max:100'],
             'suffix' => ['nullable', 'string', 'max:20'],
             'age' => ['required', 'integer', 'min:1', 'max:120'],
+            'birthdate' => ['nullable', 'date'],
             'nationality' => ['required', 'string', 'max:80'],
             'gender' => ['required', 'in:Male,Female,Other,Prefer not to say'],
             'contact_number' => ['required', 'string', 'max:30'],

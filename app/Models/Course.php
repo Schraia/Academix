@@ -17,6 +17,7 @@ class Course extends Model
         'code',
         'credits',
         'status',
+        'banner_object_position',
     ];
 
     public function enrollments()
@@ -67,6 +68,11 @@ class Course extends Model
     public function certificates()
     {
         return $this->hasMany(Certificate::class);
+    }
+
+    public function courseArchives()
+    {
+        return $this->hasMany(CourseArchive::class)->orderByDesc('created_at');
     }
 }
 

@@ -6,10 +6,22 @@
     <div class="courses-card" style="padding: 1rem 1.5rem;">
         <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 1rem;">
             <a href="{{ route('courses.lessons', $course) }}" class="back-link">← Back to lessons</a>
-            <a href="{{ $fileUrl }}" download="{{ $downloadFilename ?? basename($lesson->attachment_path ?? '') }}" class="btn-download" style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; background: #dc2626; color: white; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 0.875rem;">Download file</a>
+            @if(($previewMode ?? 'file') === 'file' && !empty($fileUrl) && in_array($extension ?? '', ['pdf','png','jpg','jpeg','gif','webp'], true))
+                <a href="{{ $fileUrl }}" download="{{ $downloadFilename ?? basename($lesson->attachment_path ?? '') }}" class="btn-download" style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; background: #dc2626; color: white; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 0.875rem;">Download file</a>
+            @endif
         </div>
-        @if($canPreview)
-            @if($extension === 'pdf')
+
+        @if(($previewMode ?? '') === 'youtube' && !empty($youtubeId))
+            <div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: 8px; border: 1px solid #e5e7eb;">
+                <iframe style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;" src="https://www.youtube-nocookie.com/embed/{{ $youtubeId }}" title="YouTube video" allowfullscreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe>
+            </div>
+        @elseif(($previewMode ?? '') === 'video' && !empty($fileUrl))
+            <video controls playsinline style="width: 100%; max-height: 75vh; border-radius: 8px; background: #000;" src="{{ $fileUrl }}">
+                Your browser does not support video playback.
+            </video>
+            <p style="margin-top: 0.75rem;"><a href="{{ $fileUrl }}" download="{{ $downloadFilename ?? '' }}" style="color: #dc2626; font-weight: 600;">Download video</a></p>
+        @elseif(($previewMode ?? '') === 'file' && ($canPreview ?? false))
+            @if(($extension ?? '') === 'pdf')
                 <div style="position: relative;">
                     <button type="button" id="btn-fullscreen" style="position: absolute; top: 0.5rem; right: 0.5rem; z-index: 10; padding: 0.4rem 0.75rem; background: rgba(0,0,0,0.6); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 0.875rem;">Fullscreen</button>
                     <iframe id="preview-iframe" src="{{ $fileUrl }}#toolbar=1" style="width: 100%; height: 75vh; border: 1px solid #e5e7eb; border-radius: 8px;" title="PDF preview"></iframe>
@@ -32,11 +44,13 @@
                 </div>
             @endif
         @else
-            <p style="color: #6b7280; margin-bottom: 0.5rem;">Preview is not available for this file type. Use the button above to download and open it on your device.</p>
-            <a href="{{ $fileUrl }}" download="{{ $downloadFilename ?? basename($lesson->attachment_path ?? '') }}" style="color: #dc2626; font-weight: 600;">Download file</a>
+            <p style="color: #6b7280; margin-bottom: 0.5rem;">Preview is not available for this file type. Use download if available.</p>
+            @if(!empty($fileUrl))
+                <a href="{{ $fileUrl }}" download="{{ $downloadFilename ?? '' }}" style="color: #dc2626; font-weight: 600;">Download file</a>
+            @endif
         @endif
     </div>
-    @if($canPreview)
+    @if(($previewMode ?? '') === 'file' && ($canPreview ?? false))
     <script>
     (function() {
         var overlay = document.getElementById('fullscreen-overlay');

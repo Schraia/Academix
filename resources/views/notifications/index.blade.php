@@ -3,12 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Notifications</title>
     @vite('resources/css/app.css')
 
     <style>
         *{margin:0;padding:0;box-sizing:border-box;}
-        html,body{height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f3f4f6;color:#111827;}
+        html,body{height:100%;overflow:hidden;font-family:var(--font-sans);background:#f3f4f6;color:#111827;}
 
         .app-shell{display:flex;height:100vh;overflow:hidden;}
 
@@ -55,6 +56,12 @@
         .meta{font-size:.78rem;color:#9ca3af;white-space:nowrap;}
         .message{margin-top:.35rem;color:#6b7280;font-size:.9rem;line-height:1.35;}
         .empty{background:#fff;border:1px dashed #e5e7eb;border-radius:16px;padding:2rem;text-align:center;color:#6b7280;}
+        .tabs-wrap{background:#fff;border-bottom:1px solid #e5e7eb;padding:.5rem 1rem;flex-shrink:0;overflow-x:auto;}
+        .tabs{display:flex;flex-wrap:wrap;gap:.4rem;align-items:center;}
+        .tab{padding:.35rem .75rem;border-radius:999px;font-size:.8rem;font-weight:700;text-decoration:none;color:#374151;border:1px solid #e5e7eb;background:#f9fafb;white-space:nowrap;}
+        .tab:hover{background:#f3f4f6;color:#b91c1c;}
+        .tab.active{background:#b91c1c;color:#fff;border-color:#b91c1c;}
+        .kind-tag{font-size:.68rem;font-weight:800;text-transform:uppercase;color:#9ca3af;margin-top:.25rem;}
     </style>
 </head>
 <body>
@@ -125,6 +132,19 @@
             <a href="{{ route('dashboard') }}" class="btn">Back to Dashboard</a>
         </div>
 
+        <div class="tabs-wrap">
+            <div class="tabs">
+                <a class="tab {{ ($activeTab ?? 'all') === 'all' ? 'active' : '' }}" href="{{ route('notifications.index', ['tab' => 'all']) }}">All</a>
+                <a class="tab {{ ($activeTab ?? '') === 'starred' ? 'active' : '' }}" href="{{ route('notifications.index', ['tab' => 'starred']) }}">Starred</a>
+                <a class="tab {{ ($activeTab ?? '') === 'discussions' ? 'active' : '' }}" href="{{ route('notifications.index', ['tab' => 'discussions']) }}">Discussions</a>
+                @foreach($tabCourses ?? [] as $c)
+                    @if(is_object($c))
+                        <a class="tab {{ (string)($activeTab ?? '') === (string)$c->id ? 'active' : '' }}" href="{{ route('notifications.index', ['tab' => $c->id]) }}">{{ $c->code ? $c->code . ' — ' : '' }}{{ Str::limit($c->title, 22) }}</a>
+                    @endif
+                @endforeach
+            </div>
+        </div>
+
         <div class="content">
             @if($notifications->count() === 0)
                 <div class="empty">No notifications yet.</div>
@@ -134,10 +154,16 @@
                         <a class="item {{ $n->read_at ? '' : 'unread' }}" href="{{ route('notifications.go', $n) }}">
                             <div class="item-top">
                                 <div class="title">{{ $n->title }}</div>
-                                <div class="meta">{{ $n->created_at->format('M j, Y g:i A') }}</div>
+                                <div style="display:flex;align-items:center;gap:.5rem;">
+                                    <button class="btn-star" data-id="{{ $n->id }}" style="border:none;background:transparent;cursor:pointer;color:{{ $n->is_starred ? '#f59e0b' : '#9ca3af' }};">★</button>
+                                    <div class="meta">{{ $n->created_at->format('M j, Y g:i A') }}</div>
+                                </div>
                             </div>
                             @if($n->message)
                                 <div class="message">{{ $n->message }}</div>
+                            @endif
+                            @if($n->kind)
+                                <div class="kind-tag">{{ str_replace('_', ' ', $n->kind) }}</div>
                             @endif
                         </a>
                     @endforeach
@@ -150,6 +176,22 @@
         </div>
     </div>
 </div>
+<script>
+document.querySelectorAll('.btn-star').forEach((btn) => {
+    btn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const id = btn.dataset.id;
+        const res = await fetch(`/notifications/${id}/star`, {
+            method: 'PATCH',
+            headers: {'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '{{ csrf_token() }}', 'Accept': 'application/json'}
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        btn.style.color = data.starred ? '#f59e0b' : '#9ca3af';
+    });
+});
+</script>
 </body>
 </html>
 

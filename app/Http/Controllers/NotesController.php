@@ -28,10 +28,7 @@ class NotesController extends Controller
 
         $notes = $notesQuery->get();
 
-        $courseIds = $user->enrollments()
-            ->where('status', 'enrolled')
-            ->pluck('course_id');
-        $courses = Course::whereIn('id', $courseIds)->orderBy('title')->get(['id', 'title', 'code']);
+        $courses = $this->accessibleCourses($user);
 
         return view('notes.index', [
             'notes' => $notes,
@@ -49,10 +46,7 @@ class NotesController extends Controller
             return redirect()->route('notes.index')->withErrors(['limit' => 'You can only store up to 10 notes. Please delete one to create a new note.']);
         }
 
-        $courseIds = $user->enrollments()
-            ->where('status', 'enrolled')
-            ->pluck('course_id');
-        $courses = Course::whereIn('id', $courseIds)->orderBy('title')->get(['id', 'title', 'code']);
+        $courses = $this->accessibleCourses($user);
 
         return view('notes.create', [
             'courses' => $courses,
@@ -89,10 +83,7 @@ class NotesController extends Controller
         $user = Auth::user();
         abort_unless($note->user_id === $user->id, 403);
 
-        $courseIds = $user->enrollments()
-            ->where('status', 'enrolled')
-            ->pluck('course_id');
-        $courses = Course::whereIn('id', $courseIds)->orderBy('title')->get(['id', 'title', 'code']);
+        $courses = $this->accessibleCourses($user);
 
         return view('notes.edit', [
             'note' => $note->load('courses:id'),
@@ -163,6 +154,9 @@ class NotesController extends Controller
         }
 
         if ($format === 'docx') {
+            if (! class_exists(\ZipArchive::class)) {
+                return back()->withErrors(['limit' => 'DOCX export needs PHP zip extension. Please enable php_zip in your PHP installation.']);
+            }
             $phpWord = new PhpWord();
             $section = $phpWord->addSection();
             $section->addTitle($title, 1);
@@ -180,7 +174,7 @@ class NotesController extends Controller
         }
 
         if ($format === 'pdf') {
-            $html = $note->content_html ?? '';
+            $html = $this->normalizeHtmlForPdf($note->content_html ?? '');
             $pdf = app('dompdf.wrapper');
             $pdf->loadHTML(view('notes.pdf', [
                 'title' => $title,
@@ -201,6 +195,35 @@ class NotesController extends Controller
         $text = html_entity_decode($text, ENT_QUOTES | ENT_HTML5, 'UTF-8');
         $text = preg_replace("/\\n{3,}/", "\n\n", $text) ?? $text;
         return trim($text) . "\n";
+    }
+
+    private function accessibleCourses($user)
+    {
+        $enrolledCourseIds = $user->enrollments()
+            ->where('status', 'enrolled')
+            ->pluck('course_id');
+        $instructorCourseIds = $user->isInstructor() ? $user->courses()->pluck('courses.id') : collect();
+
+        return Course::whereIn('id', $enrolledCourseIds->merge($instructorCourseIds)->unique()->values())
+            ->orderBy('title')
+            ->get(['id', 'title', 'code']);
+    }
+
+    private function normalizeHtmlForPdf(string $html): string
+    {
+        return preg_replace_callback('/<img[^>]+src=[\"\']([^\"\']+)[\"\'][^>]*>/i', function ($matches) {
+            $src = $matches[1];
+            $storageBase = asset('storage/');
+            if (str_starts_with($src, $storageBase)) {
+                $relative = ltrim(str_replace($storageBase, '', $src), '/');
+                $full = Storage::disk('public')->path($relative);
+                if (is_file($full)) {
+                    return str_replace($src, $full, $matches[0]);
+                }
+            }
+
+            return $matches[0];
+        }, $html) ?? $html;
     }
 }
 

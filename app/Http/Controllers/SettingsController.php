@@ -3,11 +3,16 @@
 namespace App\Http\Controllers;
 
 use App\Models\Course;
+use App\Models\CourseArchive;
 use App\Models\Enrollment;
+use App\Models\Message;
+use App\Models\MessageRecipient;
 use App\Models\PendingEnrollment;
 use App\Models\User;
+use App\Models\UserNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
@@ -17,6 +22,11 @@ class SettingsController extends Controller
     {
         $users = User::with(['courses', 'registration', 'enrollments'])->orderBy('name')->get();
         $courses = Course::orderBy('title')->get();
+        $archives = CourseArchive::with('course:id,title,code')->orderByDesc('created_at')->get();
+        $blockedRows = DB::table('instructor_blocked_course_archives')
+            ->get(['user_id', 'course_archive_id'])
+            ->groupBy('user_id')
+            ->map(fn ($rows) => $rows->pluck('course_archive_id')->values());
         $pendingEnrollments = PendingEnrollment::with(['user.registration', 'items'])
             ->orderByDesc('submitted_at')
             ->get();
@@ -24,6 +34,8 @@ class SettingsController extends Controller
         return view('settings', [
             'users' => $users,
             'courses' => $courses,
+            'archives' => $archives,
+            'instructorBlockedArchives' => $blockedRows,
             'pendingEnrollments' => $pendingEnrollments,
         ]);
     }
@@ -34,6 +46,8 @@ class SettingsController extends Controller
             'user_id' => 'required|exists:users,id',
             'courses' => 'nullable|array',
             'courses.*' => 'exists:courses,id',
+            'blocked_archives' => 'nullable|array',
+            'blocked_archives.*' => 'exists:course_archives,id',
         ]);
 
         $user = User::findOrFail($request->user_id);
@@ -43,6 +57,18 @@ class SettingsController extends Controller
         }
 
         $user->courses()->sync($request->courses);
+        DB::table('instructor_blocked_course_archives')
+            ->where('user_id', $user->id)
+            ->delete();
+        $blockedArchives = collect($request->input('blocked_archives', []))->unique()->values();
+        foreach ($blockedArchives as $archiveId) {
+            DB::table('instructor_blocked_course_archives')->insert([
+                'user_id' => $user->id,
+                'course_archive_id' => $archiveId,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        }
 
         return back()->with('success', "Updated course assignments for {$user->name}.");
     }
@@ -202,6 +228,8 @@ class SettingsController extends Controller
             'reviewed_at' => now(),
         ]);
 
+        $this->notifyEnrollmentApproved($user);
+
         return back()->with('success', 'Pending enrollment approved.');
     }
 
@@ -218,6 +246,17 @@ class SettingsController extends Controller
         ]);
 
         return back()->with('success', 'Pending enrollment rejected.');
+    }
+
+    public function toggleInstructorArchiveAccess(Request $request, User $user)
+    {
+        if ($user->role !== 'instructor') {
+            abort(404);
+        }
+        $user->can_access_course_archive = ! $user->can_access_course_archive;
+        $user->save();
+
+        return back()->with('success', 'Course archive access updated for instructor.');
     }
 
     protected function semesterBaseFromSectionName(string $sectionName): ?string
@@ -255,5 +294,64 @@ class SettingsController extends Controller
             }
         }
         return false;
+    }
+
+    protected function notifyEnrollmentApproved(User $user): void
+    {
+        $registration = $user->registration;
+        $last = Str::lower((string) ($registration->last_name ?? 'student'));
+        $first = Str::lower((string) ($registration->first_name ?? 'user'));
+        $last = preg_replace('/[^a-z0-9]/', '', $last) ?: 'student';
+        $first = preg_replace('/[^a-z0-9]/', '', $first) ?: 'user';
+        $institutionalEmail = $last . '.' . $first . '@academix.edu';
+
+        $user->forceFill(['institutional_email' => $institutionalEmail])->save();
+
+        $birthdatePassword = optional($registration?->birthdate)->format('mdY');
+        if ($birthdatePassword) {
+            $user->forceFill(['password' => Hash::make($birthdatePassword)])->save();
+        }
+        $passwordHint = $birthdatePassword ? "Initial password: {$birthdatePassword}" : 'Initial password: your recorded birthdate (MMDDYYYY).';
+        $messageBody = "Enrollment approved. Institutional email: {$institutionalEmail}. {$passwordHint} You can keep using your existing login methods as well.";
+
+        UserNotification::create([
+            'user_id' => $user->id,
+            'kind' => 'enrollment',
+            'title' => 'Enrollment approved',
+            'message' => $messageBody,
+            'link_url' => '/inbox?folder=inbox',
+        ]);
+
+        $message = Message::create([
+            'sender_id' => Auth::id(),
+            'subject' => 'Enrollment approval and institutional account details',
+            'body' => $messageBody,
+            'send_individual' => true,
+        ]);
+
+        MessageRecipient::create([
+            'message_id' => $message->id,
+            'recipient_id' => $user->id,
+            'folder' => 'inbox',
+        ]);
+    }
+
+    public function resetCourseContent(Request $request, Course $course)
+    {
+        DB::transaction(function () use ($course) {
+            if ($course->banner_path) {
+                \Storage::disk('public')->delete($course->banner_path);
+            }
+            $course->update([
+                'banner_path' => null,
+                'banner_object_position' => null,
+                'description' => null,
+            ]);
+            $course->lessonModules()->update(['status' => 'draft', 'published_at' => null]);
+            $course->courseAnnouncements()->update(['is_visible' => false]);
+            $course->courseGrades()->update(['is_visible' => false]);
+        });
+
+        return back()->with('success', 'Course content reset by admin.');
     }
 }

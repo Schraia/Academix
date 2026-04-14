@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ArchivedLesson;
 use App\Models\CollegeCourse;
 use App\Models\Course;
 use App\Models\CourseAnnouncement;
+use App\Models\CourseArchive;
 use App\Models\CourseAttendance;
 use App\Models\CourseGrade;
 use App\Models\CourseGradeWeight;
@@ -14,9 +16,13 @@ use App\Models\Enrollment;
 use App\Models\LessonModule;
 use App\Models\LessonProgress;
 use App\Models\UserCourseSectionView;
+use App\Services\UserNotifier;
+use App\Support\VideoHelper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class CourseController extends Controller
 {
@@ -111,6 +117,8 @@ class CourseController extends Controller
             ? $course->discussionThreads()->where('created_at', '>', $view->discussions_seen_at)->count()
             : $course->discussionThreads()->count();
 
+        $canSeeCourseArchive = $this->userCanAccessAnyCourseArchive(Auth::user(), $course);
+
         return view('course-show', [
             'course' => $course,
             'enrollment' => $enrollment,
@@ -121,6 +129,7 @@ class CourseController extends Controller
             'newGradedCount' => $newGradedCount,
             'lessonUploadCount' => $lessonUploadCount,
             'announcementCount' => $announcementCount,
+            'canSeeCourseArchive' => $canSeeCourseArchive,
         ]);
     }
 
@@ -170,9 +179,11 @@ class CourseController extends Controller
             $course->setRelation('lessonModules', $course->lessonModules->where('status', 'published'));
         }
 
-        // For student progress, only count lessons that have an attached file
+        // For student progress, count lessons with a file attachment or video (uploaded or YouTube)
         $completedIds = [];
-        $progressEligibleLessons = $course->lessonModules->whereNotNull('attachment_path');
+        $progressEligibleLessons = $course->lessonModules->filter(function ($l) {
+            return $l->attachment_path || $l->video_url;
+        });
         $totalForProgress = $progressEligibleLessons->count();
 
         if (! $isInstructor && $totalForProgress > 0) {
@@ -445,7 +456,17 @@ class CourseController extends Controller
             }
         }
         $data['last_activity_at'] = now();
-        DiscussionThread::create($data);
+        $thread = DiscussionThread::create($data);
+        $studentIds = Enrollment::where('course_id', $course->id)->where('status', 'enrolled')->pluck('user_id')
+            ->reject(fn ($id) => (int) $id === (int) Auth::id())->values()->all();
+        UserNotifier::notifyMany(
+            $studentIds,
+            'New discussion: ' . $thread->title,
+            $course->title,
+            '/courses/' . $course->id . '/discussions/' . $thread->id,
+            'discussion',
+            $course->id
+        );
         return redirect()->route('courses.discussions', $course)->with('success', 'Discussion started.');
     }
 
@@ -472,6 +493,24 @@ class CourseController extends Controller
             'thread_id' => $thread->id,
         ]);
         $thread->update(['last_activity_at' => now()]);
+
+        $participantIds = collect([$thread->user_id])
+            ->merge(DiscussionMessage::where('thread_id', $thread->id)->pluck('user_id'))
+            ->map(fn ($id) => (int) $id)
+            ->unique()
+            ->reject(fn (int $id) => $id === (int) Auth::id())
+            ->values()
+            ->all();
+        $msgUrl = '/courses/' . $course->id . '/discussions/' . $thread->id;
+        UserNotifier::notifyMany(
+            $participantIds,
+            'New reply in: ' . $thread->title,
+            $course->title,
+            $msgUrl,
+            'discussion',
+            $course->id
+        );
+
         return redirect()->route('courses.discussions.thread', [$course, $thread])->with('success', 'Reply posted.');
     }
 
@@ -502,20 +541,102 @@ class CourseController extends Controller
         $request->validate([
             'description' => 'nullable|string',
             'banner' => 'nullable|image|mimes:jpeg,jpg,png,gif,webp|max:10240',
+            'banner_object_position' => 'nullable|string|max:64',
+            'banner_crop_data' => 'nullable|string|max:1000',
         ]);
 
         $data = ['description' => $request->description];
+
+        if ($request->filled('banner_object_position')) {
+            $data['banner_object_position'] = $request->banner_object_position;
+        }
 
         if ($request->hasFile('banner')) {
             if ($course->banner_path) {
                 Storage::disk('public')->delete($course->banner_path);
             }
-            $data['banner_path'] = $request->file('banner')->store('courses', 'public');
+            $bannerFile = $request->file('banner');
+            $cropData = null;
+            if ($request->filled('banner_crop_data')) {
+                $decoded = json_decode((string) $request->banner_crop_data, true);
+                if (is_array($decoded)) {
+                    $cropData = $decoded;
+                }
+            }
+            $stored = false;
+            if ($cropData) {
+                $imageContent = file_get_contents($bannerFile->getRealPath());
+                if ($imageContent !== false) {
+                    $srcImage = @imagecreatefromstring($imageContent);
+                    if ($srcImage !== false) {
+                        $srcW = imagesx($srcImage);
+                        $srcH = imagesy($srcImage);
+                        $x = max(0, (int) round($cropData['x'] ?? 0));
+                        $y = max(0, (int) round($cropData['y'] ?? 0));
+                        $w = max(1, (int) round($cropData['width'] ?? $srcW));
+                        $h = max(1, (int) round($cropData['height'] ?? $srcH));
+                        $x = min($x, max(0, $srcW - 1));
+                        $y = min($y, max(0, $srcH - 1));
+                        $w = min($w, $srcW - $x);
+                        $h = min($h, $srcH - $y);
+                        $dst = imagecreatetruecolor($w, $h);
+                        imagecopyresampled($dst, $srcImage, 0, 0, $x, $y, $w, $h, $w, $h);
+                        ob_start();
+                        imagejpeg($dst, null, 90);
+                        $jpg = ob_get_clean();
+                        if ($jpg !== false) {
+                            $path = 'courses/' . Str::uuid() . '.jpg';
+                            Storage::disk('public')->put($path, $jpg);
+                            $data['banner_path'] = $path;
+                            $stored = true;
+                        }
+                        imagedestroy($dst);
+                        imagedestroy($srcImage);
+                    }
+                }
+            }
+            if (! $stored) {
+                $data['banner_path'] = $bannerFile->store('courses', 'public');
+            }
         }
 
         $course->update($data);
 
         return redirect()->route('courses.show', $course)->with('success', 'Course updated.');
+    }
+
+    public function resetContent(Course $course)
+    {
+        if (! Auth::user()->isInstructor() && ! Auth::user()->isAdmin()) {
+            abort(403);
+        }
+
+        DB::transaction(function () use ($course) {
+            if ($course->banner_path) {
+                Storage::disk('public')->delete($course->banner_path);
+            }
+
+            $course->update([
+                'banner_path' => null,
+                'banner_object_position' => null,
+                'description' => null,
+            ]);
+
+            $course->lessonModules()->update([
+                'status' => 'draft',
+                'published_at' => null,
+            ]);
+
+            $course->courseAnnouncements()->update([
+                'is_visible' => false,
+            ]);
+
+            $course->courseGrades()->update([
+                'is_visible' => false,
+            ]);
+        });
+
+        return redirect()->route('courses.show', $course)->with('success', 'Course content reset successfully.');
     }
 
     public function lessonPreview(Course $course, LessonModule $lesson)
@@ -528,8 +649,9 @@ class CourseController extends Controller
         if (! $user->isInstructor() && ! $user->isAdmin() && $lesson->status !== 'published') {
             abort(404);
         }
-        if (! $lesson->attachment_path) {
-            return redirect()->route('courses.lessons', $course)->with('info', 'No file to preview.');
+        $hasMedia = $lesson->attachment_path || $lesson->video_url;
+        if (! $hasMedia) {
+            return redirect()->route('courses.lessons', $course)->with('info', 'No lesson media to preview.');
         }
 
         // Persist "Recently Opened" per user by touching lesson_progress
@@ -543,14 +665,46 @@ class CourseController extends Controller
         // Touch updated_at so dashboard ordering reflects last open
         $progress->save();
 
+        $youtubeId = VideoHelper::youtubeId($lesson->video_url);
+        if ($youtubeId) {
+            return view('lesson-preview', [
+                'course' => $course,
+                'lesson' => $lesson,
+                'previewMode' => 'youtube',
+                'youtubeId' => $youtubeId,
+                'fileUrl' => null,
+                'canPreview' => true,
+                'extension' => null,
+                'downloadFilename' => null,
+            ]);
+        }
+
         $path = $lesson->attachment_path;
+        if (! $path) {
+            return redirect()->route('courses.lessons', $course)->with('info', 'No file to preview.');
+        }
         $ext = strtolower(pathinfo($path, PATHINFO_EXTENSION));
         $url = asset('storage/' . $path);
+        if (VideoHelper::isUploadedVideoExtension($ext)) {
+            return view('lesson-preview', [
+                'course' => $course,
+                'lesson' => $lesson,
+                'previewMode' => 'video',
+                'youtubeId' => null,
+                'fileUrl' => $url,
+                'canPreview' => true,
+                'extension' => $ext,
+                'downloadFilename' => $lesson->attachment_original_name ?? ($lesson->title . '.' . $ext),
+            ]);
+        }
         $canPreview = in_array($ext, ['pdf', 'png', 'jpg', 'jpeg', 'gif', 'webp']);
         $downloadFilename = $lesson->attachment_original_name ?? ($lesson->title . ($ext ? '.' . $ext : ''));
+
         return view('lesson-preview', [
             'course' => $course,
             'lesson' => $lesson,
+            'previewMode' => 'file',
+            'youtubeId' => null,
             'fileUrl' => $url,
             'canPreview' => $canPreview,
             'extension' => $ext,
@@ -575,12 +729,21 @@ class CourseController extends Controller
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
             'content' => 'nullable|string',
-            'attachment' => 'nullable|file|mimes:pdf,pptx,docx,png|max:51200',
+            'attachment' => 'nullable|file|mimes:pdf,pptx,docx,png,mp4,webm,mov|max:51200',
+            'video_url' => 'nullable|string|max:500',
         ]);
+        $videoUrl = $request->filled('video_url') ? trim((string) $request->video_url) : null;
+        if ($videoUrl !== null && $videoUrl !== '' && VideoHelper::youtubeId($videoUrl) === null) {
+            return back()->withErrors(['video_url' => 'Enter a valid YouTube link (youtube.com or youtu.be).'])->withInput();
+        }
+        if ($videoUrl === '') {
+            $videoUrl = null;
+        }
         $data = [
             'title' => $request->input('title'),
             'description' => $request->input('description'),
             'content' => $request->input('content'),
+            'video_url' => $videoUrl,
         ];
         if ($request->hasFile('attachment')) {
             if ($lesson->attachment_path) {
@@ -605,6 +768,18 @@ class CourseController extends Controller
             $data['published_at'] = now();
         }
         $lesson->update($data);
+        if ($newStatus === 'published') {
+            $studentIds = Enrollment::where('course_id', $course->id)->where('status', 'enrolled')->pluck('user_id')->all();
+            $previewUrl = '/courses/' . $course->id . '/lessons/' . $lesson->id . '/preview';
+            UserNotifier::notifyMany(
+                $studentIds,
+                'Lesson published: ' . $lesson->title,
+                $course->title,
+                $previewUrl,
+                'lesson',
+                $course->id
+            );
+        }
         return back()->with('success', $newStatus === 'published' ? 'Lesson is now visible.' : 'Lesson is now hidden.');
     }
 
@@ -614,7 +789,8 @@ class CourseController extends Controller
         if ($lesson->course_id !== $course->id) {
             abort(404);
         }
-        if (! $lesson->attachment_path || $lesson->status !== 'published') {
+        $hasMedia = $lesson->attachment_path || $lesson->video_url;
+        if (! $hasMedia || $lesson->status !== 'published') {
             return back()->with('info', 'Lesson is not available.');
         }
         $user = Auth::user();
@@ -745,5 +921,111 @@ class CourseController extends Controller
         }
         $grade->delete();
         return redirect()->route('courses.grades', $course)->with('success', 'Grade deleted.');
+    }
+
+    public function courseArchiveIndex(Course $course)
+    {
+        $this->ensureCanAccessCourse($course);
+        $user = Auth::user();
+        if (! $this->userCanAccessAnyCourseArchive($user, $course)) {
+            abort(403);
+        }
+        $archives = $course->courseArchives()->get()->filter(fn (CourseArchive $a) => $this->userCanAccessArchiveRecord($user, $a))->values();
+
+        return view('course-archive-index', [
+            'course' => $course,
+            'archives' => $archives,
+        ]);
+    }
+
+    public function courseArchiveShow(Course $course, CourseArchive $archive)
+    {
+        $this->ensureCanAccessCourse($course);
+        if ((int) $archive->course_id !== (int) $course->id) {
+            abort(404);
+        }
+        $user = Auth::user();
+        if (! $this->userCanAccessArchiveRecord($user, $archive)) {
+            abort(403);
+        }
+        $archive->load('archivedLessons');
+
+        return view('course-archive-show', [
+            'course' => $course,
+            'archive' => $archive,
+        ]);
+    }
+
+    public function importArchivedLesson(Course $course, CourseArchive $archive, ArchivedLesson $archivedLesson)
+    {
+        if (! Auth::user()->isInstructor() && ! Auth::user()->isAdmin()) {
+            abort(403);
+        }
+        $this->ensureCanAccessCourse($course);
+        if ((int) $archive->course_id !== (int) $course->id || (int) $archivedLesson->course_archive_id !== (int) $archive->id) {
+            abort(404);
+        }
+        $user = Auth::user();
+        if (! $this->userCanAccessArchiveRecord($user, $archive)) {
+            abort(403);
+        }
+
+        $newPath = null;
+        $origName = $archivedLesson->attachment_original_name;
+        if ($archivedLesson->attachment_path && Storage::disk('public')->exists($archivedLesson->attachment_path)) {
+            $ext = pathinfo($archivedLesson->attachment_path, PATHINFO_EXTENSION);
+            $newPath = 'lessons/' . Str::uuid() . ($ext !== '' ? '.' . $ext : '');
+            Storage::disk('public')->copy($archivedLesson->attachment_path, $newPath);
+        }
+
+        $order = (int) $course->lessonModules()->max('order') + 1;
+        LessonModule::create([
+            'course_id' => $course->id,
+            'title' => $archivedLesson->title . ' (from archive)',
+            'description' => $archivedLesson->description,
+            'content' => $archivedLesson->content,
+            'attachment_path' => $newPath,
+            'attachment_original_name' => $origName,
+            'video_url' => $archivedLesson->video_url,
+            'order' => $order,
+            'type' => 'lesson',
+            'status' => 'draft',
+            'published_at' => null,
+        ]);
+
+        return redirect()->route('courses.lessons', $course)->with('success', 'Lesson copied from archive as a draft. Publish when ready.');
+    }
+
+    protected function userCanAccessAnyCourseArchive($user, Course $course): bool
+    {
+        if (! $course->courseArchives()->exists()) {
+            return false;
+        }
+        if ($user->isAdmin()) {
+            return true;
+        }
+        if (! $user->isInstructor() || ! $user->can_access_course_archive) {
+            return false;
+        }
+
+        return $user->courses()->where('courses.id', $course->id)->exists();
+    }
+
+    protected function userCanAccessArchiveRecord($user, CourseArchive $archive): bool
+    {
+        if ($user->isAdmin()) {
+            return true;
+        }
+        if (! $user->isInstructor() || ! $user->can_access_course_archive) {
+            return false;
+        }
+        if (! $user->courses()->where('courses.id', $archive->course_id)->exists()) {
+            return false;
+        }
+
+        return ! DB::table('instructor_blocked_course_archives')
+            ->where('user_id', $user->id)
+            ->where('course_archive_id', $archive->id)
+            ->exists();
     }
 }

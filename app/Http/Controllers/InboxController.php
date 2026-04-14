@@ -184,6 +184,8 @@ class InboxController extends Controller
 
                     UserNotification::create([
                         'user_id' => $recipientId,
+                        'kind' => 'message',
+                        'course_id' => null,
                         'title' => $title,
                         'message' => 'From: ' . ($user->name ?? 'Someone'),
                         'link_url' => '/inbox?folder=inbox&open_message_id=' . $message->id,

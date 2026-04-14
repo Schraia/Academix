@@ -104,6 +104,15 @@ body{
     text-decoration:none;
 }
 
+.course-header-row{
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:1rem;
+    flex-wrap:wrap;
+    margin-bottom:0.25rem;
+}
+
 .course-title{
     font-size:2rem;
     font-weight:700;
@@ -114,6 +123,21 @@ body{
     font-size:.9rem;
     margin-bottom:1.25rem;
 }
+
+.btn-archive{
+    display:inline-flex;
+    align-items:center;
+    padding:.45rem .95rem;
+    border-radius:999px;
+    font-size:.8rem;
+    font-weight:600;
+    text-decoration:none;
+    border:1px solid #e5e7eb;
+    background:#fff;
+    color:#374151;
+    white-space:nowrap;
+}
+.btn-archive:hover{background:#f9fafb;color:#b91c1c;}
 
 .course-actions{
     margin-bottom:1.75rem;
@@ -158,7 +182,7 @@ body{
 .course-nav{
     display:flex;
     gap:2.5rem;
-    border-bottom:2px solid #e5e7eb;
+    border-bottom:2px solid #111827;
     margin-bottom:2.5rem;
     padding-bottom:.85rem;
 }
@@ -363,8 +387,15 @@ body{
 
 <a href="{{ route('courses.index') }}" class="back-link">← Back to Courses</a>
 
-<div class="course-title">{{ $course->title }}</div>
-<div class="course-code">{{ $course->code ?? $course->id }}</div>
+<div class="course-header-row">
+    <div>
+        <div class="course-title">{{ $course->title }}</div>
+        <div class="course-code">{{ $course->code ?? $course->id }}</div>
+    </div>
+    @if(!empty($canSeeCourseArchive))
+        <a href="{{ route('courses.archive.index', $course) }}" class="btn-archive">Course archive</a>
+    @endif
+</div>
 
 @if(Auth::user()->isInstructor())
     <div class="course-actions">
@@ -387,7 +418,7 @@ body{
     <div class="left-column">
 
         @if($course->banner_path)
-            <img src="{{ asset('storage/'.$course->banner_path) }}" class="course-banner">
+            <img src="{{ asset('storage/'.$course->banner_path) }}" class="course-banner" style="object-position: {{ $course->banner_object_position ?: 'center' }};">
         @else
             <div class="banner-placeholder">
                 {{ $course->title }} — Learning Materials
@@ -412,10 +443,10 @@ body{
                 <div class="preview" style="font-weight: 700;">{{ Str::limit($thread->title, 60) }}</div>
                 @php $latestMessage = $thread->messages->sortByDesc('created_at')->first(); @endphp
                 @if($latestMessage)
-                    <div class="discussion-reply" title="{{ $latestMessage->user->name ?? 'User' }}: {{ $latestMessage->content }}">{{ $latestMessage->user->name ?? 'User' }}: {{ $latestMessage->content }}</div>
+                    <div class="discussion-reply" title="{{ $latestMessage->user->name ?? 'User' }}: {{ $latestMessage->content }}"><a href="{{ route('users.profile', $latestMessage->user_id) }}" style="color:#dc2626;text-decoration:none;font-weight:600;">{{ $latestMessage->user->name ?? 'User' }}</a>: {{ $latestMessage->content }}</div>
                 @elseif($thread->content)
                     @php $author = $thread->user->name ?? 'User'; @endphp
-                    <div class="discussion-reply" title="{{ $author }}: {{ $thread->content }}">{{ $author }}: {{ $thread->content }}</div>
+                    <div class="discussion-reply" title="{{ $author }}: {{ $thread->content }}"><a href="{{ route('users.profile', $thread->user_id) }}" style="color:#dc2626;text-decoration:none;font-weight:600;">{{ $author }}</a>: {{ $thread->content }}</div>
                 @endif
             @empty
                 <div class="preview">No discussions yet.</div>
@@ -427,10 +458,12 @@ body{
             <h3>Last lesson uploaded:</h3>
             @if($lastLesson)
                 <div class="preview" style="font-weight: 700;">{{ $lastLesson->title }}</div>
-                <div class="preview" style="padding-left: 1.25rem; font-weight: normal;">{{ Str::limit($lastLesson->description, 100) ?: '—' }}</div>
+                @if(filled($lastLesson->description))
+                    <div class="preview" style="padding-left: 1.25rem; font-weight: normal;">{{ Str::limit($lastLesson->description, 100) }}</div>
+                @endif
                 @if($lastLesson->attachment_path)
-                    @php $ext = pathinfo($lastLesson->attachment_path, PATHINFO_EXTENSION); $filename = $lastLesson->attachment_original_name ?? ($lastLesson->title . ($ext ? '.' . $ext : '')); @endphp
-                    <div class="preview" style="padding-left: 1.25rem; font-weight: normal; margin-top: 0.25rem;"><a href="{{ route('courses.lessons.preview', [$course, $lastLesson]) }}" style="color: #dc2626; text-decoration: none;">{{ $filename }}</a></div>
+                    @php $ext = pathinfo($lastLesson->attachment_path, PATHINFO_EXTENSION); $filename = $lastLesson->attachment_original_name ?? ($lastLesson->title . ($ext ? '.' . $ext : '')); $fileMarginTop = filled($lastLesson->description) ? '0.25rem' : '0'; @endphp
+                    <div class="preview" style="padding-left: 1.25rem; font-weight: normal; margin-top: {{ $fileMarginTop }};"><a href="{{ route('courses.lessons.preview', [$course, $lastLesson]) }}" style="color: #dc2626; text-decoration: none;">{{ $filename }}</a></div>
                 @endif
                 <div class="preview" style="padding-left: 1.25rem; font-size: 0.8125rem; color: #6b7280; margin-top: 0.25rem;">{{ ($lastLesson->published_at ?? $lastLesson->updated_at)->format('M j, Y g:i A') }}</div>
             @else
