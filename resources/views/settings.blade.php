@@ -169,6 +169,8 @@
                 <button type="button" class="btn-secondary" onclick="showTab('instructors')" id="tabBtnInstructors">Instructors</button>
                 <button type="button" class="btn-secondary" onclick="showTab('pending')" id="tabBtnPending">Pending Enrollments</button>
                 <button type="button" class="btn-secondary" onclick="showTab('course-reset')" id="tabBtnCourseReset">Course Reset</button>
+                <button type="button" class="btn-secondary" onclick="showTab('courses-catalog')" id="tabBtnCoursesCatalog">Course Catalog</button>
+                <button type="button" class="btn-secondary" onclick="showTab('majors')" id="tabBtnMajors">Majors and Sections</button>
                 <a href="{{ route('settings.courseArchiving') }}" class="btn-secondary" style="text-decoration:none;display:inline-block;padding:.5rem .85rem;border-radius:6px;font-size:.875rem;font-weight:600;border:1px solid #d1d5db;background:#e5e7eb;color:#374151;">Course Archiving</a>
             </div>
 
@@ -347,6 +349,221 @@
                         @endforeach
                     </tbody>
                 </table>
+            </div>
+
+            <div id="tab-courses-catalog" class="card" style="display:none; padding: 1rem 1.25rem;">
+                <h3 style="margin-bottom:.75rem;">Add New Course</h3>
+                <form method="POST" action="{{ route('settings.courses.store') }}" style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr 2fr auto;gap:.5rem;align-items:center;margin-bottom:1rem;">
+                    @csrf
+                    <input type="text" name="title" placeholder="Course title" required style="padding:.5rem;border:1px solid #d1d5db;border-radius:8px;">
+                    <input type="text" name="code" placeholder="Code" required style="padding:.5rem;border:1px solid #d1d5db;border-radius:8px;">
+                    <input type="number" name="credits" min="0" max="12" value="3" required style="padding:.5rem;border:1px solid #d1d5db;border-radius:8px;">
+                    <select name="status" style="padding:.5rem;border:1px solid #d1d5db;border-radius:8px;">
+                        <option value="draft">Draft</option>
+                        <option value="published">Published</option>
+                        <option value="archived">Archived</option>
+                    </select>
+                    <input type="text" name="description" placeholder="Description (optional)" style="padding:.5rem;border:1px solid #d1d5db;border-radius:8px;">
+                    <button type="submit" class="btn-primary" style="border-radius:8px;">Add</button>
+                </form>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Title</th>
+                            <th>Code</th>
+                            <th>Credits</th>
+                            <th>Status</th>
+                            <th>Description</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($courses as $course)
+                            <tr>
+                                <form method="POST" action="{{ route('settings.courses.update', $course) }}">
+                                    @csrf
+                                    <td><input type="text" name="title" value="{{ $course->title }}" required style="width:100%;padding:.45rem;border:1px solid #d1d5db;border-radius:8px;"></td>
+                                    <td><input type="text" name="code" value="{{ $course->code }}" required style="width:100%;padding:.45rem;border:1px solid #d1d5db;border-radius:8px;"></td>
+                                    <td><input type="number" name="credits" min="0" max="12" value="{{ (int) $course->credits }}" required style="width:100%;padding:.45rem;border:1px solid #d1d5db;border-radius:8px;"></td>
+                                    <td>
+                                        <select name="status" style="width:100%;padding:.45rem;border:1px solid #d1d5db;border-radius:8px;">
+                                            @foreach(['draft','published','archived'] as $status)
+                                                <option value="{{ $status }}" @selected($course->status === $status)>{{ ucfirst($status) }}</option>
+                                            @endforeach
+                                        </select>
+                                    </td>
+                                    <td><input type="text" name="description" value="{{ $course->description }}" style="width:100%;padding:.45rem;border:1px solid #d1d5db;border-radius:8px;"></td>
+                                    <td style="display:flex;gap:.4rem;">
+                                        <button type="submit" class="btn-primary" style="border-radius:8px;">Update</button>
+                                        <button type="submit" class="btn-secondary" style="border-radius:8px;" formaction="{{ route('settings.courses.destroy', $course) }}" onclick="return confirm('Delete this course? This only works if not referenced in enrollments/curriculum.');">Delete</button>
+                                    </td>
+                                </form>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+
+            <div id="tab-majors" class="card" style="display:none; padding: 1rem 1.25rem;">
+                <h3 style="margin-bottom:.75rem;">Add New Major / College Program</h3>
+                <form method="POST" action="{{ route('settings.collegeCourses.store') }}" style="display:grid;grid-template-columns:2fr 1fr 2fr auto;gap:.5rem;align-items:center;margin-bottom:1rem;">
+                    @csrf
+                    <input type="text" name="name" placeholder="Major name (e.g. Information Technology)" required style="padding:.5rem;border:1px solid #d1d5db;border-radius:8px;">
+                    <input type="text" name="code" placeholder="Code (e.g. IT)" required style="padding:.5rem;border:1px solid #d1d5db;border-radius:8px;">
+                    <input type="text" name="description" placeholder="Description (optional)" style="padding:.5rem;border:1px solid #d1d5db;border-radius:8px;">
+                    <button type="submit" class="btn-primary" style="border-radius:8px;">Add</button>
+                </form>
+
+                <h3 style="margin:.5rem 0;">Create/Update Section</h3>
+                <form method="POST" action="{{ route('settings.collegeSections.store') }}" style="display:grid;grid-template-columns:1.5fr repeat(6,1fr) auto;gap:.5rem;align-items:center;margin-bottom:1rem;">
+                    @csrf
+                    <select name="college_course_id" required style="padding:.5rem;border:1px solid #d1d5db;border-radius:8px;">
+                        <option value="">Select major</option>
+                        @foreach($collegeCourses as $major)
+                            <option value="{{ $major->id }}">{{ $major->name }} ({{ $major->code }})</option>
+                        @endforeach
+                    </select>
+                    <input type="number" name="year" min="1" max="4" required placeholder="Year" style="padding:.5rem;border:1px solid #d1d5db;border-radius:8px;">
+                    <input type="number" name="semester" min="1" max="2" required placeholder="Sem" style="padding:.5rem;border:1px solid #d1d5db;border-radius:8px;">
+                    <input type="text" name="section_code" required placeholder="Section code" style="padding:.5rem;border:1px solid #d1d5db;border-radius:8px;">
+                    <input type="text" name="time_slot" placeholder="Time slot" style="padding:.5rem;border:1px solid #d1d5db;border-radius:8px;">
+                    <input type="number" name="student_slots" min="1" max="500" value="40" required placeholder="Slots" style="padding:.5rem;border:1px solid #d1d5db;border-radius:8px;">
+                    <input type="number" name="sort_order" min="0" max="999" value="0" placeholder="Sort" style="padding:.5rem;border:1px solid #d1d5db;border-radius:8px;">
+                    <button type="submit" class="btn-primary" style="border-radius:8px;">Save</button>
+                </form>
+
+                <h3 style="margin:.5rem 0;">Assign Course to Major Curriculum</h3>
+                <form method="POST" action="{{ route('settings.curriculum.store') }}" style="display:grid;grid-template-columns:1.5fr 2fr repeat(4,1fr) auto;gap:.5rem;align-items:center;margin-bottom:1rem;">
+                    @csrf
+                    <select name="college_course_id" required style="padding:.5rem;border:1px solid #d1d5db;border-radius:8px;">
+                        <option value="">Select major</option>
+                        @foreach($collegeCourses as $major)
+                            <option value="{{ $major->id }}">{{ $major->name }} ({{ $major->code }})</option>
+                        @endforeach
+                    </select>
+                    <select name="course_id" required style="padding:.5rem;border:1px solid #d1d5db;border-radius:8px;">
+                        <option value="">Select course</option>
+                        @foreach($courses as $course)
+                            <option value="{{ $course->id }}">{{ $course->code }} - {{ $course->title }}</option>
+                        @endforeach
+                    </select>
+                    <input type="number" name="year" min="1" max="4" required placeholder="Year" style="padding:.5rem;border:1px solid #d1d5db;border-radius:8px;">
+                    <input type="number" name="semester" min="1" max="2" required placeholder="Sem" style="padding:.5rem;border:1px solid #d1d5db;border-radius:8px;">
+                    <input type="text" name="prerequisites" placeholder="Prereq" style="padding:.5rem;border:1px solid #d1d5db;border-radius:8px;">
+                    <input type="number" name="sort_order" min="0" max="999" value="0" placeholder="Sort" style="padding:.5rem;border:1px solid #d1d5db;border-radius:8px;">
+                    <button type="submit" class="btn-primary" style="border-radius:8px;">Save</button>
+                </form>
+
+                @foreach($collegeCourses as $major)
+                    <details style="border:1px solid #e5e7eb;border-radius:10px;padding:1rem;margin-bottom:1rem;background:#fff;">
+                        <summary style="cursor:pointer;font-weight:700;color:#111827;display:flex;align-items:center;gap:.5rem;">
+                            {{ $major->name }} ({{ $major->code }})
+                            <span style="font-weight:500;color:#6b7280;">{{ $major->collegeSections->count() }} sections • {{ $major->curriculum->count() }} curriculum entries</span>
+                        </summary>
+                        <form method="POST" action="{{ route('settings.collegeCourses.update', $major) }}" style="display:grid;grid-template-columns:2fr 1fr 2fr auto auto;gap:.5rem;align-items:center;margin-top:.75rem;">
+                            @csrf
+                            <input type="text" name="name" value="{{ $major->name }}" required style="padding:.45rem;border:1px solid #d1d5db;border-radius:8px;">
+                            <input type="text" name="code" value="{{ $major->code }}" required style="padding:.45rem;border:1px solid #d1d5db;border-radius:8px;">
+                            <input type="text" name="description" value="{{ $major->description }}" style="padding:.45rem;border:1px solid #d1d5db;border-radius:8px;">
+                            <button type="submit" class="btn-primary" style="border-radius:8px;">Update Major</button>
+                            <button type="submit" class="btn-secondary" style="border-radius:8px;" formaction="{{ route('settings.collegeCourses.destroy', $major) }}" onclick="return confirm('Delete this major? This only works if it has no related data.');">Delete</button>
+                        </form>
+
+                        <table style="margin-top:.75rem;">
+                            <thead>
+                                <tr><th colspan="7">Sections</th></tr>
+                            </thead>
+                            <tbody>
+                                @foreach($major->collegeSections as $section)
+                                    <tr>
+                                        <form method="POST" action="{{ route('settings.collegeSections.update', $section) }}">
+                                            @csrf
+                                            <td><input type="number" name="year" min="1" max="4" value="{{ $section->year }}" required style="width:100%;padding:.4rem;border:1px solid #d1d5db;border-radius:8px;"></td>
+                                            <td><input type="number" name="semester" min="1" max="2" value="{{ $section->semester }}" required style="width:100%;padding:.4rem;border:1px solid #d1d5db;border-radius:8px;"></td>
+                                            <td><input type="text" name="section_code" value="{{ $section->section_code }}" required style="width:100%;padding:.4rem;border:1px solid #d1d5db;border-radius:8px;"></td>
+                                            <td><input type="text" name="time_slot" value="{{ $section->time_slot }}" style="width:100%;padding:.4rem;border:1px solid #d1d5db;border-radius:8px;"></td>
+                                            <td><input type="number" name="student_slots" min="1" max="500" value="{{ (int) ($section->student_slots ?? 40) }}" required style="width:100%;padding:.4rem;border:1px solid #d1d5db;border-radius:8px;"></td>
+                                            <td><input type="number" name="sort_order" min="0" max="999" value="{{ $section->sort_order }}" style="width:100%;padding:.4rem;border:1px solid #d1d5db;border-radius:8px;"></td>
+                                            <td style="display:flex;gap:.35rem;">
+                                                <button type="submit" class="btn-primary" style="border-radius:8px;">Update Section</button>
+                                                <button type="submit" class="btn-secondary" style="border-radius:8px;" formaction="{{ route('settings.collegeSections.destroy', $section) }}" onclick="return confirm('Delete this section?');">Delete</button>
+                                            </td>
+                                        </form>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+
+                        <table style="margin-top:.75rem;">
+                            <thead>
+                                <tr><th colspan="8">PPE/MLC Option Schedules</th></tr>
+                                <tr><th>Type</th><th>Code</th><th>Label</th><th>Year</th><th>Sem</th><th>Days</th><th>Time Slot</th><th>Slots</th></tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <form method="POST" action="{{ route('settings.optionSchedules.store') }}">
+                                        @csrf
+                                        <input type="hidden" name="college_course_id" value="{{ $major->id }}">
+                                        <td><select name="option_type" required style="width:100%;padding:.4rem;border:1px solid #d1d5db;border-radius:8px;"><option value="PE">PE</option><option value="MLC">MLC</option></select></td>
+                                        <td><input type="text" name="option_code" required placeholder="PE-1 / MLC-1" style="width:100%;padding:.4rem;border:1px solid #d1d5db;border-radius:8px;"></td>
+                                        <td><input type="text" name="option_label" required placeholder="Badminton / Literacy (STC)" style="width:100%;padding:.4rem;border:1px solid #d1d5db;border-radius:8px;"></td>
+                                        <td><input type="number" name="year" min="1" max="4" required style="width:100%;padding:.4rem;border:1px solid #d1d5db;border-radius:8px;"></td>
+                                        <td><input type="number" name="semester" min="1" max="2" required style="width:100%;padding:.4rem;border:1px solid #d1d5db;border-radius:8px;"></td>
+                                        <td><input type="text" name="days" placeholder="MW/TTH/F" style="width:100%;padding:.4rem;border:1px solid #d1d5db;border-radius:8px;"></td>
+                                        <td><input type="text" name="time_slot" placeholder="8:00 AM - 9:00 AM" style="width:100%;padding:.4rem;border:1px solid #d1d5db;border-radius:8px;"></td>
+                                        <td style="display:flex;gap:.35rem;">
+                                            <input type="number" name="student_slots" min="1" max="500" value="40" required style="width:85px;padding:.4rem;border:1px solid #d1d5db;border-radius:8px;">
+                                            <button type="submit" class="btn-primary" style="border-radius:8px;">Add</button>
+                                        </td>
+                                    </form>
+                                </tr>
+                                @foreach($major->optionSchedules as $option)
+                                    <tr>
+                                        <form method="POST" action="{{ route('settings.optionSchedules.update', $option) }}">
+                                            @csrf
+                                            <td><select name="option_type" required style="width:100%;padding:.4rem;border:1px solid #d1d5db;border-radius:8px;"><option value="PE" @selected($option->option_type === 'PE')>PE</option><option value="MLC" @selected($option->option_type === 'MLC')>MLC</option></select></td>
+                                            <td><input type="text" name="option_code" value="{{ $option->option_code }}" required style="width:100%;padding:.4rem;border:1px solid #d1d5db;border-radius:8px;"></td>
+                                            <td><input type="text" name="option_label" value="{{ $option->option_label }}" required style="width:100%;padding:.4rem;border:1px solid #d1d5db;border-radius:8px;"></td>
+                                            <td><input type="number" name="year" min="1" max="4" value="{{ $option->year }}" required style="width:100%;padding:.4rem;border:1px solid #d1d5db;border-radius:8px;"></td>
+                                            <td><input type="number" name="semester" min="1" max="2" value="{{ $option->semester }}" required style="width:100%;padding:.4rem;border:1px solid #d1d5db;border-radius:8px;"></td>
+                                            <td><input type="text" name="days" value="{{ $option->days }}" style="width:100%;padding:.4rem;border:1px solid #d1d5db;border-radius:8px;"></td>
+                                            <td><input type="text" name="time_slot" value="{{ $option->time_slot }}" style="width:100%;padding:.4rem;border:1px solid #d1d5db;border-radius:8px;"></td>
+                                            <td style="display:flex;gap:.35rem;">
+                                                <input type="number" name="student_slots" min="1" max="500" value="{{ $option->student_slots }}" required style="width:85px;padding:.4rem;border:1px solid #d1d5db;border-radius:8px;">
+                                                <button type="submit" class="btn-primary" style="border-radius:8px;">Save</button>
+                                                <button type="submit" class="btn-secondary" style="border-radius:8px;" formaction="{{ route('settings.optionSchedules.destroy', $option) }}" onclick="return confirm('Delete this option schedule?');">Delete</button>
+                                            </td>
+                                        </form>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+
+                        <table style="margin-top:.75rem;">
+                            <thead>
+                                <tr><th>Curriculum</th><th>Year</th><th>Sem</th><th>Prereq</th><th>Sort</th><th>Action</th></tr>
+                            </thead>
+                            <tbody>
+                                @foreach($major->curriculum->sortBy(fn ($entry) => sprintf('%02d-%02d-%04d', $entry->year, $entry->semester, $entry->sort_order)) as $item)
+                                    <tr>
+                                        <td>{{ $item->course?->code }} - {{ $item->course?->title }}</td>
+                                        <td>{{ $item->year }}</td>
+                                        <td>{{ $item->semester }}</td>
+                                        <td>{{ $item->prerequisites ?: '—' }}</td>
+                                        <td>{{ $item->sort_order }}</td>
+                                        <td>
+                                            <form method="POST" action="{{ route('settings.curriculum.destroy', $item) }}">
+                                                @csrf
+                                                <button type="submit" class="btn-secondary" style="border-radius:8px;">Remove</button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </details>
+                @endforeach
             </div>
         </div>
     </div>
@@ -649,6 +866,8 @@
             document.getElementById('tab-instructors').style.display = tab === 'instructors' ? 'block' : 'none';
             document.getElementById('tab-pending').style.display = tab === 'pending' ? 'block' : 'none';
             document.getElementById('tab-course-reset').style.display = tab === 'course-reset' ? 'block' : 'none';
+            document.getElementById('tab-courses-catalog').style.display = tab === 'courses-catalog' ? 'block' : 'none';
+            document.getElementById('tab-majors').style.display = tab === 'majors' ? 'block' : 'none';
         }
 
         function openPersonalInfoModal(registration, email) {

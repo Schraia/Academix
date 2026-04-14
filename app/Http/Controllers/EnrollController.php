@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\CollegeCourse;
+use App\Models\CollegeOptionSchedule;
 use App\Models\CollegeSection;
 use App\Models\Course;
 use App\Models\Curriculum;
@@ -56,6 +57,7 @@ class EnrollController extends Controller
 
         $curriculumByCollege = $this->buildCurriculumByCollege();
         $sectionsByCollege = $this->buildSectionsByCollege();
+        $sectionEnrollmentStats = $this->buildSectionEnrollmentStats();
         $sectionSubjectTimes = $this->buildSectionSubjectTimes();
         $peMlcSchedules = $this->buildPeMlcSchedules();
 
@@ -94,6 +96,7 @@ class EnrollController extends Controller
             'restrictToCollege' => $restrictToCollege,
             'curriculumByCollege' => $curriculumByCollege,
             'sectionsByCollege' => $sectionsByCollege,
+            'sectionEnrollmentStats' => $sectionEnrollmentStats,
             'sectionSubjectTimes' => $sectionSubjectTimes,
             'peMlcSchedules' => $peMlcSchedules,
             'pendingEnrollmentsFromSession' => $pendingForFrontend,
@@ -206,20 +209,69 @@ class EnrollController extends Controller
      */
     protected function buildPeMlcSchedules(): array
     {
-        $pe = [
-            ['courseCode' => 'PPE 1101', 'courseName' => 'Badminton', 'section_code' => 'PE-1', 'time_slot' => '8:00 AM - 9:00 AM', 'days' => 'MW'],
-            ['courseCode' => 'PPE 1102', 'courseName' => 'Volleyball', 'section_code' => 'PE-2', 'time_slot' => '9:00 AM - 10:00 AM', 'days' => 'TTH'],
-            ['courseCode' => 'PPE 1103', 'courseName' => 'Basketball', 'section_code' => 'PE-3', 'time_slot' => '10:00 AM - 11:00 AM', 'days' => 'MW'],
-            ['courseCode' => 'PPE 1104', 'courseName' => 'Table Tennis', 'section_code' => 'PE-4', 'time_slot' => '11:00 AM - 12:00 PM', 'days' => 'TTH'],
-            ['courseCode' => 'PPE 1105', 'courseName' => 'Swimming', 'section_code' => 'PE-5', 'time_slot' => '1:00 PM - 3:00 PM', 'days' => 'F'],
-            ['courseCode' => 'PPE 1106', 'courseName' => 'Dance', 'section_code' => 'PE-6', 'time_slot' => '2:00 PM - 3:00 PM', 'days' => 'MW'],
+        $schoolYear = now()->year;
+        $default = [
+            'pe' => [
+                ['courseCode' => 'PPE 1101', 'courseName' => 'Badminton', 'section_code' => 'PE-1', 'time_slot' => '8:00 AM - 9:00 AM', 'days' => 'MW', 'student_slots' => 40],
+                ['courseCode' => 'PPE 1102', 'courseName' => 'Volleyball', 'section_code' => 'PE-2', 'time_slot' => '9:00 AM - 10:00 AM', 'days' => 'TTH', 'student_slots' => 40],
+                ['courseCode' => 'PPE 1103', 'courseName' => 'Basketball', 'section_code' => 'PE-3', 'time_slot' => '10:00 AM - 11:00 AM', 'days' => 'MW', 'student_slots' => 40],
+                ['courseCode' => 'PPE 1104', 'courseName' => 'Table Tennis', 'section_code' => 'PE-4', 'time_slot' => '11:00 AM - 12:00 PM', 'days' => 'TTH', 'student_slots' => 40],
+                ['courseCode' => 'PPE 1105', 'courseName' => 'Swimming', 'section_code' => 'PE-5', 'time_slot' => '1:00 PM - 3:00 PM', 'days' => 'F', 'student_slots' => 40],
+                ['courseCode' => 'PPE 1106', 'courseName' => 'Dance', 'section_code' => 'PE-6', 'time_slot' => '2:00 PM - 3:00 PM', 'days' => 'MW', 'student_slots' => 40],
+            ],
+            'mlc' => [
+                ['option' => 'Literacy (STC)', 'section_code' => 'MLC-1', 'time_slot' => '2:00 PM - 3:30 PM', 'days' => 'TTH', 'student_slots' => 40],
+                ['option' => 'Civic Welfare (STL)', 'section_code' => 'MLC-2', 'time_slot' => '10:00 AM - 11:30 AM', 'days' => 'MW', 'student_slots' => 40],
+                ['option' => 'Military Science (STM)', 'section_code' => 'MLC-3', 'time_slot' => '1:00 PM - 4:00 PM', 'days' => 'F', 'student_slots' => 40],
+            ],
         ];
-        $mlc = [
-            ['option' => 'Literacy (STC)', 'section_code' => 'MLC-1', 'time_slot' => '2:00 PM - 3:30 PM', 'days' => 'TTH'],
-            ['option' => 'Civic Welfare (STL)', 'section_code' => 'MLC-2', 'time_slot' => '10:00 AM - 11:30 AM', 'days' => 'MW'],
-            ['option' => 'Military Science (STM)', 'section_code' => 'MLC-3', 'time_slot' => '1:00 PM - 4:00 PM', 'days' => 'F'],
-        ];
-        return ['pe' => $pe, 'mlc' => $mlc];
+
+        $globalCounts = Enrollment::query()
+            ->whereYear('enrolled_at', $schoolYear)
+            ->where('status', 'enrolled')
+            ->whereNotNull('section_code')
+            ->select('section_code')
+            ->selectRaw('COUNT(DISTINCT user_id) as total')
+            ->groupBy('section_code')
+            ->pluck('total', 'section_code');
+
+        foreach (['pe', 'mlc'] as $typeKey) {
+            foreach ($default[$typeKey] as $i => $row) {
+                $default[$typeKey][$i]['enrolled_count'] = (int) ($globalCounts[$row['section_code']] ?? 0);
+            }
+        }
+
+        $out = ['default' => $default];
+        $rows = CollegeOptionSchedule::query()
+            ->orderBy('college_course_id')
+            ->orderBy('year')
+            ->orderBy('semester')
+            ->orderBy('option_type')
+            ->orderBy('sort_order')
+            ->get();
+
+        foreach ($rows as $row) {
+            $typeKey = strtoupper($row->option_type) === 'PE' ? 'pe' : 'mlc';
+            $entry = [
+                'section_code' => $row->option_code,
+                'time_slot' => $row->time_slot ?? '',
+                'days' => $row->days ?? '',
+                'student_slots' => (int) ($row->student_slots ?? 40),
+                'enrolled_count' => (int) ($globalCounts[$row->option_code] ?? 0),
+            ];
+            if ($typeKey === 'pe') {
+                $entry['courseCode'] = $row->course_code ?: null;
+                $entry['courseName'] = $row->option_label;
+            } else {
+                $entry['option'] = $row->option_label;
+            }
+            $ccId = (string) $row->college_course_id;
+            $y = (string) $row->year;
+            $s = (string) $row->semester;
+            $out[$ccId][$y][$s][$typeKey][] = $entry;
+        }
+
+        return $out;
     }
 
     /**
@@ -258,6 +310,7 @@ class EnrollController extends Controller
      */
     protected function buildSectionsByCollege(): array
     {
+        $stats = $this->buildSectionEnrollmentStats();
         $sections = CollegeSection::orderBy('college_course_id')
             ->orderBy('year')
             ->orderBy('semester')
@@ -275,9 +328,66 @@ class EnrollController extends Controller
             $out[$ccId][$y][$s][] = [
                 'section_code' => $row->section_code,
                 'time_slot' => $row->time_slot,
+                'student_slots' => (int) ($row->student_slots ?? 40),
+                'enrolled_count' => (int) ($stats[$ccId][$y][$s][$row->section_code] ?? 0),
             ];
         }
         return $out;
+    }
+
+    protected function buildSectionEnrollmentStats(): array
+    {
+        $schoolYear = now()->year;
+        $sections = CollegeSection::orderBy('college_course_id')
+            ->orderBy('year')
+            ->orderBy('semester')
+            ->get(['college_course_id', 'year', 'semester', 'section_code']);
+        $collegeCourseNames = CollegeCourse::pluck('name', 'id');
+
+        $out = [];
+
+        foreach ($sections as $section) {
+            $semesterBase = $this->buildSemesterBaseLabel(
+                (int) $section->year,
+                (int) $section->semester,
+                (string) ($collegeCourseNames[$section->college_course_id] ?? 'College')
+            );
+            $semesterBaseShort = str_replace('Semester', 'Sem', $semesterBase);
+
+            $enrolledCount = Enrollment::query()
+                ->whereYear('enrolled_at', $schoolYear)
+                ->where('status', 'enrolled')
+                ->where('section_code', $section->section_code)
+                ->where(function ($q) use ($semesterBase, $semesterBaseShort, $section) {
+                    $q->where('section_name', 'like', $semesterBase . '%')
+                        ->orWhere('section_name', 'like', $semesterBaseShort . '%')
+                        ->orWhere('college_course_id', $section->college_course_id);
+                })
+                ->distinct('user_id')
+                ->count('user_id');
+
+            $ccId = (string) $section->college_course_id;
+            $y = (string) $section->year;
+            $s = (string) $section->semester;
+            $out[$ccId][$y][$s][$section->section_code] = (int) $enrolledCount;
+        }
+
+        return $out;
+    }
+
+    protected function buildSemesterBaseLabel(int $year, int $semester, string $collegeName): string
+    {
+        return $collegeName . ' - ' . $this->ordinal($year) . ' Year, ' . $this->ordinal($semester) . ' Semester';
+    }
+
+    protected function ordinal(int $number): string
+    {
+        return match ($number) {
+            1 => '1st',
+            2 => '2nd',
+            3 => '3rd',
+            default => $number . 'th',
+        };
     }
 
     /**

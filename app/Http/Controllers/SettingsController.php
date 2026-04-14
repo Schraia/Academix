@@ -4,6 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\Course;
 use App\Models\CourseArchive;
+use App\Models\CollegeCourse;
+use App\Models\CollegeOptionSchedule;
+use App\Models\CollegeSection;
+use App\Models\Curriculum;
 use App\Models\Enrollment;
 use App\Models\Message;
 use App\Models\MessageRecipient;
@@ -30,6 +34,11 @@ class SettingsController extends Controller
         $pendingEnrollments = PendingEnrollment::with(['user.registration', 'items'])
             ->orderByDesc('submitted_at')
             ->get();
+        $collegeCourses = CollegeCourse::with([
+            'collegeSections' => fn ($q) => $q->orderBy('year')->orderBy('semester')->orderBy('sort_order'),
+            'curriculum.course',
+            'optionSchedules' => fn ($q) => $q->orderBy('year')->orderBy('semester')->orderBy('option_type')->orderBy('sort_order'),
+        ])->orderBy('name')->get();
 
         return view('settings', [
             'users' => $users,
@@ -37,7 +46,244 @@ class SettingsController extends Controller
             'archives' => $archives,
             'instructorBlockedArchives' => $blockedRows,
             'pendingEnrollments' => $pendingEnrollments,
+            'collegeCourses' => $collegeCourses,
         ]);
+    }
+
+    public function storeCourse(Request $request)
+    {
+        $data = $request->validate([
+            'title' => 'required|string|max:255',
+            'code' => 'required|string|max:50|unique:courses,code',
+            'credits' => 'required|integer|min:0|max:12',
+            'description' => 'nullable|string',
+            'status' => 'nullable|in:draft,published,archived',
+        ]);
+
+        Course::create($data);
+
+        return back()->with('success', 'Course created.');
+    }
+
+    public function updateCourse(Request $request, Course $course)
+    {
+        $data = $request->validate([
+            'title' => 'required|string|max:255',
+            'code' => 'required|string|max:50|unique:courses,code,' . $course->id,
+            'credits' => 'required|integer|min:0|max:12',
+            'description' => 'nullable|string',
+            'status' => 'nullable|in:draft,published,archived',
+        ]);
+
+        $course->update($data);
+
+        return back()->with('success', 'Course updated.');
+    }
+
+    public function destroyCourse(Course $course)
+    {
+        if ($course->enrollments()->exists() || $course->curriculum()->exists()) {
+            return back()->with('error', 'Cannot delete this course because it is already used by enrollments or curriculum.');
+        }
+
+        $course->delete();
+        return back()->with('success', 'Course deleted.');
+    }
+
+    public function storeCollegeCourse(Request $request)
+    {
+        $data = $request->validate([
+            'name' => 'required|string|max:255',
+            'code' => 'required|string|max:50|unique:college_courses,code',
+            'description' => 'nullable|string',
+        ]);
+
+        CollegeCourse::create($data);
+
+        return back()->with('success', 'Major created.');
+    }
+
+    public function updateCollegeCourse(Request $request, CollegeCourse $collegeCourse)
+    {
+        $data = $request->validate([
+            'name' => 'required|string|max:255',
+            'code' => 'required|string|max:50|unique:college_courses,code,' . $collegeCourse->id,
+            'description' => 'nullable|string',
+        ]);
+
+        $collegeCourse->update($data);
+
+        return back()->with('success', 'Major updated.');
+    }
+
+    public function destroyCollegeCourse(CollegeCourse $collegeCourse)
+    {
+        if ($collegeCourse->enrollments()->exists() || $collegeCourse->curriculum()->exists() || $collegeCourse->collegeSections()->exists() || $collegeCourse->optionSchedules()->exists()) {
+            return back()->with('error', 'Cannot delete this major because it is already used by enrollments, curriculum, or sections.');
+        }
+
+        $collegeCourse->delete();
+        return back()->with('success', 'Major deleted.');
+    }
+
+    public function storeCollegeSection(Request $request)
+    {
+        $data = $request->validate([
+            'college_course_id' => 'required|exists:college_courses,id',
+            'year' => 'required|integer|between:1,4',
+            'semester' => 'required|integer|between:1,2',
+            'section_code' => 'required|string|max:20',
+            'time_slot' => 'nullable|string|max:255',
+            'student_slots' => 'required|integer|min:1|max:500',
+            'sort_order' => 'nullable|integer|min:0|max:999',
+        ]);
+        $data['sort_order'] = $data['sort_order'] ?? 0;
+
+        CollegeSection::updateOrCreate(
+            [
+                'college_course_id' => $data['college_course_id'],
+                'year' => $data['year'],
+                'semester' => $data['semester'],
+                'section_code' => $data['section_code'],
+            ],
+            [
+                'time_slot' => $data['time_slot'] ?? null,
+                'student_slots' => $data['student_slots'],
+                'sort_order' => $data['sort_order'],
+            ]
+        );
+
+        return back()->with('success', 'Section saved.');
+    }
+
+    public function updateCollegeSection(Request $request, CollegeSection $collegeSection)
+    {
+        $data = $request->validate([
+            'year' => 'required|integer|between:1,4',
+            'semester' => 'required|integer|between:1,2',
+            'section_code' => 'required|string|max:20',
+            'time_slot' => 'nullable|string|max:255',
+            'student_slots' => 'required|integer|min:1|max:500',
+            'sort_order' => 'nullable|integer|min:0|max:999',
+        ]);
+        $data['sort_order'] = $data['sort_order'] ?? 0;
+
+        $collegeSection->update($data);
+
+        return back()->with('success', 'Section updated.');
+    }
+
+    public function destroyCollegeSection(CollegeSection $collegeSection)
+    {
+        if (Enrollment::where('section_code', $collegeSection->section_code)->exists()) {
+            return back()->with('error', 'Cannot delete this section because enrollments already reference it.');
+        }
+
+        if ($collegeSection->sectionSubjectSchedules()->exists()) {
+            return back()->with('error', 'Cannot delete this section because subject schedules are attached.');
+        }
+
+        $collegeSection->delete();
+        return back()->with('success', 'Section deleted.');
+    }
+
+    public function storeCurriculumItem(Request $request)
+    {
+        $data = $request->validate([
+            'college_course_id' => 'required|exists:college_courses,id',
+            'course_id' => 'required|exists:courses,id',
+            'year' => 'required|integer|between:1,4',
+            'semester' => 'required|integer|between:1,2',
+            'prerequisites' => 'nullable|string|max:255',
+            'sort_order' => 'nullable|integer|min:0|max:999',
+        ]);
+        $data['sort_order'] = $data['sort_order'] ?? 0;
+
+        Curriculum::updateOrCreate(
+            [
+                'college_course_id' => $data['college_course_id'],
+                'course_id' => $data['course_id'],
+                'year' => $data['year'],
+                'semester' => $data['semester'],
+            ],
+            [
+                'prerequisites' => $data['prerequisites'] ?? null,
+                'sort_order' => $data['sort_order'],
+            ]
+        );
+
+        return back()->with('success', 'Curriculum entry saved.');
+    }
+
+    public function destroyCurriculumItem(Curriculum $curriculum)
+    {
+        $curriculum->delete();
+
+        return back()->with('success', 'Curriculum entry removed.');
+    }
+
+    public function storeOptionSchedule(Request $request)
+    {
+        $data = $request->validate([
+            'college_course_id' => 'required|exists:college_courses,id',
+            'year' => 'required|integer|between:1,4',
+            'semester' => 'required|integer|between:1,2',
+            'option_type' => 'required|in:PE,MLC',
+            'option_code' => 'required|string|max:20',
+            'option_label' => 'required|string|max:120',
+            'course_code' => 'nullable|string|max:30',
+            'time_slot' => 'nullable|string|max:255',
+            'days' => 'nullable|string|max:20',
+            'student_slots' => 'required|integer|min:1|max:500',
+            'sort_order' => 'nullable|integer|min:0|max:999',
+        ]);
+        $data['sort_order'] = $data['sort_order'] ?? 0;
+
+        CollegeOptionSchedule::updateOrCreate(
+            [
+                'college_course_id' => $data['college_course_id'],
+                'year' => $data['year'],
+                'semester' => $data['semester'],
+                'option_type' => $data['option_type'],
+                'option_code' => $data['option_code'],
+            ],
+            [
+                'option_label' => $data['option_label'],
+                'course_code' => $data['course_code'] ?? null,
+                'time_slot' => $data['time_slot'] ?? null,
+                'days' => $data['days'] ?? null,
+                'student_slots' => $data['student_slots'],
+                'sort_order' => $data['sort_order'],
+            ]
+        );
+
+        return back()->with('success', 'Option schedule saved.');
+    }
+
+    public function updateOptionSchedule(Request $request, CollegeOptionSchedule $optionSchedule)
+    {
+        $data = $request->validate([
+            'year' => 'required|integer|between:1,4',
+            'semester' => 'required|integer|between:1,2',
+            'option_type' => 'required|in:PE,MLC',
+            'option_code' => 'required|string|max:20',
+            'option_label' => 'required|string|max:120',
+            'course_code' => 'nullable|string|max:30',
+            'time_slot' => 'nullable|string|max:255',
+            'days' => 'nullable|string|max:20',
+            'student_slots' => 'required|integer|min:1|max:500',
+            'sort_order' => 'nullable|integer|min:0|max:999',
+        ]);
+        $data['sort_order'] = $data['sort_order'] ?? 0;
+
+        $optionSchedule->update($data);
+        return back()->with('success', 'Option schedule updated.');
+    }
+
+    public function destroyOptionSchedule(CollegeOptionSchedule $optionSchedule)
+    {
+        $optionSchedule->delete();
+        return back()->with('success', 'Option schedule deleted.');
     }
 
     public function assignCourses(Request $request)
